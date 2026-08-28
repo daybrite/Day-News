@@ -126,6 +126,9 @@ fn build_shell() -> impl Piece {
             res::images::sidebar_today,
             reader_dest,
         )
+        // Per-feed identity colors (docs/vectors.md): the sun, the dot, the star and the
+        // stack each wear their own tint, NetNewsWire-style.
+        .icon_tint(Color::hex(0xFF9F0A))
         .badge(move || count(st.total_today.get()))
         .item_icon(
             "unread".to_string(),
@@ -133,6 +136,7 @@ fn build_shell() -> impl Piece {
             res::images::sidebar_unread,
             reader_dest,
         )
+        .icon_tint(Color::hex(0x0A84FF))
         .badge(move || count(st.total_unread.get()))
         .item_icon(
             "starred".to_string(),
@@ -140,6 +144,7 @@ fn build_shell() -> impl Piece {
             res::images::sidebar_starred,
             reader_dest,
         )
+        .icon_tint(Color::hex(0xE8940A))
         .badge(move || count(st.total_starred.get()))
         .item_icon(
             "all".to_string(),
@@ -147,6 +152,7 @@ fn build_shell() -> impl Piece {
             res::images::sidebar_all,
             reader_dest,
         )
+        .icon_tint(Color::hex(0x5E5CE6))
         // One row per subscription, re-derived whenever the feed list or its counts change.
         .section(res::str::nav_feeds_section())
         .items(
@@ -159,6 +165,7 @@ fn build_shell() -> impl Piece {
                 };
                 item(format!("feed:{}", f.id), name)
                     .icon(res::images::sidebar_feed)
+                    .icon_tint(Color::hex(0x30B0C7))
                     .badge(count(f.unread))
             },
         )
@@ -169,6 +176,7 @@ fn build_shell() -> impl Piece {
             |t: &daynews_core::TagRow| {
                 item(format!("tag:{}", t.id), t.name.clone())
                     .icon(res::images::sidebar_starred)
+                    .icon_tint(Color::hex(0xE8940A))
                     .badge(count(t.count))
             },
         )

@@ -353,8 +353,16 @@ pub fn timeline_pane() -> impl Piece {
                 } else {
                     crate::res::str::mark_read()
                 };
+                // The glyph speaks the dot language: marking read REMOVES the dot (an
+                // outlined circle), marking unread restores it (filled).
+                let symbol = if read {
+                    Symbol::CircleFilled
+                } else {
+                    Symbol::Circle
+                };
                 vec![
                     swipe_action(text.format())
+                        .symbol(symbol)
                         .tint(palette().accent)
                         .action(move || daynews_core::set_read(id, !read)),
                 ]
@@ -373,6 +381,7 @@ pub fn timeline_pane() -> impl Piece {
                 };
                 vec![
                     swipe_action(text.format())
+                        .symbol(Symbol::Star)
                         .tint(palette().star)
                         .action(move || daynews_core::set_starred(id, !starred)),
                 ]

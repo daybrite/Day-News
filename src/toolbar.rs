@@ -98,7 +98,7 @@ pub fn install() {
                     }
                 }),
             toolbar_toggle("read", res::str::toggle_read(), read)
-                .icon(Symbol::Mail)
+                .icon(Symbol::CircleFilled)
                 .enabled_when(move || st.selected.get().is_some())
                 // Same shape as the star: the signal already holds the new state.
                 .action(move || {

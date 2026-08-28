@@ -20,7 +20,7 @@ jobs:
     with:
       targets: windows-xaml, macos-appkit, linux-gtk, linux-qt, ios-uikit, android-mdc, harmony-arkui, web-dom
       day-version: main
-      scripts: dayscript/demo.yaml
+      scripts: dayscript/walkthrough.yaml
       locales: en
       deploy-web: true
       daysite-version: main
