@@ -33,10 +33,15 @@ fn read() -> Signal<bool> {
     READ.with(|c| *c.get_or_init(|| Signal::global(false)))
 }
 
-/// Does this toolkit have a real toolbar? Where it does not, the reader's commands have to
+/// Does this toolkit put commands in a bar? Where it does not, the reader's commands have to
 /// live in the content instead — there is no drawn stand-in.
+///
+/// `!= Unsupported`, not `== Native` (docs/toolbars.md): web-dom answers `Emulated` — a strip
+/// the shim docks above the app root, with working buttons, toggles and menus — and gating on
+/// `Native` hid the web build's toolbar entirely, pushing Refresh and Mark All as Read into
+/// the timeline as if a browser were a phone.
 pub fn available() -> bool {
-    capability(Cap::Toolbar) == Support::Native
+    capability(Cap::Toolbar) != Support::Unsupported
 }
 
 /// Install the window's toolbar. Called once per window, from that window's builder.

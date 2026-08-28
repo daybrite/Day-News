@@ -19,12 +19,12 @@ flow:
 
   # Search filters through the full-text index, then clears. It is a toolbar item on the
   # desktops and a timeline field on a phone (docs/toolbars.md) — one behaviour, two homes.
-  - toolbar: { item: day.search, text: "swift", skip_on: [ios-uikit, android-mdc, web-dom] }
-  - input: { id: search, text: "swift", only_on: [ios-uikit, android-mdc, web-dom] }
+  - toolbar: { item: day.search, text: "swift", skip_on: [ios-uikit, android-mdc] }
+  - input: { id: search, text: "swift", only_on: [ios-uikit, android-mdc] }
   - pause: { secs: 1 }
   - screenshot: search-results
-  - toolbar: { item: day.search, text: "", skip_on: [ios-uikit, android-mdc, web-dom] }
-  - input: { id: search, text: "", only_on: [ios-uikit, android-mdc, web-dom] }
+  - toolbar: { item: day.search, text: "", skip_on: [ios-uikit, android-mdc] }
+  - input: { id: search, text: "", only_on: [ios-uikit, android-mdc] }
   - pause: { secs: 1 }
   - wait_for: { id: article-row-0, timeout_secs: 10 }
 
@@ -70,7 +70,7 @@ flow:
   - pause: { secs: 1, only_on: [android-mdc] }
   - swipe_row: { id: timeline, row: 0, key: mark_unread }
   - pause: { secs: 1 }
-  - toolbar: { item: read, on: true, skip_on: [ios-uikit, android-mdc, web-dom] }
+  - toolbar: { item: read, on: true, skip_on: [ios-uikit, android-mdc] }
   - pause: { secs: 1 }
   - menu: { key: toggle_read, path: [menu_article], skip_on: [ios-uikit, android-mdc] }
   - pause: { secs: 1 }
@@ -89,8 +89,8 @@ flow:
   # Mark-all-read empties the UNREAD timeline specifically.
   - navigate: { route: unread }
   - pause: { secs: 1 }
-  - toolbar: { item: mark-all-read, skip_on: [ios-uikit, android-mdc, web-dom] }
-  - tap: { id: mark-all-read, only_on: [ios-uikit, android-mdc, web-dom] }
+  - toolbar: { item: mark-all-read, skip_on: [ios-uikit, android-mdc] }
+  - tap: { id: mark-all-read, only_on: [ios-uikit, android-mdc] }
   - pause: { secs: 1 }
   - assert_visible: { id: timeline-empty }
   - screenshot: all-read
@@ -127,10 +127,10 @@ flow:
   - screenshot: settings
 
   # The toolbar's sidebar toggle hides the pane and brings it back.
-  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc, web-dom] }
+  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc] }
   - pause: { secs: 1 }
   - screenshot: sidebar-hidden
-  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc, web-dom] }
+  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc] }
   - pause: { secs: 1 }
 
   # Subscriptions page: feed list and the OPML controls.

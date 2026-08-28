@@ -1,6 +1,20 @@
 /target
 /build
 Cargo.lock
+/.cargo/config.toml
 
-# Machine-local cargo patch table pointing at the day checkout.
-.cargo/
+# Gradle local state. platform/android/ is source, but everything Gradle generates INSIDE it is
+# not: the caches, the per-module build/ trees, and the SDK path local.properties records. These
+# need their own entries because `/build` above is anchored to the repo root and so never matches
+# platform/android/build/ — which is what fails the pristine check the android-mdc job runs
+# before packing (an untracked file is an input the commit does not describe).
+platform/android/.gradle/
+platform/android/**/build/
+platform/android/local.properties
+
+# The website is generated: the daysite template clone (local preview) and the data files the
+# pipeline synthesizes from Day.toml + store/ + release assets. Only site.toml and theme.css
+# are source.
+website/.daysite/
+website/appindex.json
+website/gallery-manifest.json
