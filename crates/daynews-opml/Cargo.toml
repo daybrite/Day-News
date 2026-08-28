@@ -1,0 +1,12 @@
+[package]
+name = "daynews-opml"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+# OPML is XML, and hand-rolling a parser means hand-rolling entity decoding, attribute quoting
+# and encoding detection — all of which real exports (NetNewsWire's included) exercise. quick-xml
+# is a small pull parser with no transitive weight, and it also writes, so one dependency covers
+# both directions.
+quick-xml = "0.37"

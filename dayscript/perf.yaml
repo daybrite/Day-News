@@ -1,0 +1,14 @@
+# Timing probe: switch scopes with a stopwatch on the wall clock. Feed scopes need live ids
+# (they are URL hashes now); the smart scopes cover the query shapes.
+name: day-news-perf
+description: Scope switches across the smart feeds.
+flow:
+  - wait_for: { id: nav }
+  - navigate: { route: all }
+  - wait_idle:
+  - navigate: { route: unread }
+  - wait_idle:
+  - navigate: { route: starred }
+  - wait_idle:
+  - navigate: { route: today }
+  - wait_idle:

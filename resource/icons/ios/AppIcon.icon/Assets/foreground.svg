@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/>
+      <stop offset="1" stop-color="#161D2A"/>
+    </linearGradient>
+  </defs>
+  <!-- Day icon master (docs/icons.md): full-bleed square backdrop, platforms mask it. -->
+  
+  <g id="day:foreground">
+    <!-- A tidy fan of sheets — your feeds, your order. The top sheet is the article:
+         an amber headline and body lines that read at large sizes and fall away small. -->
+    <rect x="296" y="250" width="432" height="524" rx="34" fill="#7E93B0"
+          transform="rotate(-10 512 512)"/>
+    <rect x="296" y="250" width="432" height="524" rx="34" fill="#C7D2E2"
+          transform="rotate(-5 512 512)"/>
+    <rect x="296" y="250" width="432" height="524" rx="34" fill="#F7FAFD"/>
+    <rect x="340" y="302" width="190" height="46" rx="23" fill="#F0A83C"/>
+    <g stroke="#AEBBCC" stroke-width="20" stroke-linecap="round">
+      <line x1="340" y1="412" x2="684" y2="412"/>
+      <line x1="340" y1="486" x2="684" y2="486"/>
+      <line x1="340" y1="560" x2="684" y2="560"/>
+      <line x1="340" y1="634" x2="576" y2="634"/>
+    </g>
+  </g>
+  <!-- Single-color silhouette for themed/tinted icons (Android 13, Icon Composer Tinted):
+       solid paint only, VectorDrawable subset. Hidden so plain viewers show the icon as
+       shipped; the pipeline re-enables it. -->
+  
+</svg>

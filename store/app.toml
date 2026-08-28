@@ -1,0 +1,12 @@
+# Store listing metadata that is NOT localized. The localized text lives in store/<locale>/.
+# bundle-id: omitted on purpose — `day store` falls back to Day.toml [app] id, which is
+# the source of truth. Set it here only to publish under an id the app does not build with.
+apple-category = "NEWS"
+copyright = "2026 Daybrite"
+contact-email = "hello@daybrite.dev"
+review-notes = """
+A feed reader. Add a feed with New Feed… (any RSS, Atom, RDF or JSON Feed URL) or import an OPML
+file exported from another reader; the app then fetches articles directly from those publishers.
+
+No account, no server of ours in the middle, and no advertising.
+"""

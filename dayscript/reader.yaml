@@ -1,0 +1,21 @@
+# The reader loop: opening an article must clear its dot AND swap the content pane.
+name: day-news-reader
+description: Unread clears on open; a second article replaces the first in the reader.
+flow:
+  - wait_for: { id: nav }
+  - navigate: { route: unread }
+  - wait_idle:
+  - pause: { secs: 1 }
+  - screenshot: before-open
+
+  # Go > Next Unread opens the first unread article.
+  - menu: { key: menu_next_unread, path: [menu_go] }
+  - wait_idle:
+  - pause: { secs: 2 }
+  - screenshot: first-article
+
+  # A second Next Unread must replace the content, not keep the first article.
+  - menu: { key: menu_next_unread, path: [menu_go] }
+  - wait_idle:
+  - pause: { secs: 2 }
+  - screenshot: second-article

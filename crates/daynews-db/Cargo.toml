@@ -1,0 +1,21 @@
+[package]
+name = "daynews-db"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+# The local article store rides day-persistence's lazy engine: models declared with
+# #[derive(Model)], relations with cascade rules, generated FTS5 shadows, and live queries
+# the UI binds to directly. SQLite itself comes bundled through the engine.
+day-persistence = { git = "https://github.com/daybrite/day.git" }
+day-model = { git = "https://github.com/daybrite/day.git" }
+day-macros = { git = "https://github.com/daybrite/day.git" }
+# "Today" means today WHERE THE READER IS, so the cut-off is local midnight, not UTC midnight —
+# that needs the machine's UTC offset and its DST rules. day-part-timezone carries a bundled
+# tzdb and the one wall clock that works everywhere the app runs, wasm included (docs/dates.md).
+day-part-timezone = { git = "https://github.com/daybrite/day.git" }
+day-reactive = { git = "https://github.com/daybrite/day.git" }
+# Statement tracing rides the standard logging facade the day crates already pull in; the
+# engine's trace hook logs each executed SQL at `trace!` in debug builds (Day-Sketch's shape).
+log = "0.4"

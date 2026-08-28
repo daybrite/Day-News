@@ -1,0 +1,6 @@
+/target
+/build
+Cargo.lock
+
+# Machine-local cargo patch table pointing at the day checkout.
+.cargo/

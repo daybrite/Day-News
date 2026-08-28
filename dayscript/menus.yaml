@@ -1,0 +1,37 @@
+# Day News desktop menus — File and Go, driven through the native menu bar.
+#
+#     day launch -p macos-appkit --script dayscript/menus.yaml
+#
+# CONTRACT: expects an imported store (run dayscript/import.yaml first) with at least one
+# unread article, so Go ▸ Next Unread has somewhere to go. Deliberately does NOT invoke
+# File ▸ Refresh: that fetches every subscription over the network.
+name: day-news-menus
+description: The File and Go menus drive navigation and windows on every desktop toolkit.
+flow:
+  - wait_for: { id: nav }
+
+  # Go ▸ the three smart-feed filters, each of which re-scopes the timeline.
+  - menu: { key: nav_starred, path: [menu_go] }
+  - wait_idle:
+  - assert_route: { route: starred }
+  - menu: { key: nav_all_unread, path: [menu_go] }
+  - wait_idle:
+  - assert_route: { route: unread }
+  - menu: { key: nav_today, path: [menu_go] }
+  - wait_idle:
+  - assert_route: { route: today }
+  - screenshot: menu-go-today
+
+  # Go ▸ Next Unread opens an article without the pointer ever touching the timeline.
+  - menu: { key: nav_all_unread, path: [menu_go] }
+  - wait_idle:
+  - menu: { key: menu_next_unread, path: [menu_go] }
+  - wait_idle:
+  - pause: { secs: 1 }
+  - screenshot: menu-next-unread
+
+  # File ▸ New Feed focuses the subscribe field on the subscriptions page.
+  - menu: { key: menu_new_feed, path: [menu_file] }
+  - wait_idle:
+  - assert_route: { route: subscriptions }
+  - screenshot: menu-new-feed

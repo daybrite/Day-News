@@ -1,0 +1,28 @@
+# Subscribes to a handful of dependable feeds, for a device where importing a file is awkward.
+# Each is a different flavour (plain RSS, WordPress, Atom/YouTube, Discourse, Mastodon), so the
+# parser's breadth is visible on the device too.
+name: day-news-seed
+description: Subscribe to a few representative feeds and let them refresh.
+flow:
+  - wait_for: { id: nav, timeout_secs: 30 }
+  - navigate: { route: subscriptions }
+  - wait_for: { id: subscribe-url, timeout_secs: 20 }
+  - input: { id: subscribe-url, text: "https://andrewkelley.me/rss.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - input: { id: subscribe-url, text: "https://blog.cryptographyengineering.com/feed/" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - input: { id: subscribe-url, text: "https://forums.swift.org/c/general-announce/24.rss" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - input: { id: subscribe-url, text: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVHFbqXqoYvEWM1Ddxl0QDg" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - input: { id: subscribe-url, text: "https://mas.to/@aabewhite.rss" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 4 }
+  - assert_text: { id: feeds-count, text: "5 feeds" }
+  - navigate: { route: unread }
+  - pause: { secs: 3 }
+  - screenshot: seeded

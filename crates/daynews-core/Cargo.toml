@@ -1,0 +1,21 @@
+[package]
+name = "daynews-core"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+daynews-db = { path = "../daynews-db" }
+daynews-feed = { path = "../daynews-feed" }
+daynews-opml = { path = "../daynews-opml" }
+# The view-model publishes signals DERIVED from live queries: standing effects bridge the
+# container's queries and count badges into the value shapes the UI binds. day-core supplies
+# the main-loop executor (`day::task`) the refresh loop runs on; no async runtime is involved.
+day-reactive = { git = "https://github.com/daybrite/day.git" }
+day-core = { git = "https://github.com/daybrite/day.git" }
+day-model = { git = "https://github.com/daybrite/day.git" }
+day-persistence = { git = "https://github.com/daybrite/day.git" }
+
+# Android resolves its writable files dir through the JNI bridge (see `store_dir`).
+[target.'cfg(target_os = "android")'.dependencies]
+day-android = { git = "https://github.com/daybrite/day.git" }

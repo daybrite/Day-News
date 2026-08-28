@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UCVHFbqXqoYvEWM1Ddxl0QDg"/>
+ <id>yt:channel:VHFbqXqoYvEWM1Ddxl0QDg</id>
+ <yt:channelId>VHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+ <title>Android Developers</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg"/>
+ <author>
+  <name>Android Developers</name>
+  <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+ </author>
+ <published>2007-11-09T18:05:25+00:00</published>
+ <entry>
+  <id>yt:video:BQZZh8L1w_A</id>
+  <yt:videoId>BQZZh8L1w_A</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>How does GDE Pawan Kumar describe the future of Android?</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/BQZZh8L1w_A"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-08-01T01:43:39+00:00</published>
+  <updated>2026-08-01T01:54:10+00:00</updated>
+  <media:group>
+   <media:title>How does GDE Pawan Kumar describe the future of Android?</media:title>
+   <media:content url="https://www.youtube.com/v/BQZZh8L1w_A?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i3.ytimg.com/vi/BQZZh8L1w_A/hqdefault.jpg" width="480" height="360"/>
+   <media:description>At Google I/O Connect India, Google Developer Expert Pawan Kumar shares how he's integrating generative AI and agent-ready tooling to build intelligent Android apps that are privacy-focused and efficient. Hear why he believes the future of Android is adaptive, intelligent, and performant.
+
+Watch the Android sessions from I/O Connect India → https://goo.gle/IOC-India-Sessions
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+
+#Android #AndroidDevelopers #GoogleIOConnect #GoogleDeveloperProgram #BuildWithGemini
+
+
+Event: Google I/O Connect India 2026
+
+Speaker: Pawan Kumar</media:description>
+   <media:community>
+    <media:starRating count="35" average="5.00" min="1" max="5"/>
+    <media:statistics views="1663"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:dq5LHtF709s</id>
+  <yt:videoId>dq5LHtF709s</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>From student to Android app developer, meet Pooja Bhaumik</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/dq5LHtF709s"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-31T21:34:01+00:00</published>
+  <updated>2026-07-31T21:42:07+00:00</updated>
+  <media:group>
+   <media:title>From student to Android app developer, meet Pooja Bhaumik</media:title>
+   <media:content url="https://www.youtube.com/v/dq5LHtF709s?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/dq5LHtF709s/hqdefault.jpg" width="480" height="360"/>
+   <media:description>At Google I/O Connect India, Google Developer Expert Pooja Bhaumik shares how an Android app she built in high school sparked a journey from student developer to GDE. Along the way, she reflects on the importance of staying curious, continuously building, and giving back to the developer community.
+
+Whether you're shipping your first app or growing your Android skills, Pooja's story is a reminder that every developer journey starts with a single project.
+
+Watch the Android sessions from I/O Connect India → https://goo.gle/IOC-India-Sessions
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+
+#Android #AndroidDevelopers #GoogleIOConnect #GoogleDeveloperProgram 
+
+
+Event: Google I/O Connect India 2026
+
+Speaker: Pooja Bhaumik</media:description>
+   <media:community>
+    <media:starRating count="103" average="5.00" min="1" max="5"/>
+    <media:statistics views="2733"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:HcMm-rk5xTI</id>
+  <yt:videoId>HcMm-rk5xTI</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Rapid-fire: Jetpack Compose</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/HcMm-rk5xTI"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-31T20:07:38+00:00</published>
+  <updated>2026-08-02T06:43:13+00:00</updated>
+  <media:group>
+   <media:title>Rapid-fire: Jetpack Compose</media:title>
+   <media:content url="https://www.youtube.com/v/HcMm-rk5xTI?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/HcMm-rk5xTI/hqdefault.jpg" width="480" height="360"/>
+   <media:description>We put senior Android engineer Akshay Chordiya with Marshmallow on the spot in this  rapid-fire “this or that” for the 5-year anniversary of Jetpack Compose. Coil or Glide? Dark mode or light? Find out and let us know what you are going with in the comments.  
+
+Subscribe to Android Developers → https://goo.gle/AndroidDevs     
+
+#Android #JetpackCompose</media:description>
+   <media:community>
+    <media:starRating count="74" average="5.00" min="1" max="5"/>
+    <media:statistics views="2289"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:Np7RsqtkF1Q</id>
+  <yt:videoId>Np7RsqtkF1Q</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Jetpack Compose 5th-Anniversary: Livestream Birthday Party 🎈</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=Np7RsqtkF1Q"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-30T13:58:20+00:00</published>
+  <updated>2026-08-02T17:35:00+00:00</updated>
+  <media:group>
+   <media:title>Jetpack Compose 5th-Anniversary: Livestream Birthday Party 🎈</media:title>
+   <media:content url="https://www.youtube.com/v/Np7RsqtkF1Q?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i3.ytimg.com/vi/Np7RsqtkF1Q/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Jetpack Compose is 5! 🎂 To celebrate this major milestone, we’re looking back at the journey of Jetpack Compose - from its initial internal prototype days in 2017, announcing the first stable version in 2021, to its current status as the industry standard for Android UI development.
+
+Join us for a trip down memory lane as we hear from the team about the challenges, the wins, and the evolution of the toolkit that completely re-imagined UI development on Android - and ask your burning questions in the comments. 
+
+Chapters:
+00:00 - Introduction
+02:07 - How has Compose changed over the years?
+06:21 - Q&amp;A
+46:19 - What are the engineers’ favorite APIs?
+
+
+Download your free Jetpack Compose birthday wallpaper! →  https://bit.ly/compose-wallpapers
+
+Subscribe to Android Developers → https://goo.gle/AndroidDevs     
+
+#Android #AndroidDevelopers #Compose
+
+Speakers: Rebecca Franks, Nick Butcher, Clara Bayarri, Louis Pullen-Freilich
+Products Mentioned: Android, Jetpack Compose</media:description>
+   <media:community>
+    <media:starRating count="122" average="5.00" min="1" max="5"/>
+    <media:statistics views="3138"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:QuGzlRpS4Tw</id>
+  <yt:videoId>QuGzlRpS4Tw</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Develop Android XR apps for display glasses with Android Studio</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/QuGzlRpS4Tw"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-29T22:28:05+00:00</published>
+  <updated>2026-07-30T07:33:54+00:00</updated>
+  <media:group>
+   <media:title>Develop Android XR apps for display glasses with Android Studio</media:title>
+   <media:content url="https://www.youtube.com/v/QuGzlRpS4Tw?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/QuGzlRpS4Tw/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Develop apps for display glasses (even without a device) with the XR emulator in Android Studio. This demo highlights that you can pair the emulator with a companion phone and utilize Jetpack Compose Glimmer to create engaging UIs. You can test your apps with built-in touch controls and custom environments, empowering you to innovate without hardware limitations. Begin developing for display glasses by downloading Android Studio Canary 5 or later.
+
+
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+#Android #AndroidDevelopers #AndroidStudio #WearOS 
+
+Event: Google I/O 2026
+
+Speakers: Kathleen Bryan, Trey Williamson</media:description>
+   <media:community>
+    <media:starRating count="107" average="5.00" min="1" max="5"/>
+    <media:statistics views="4136"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:HEqXwUm6vd0</id>
+  <yt:videoId>HEqXwUm6vd0</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>The inside story of Jetpack Compose</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=HEqXwUm6vd0"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-29T11:12:20+00:00</published>
+  <updated>2026-07-31T21:52:36+00:00</updated>
+  <media:group>
+   <media:title>The inside story of Jetpack Compose</media:title>
+   <media:content url="https://www.youtube.com/v/HEqXwUm6vd0?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/HEqXwUm6vd0/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Discover the origin story of Jetpack Compose and how it changed the way Android developers build applications. We discuss the original challenges of unbundling the UI toolkit from the operating system to deliver faster updates. By adopting Kotlin and a declarative approach, the team reduced the boilerplate necessary to build user interfaces. While earlier systems relied heavily on XML, Jetpack Compose shifts to a code-first model for easier iteration. Listen to the team share their insights on modifiers, performance improvements, and the future of Android design.
+
+
+Chapters:
+00:00 - Introduction
+02:00 - Unbundling the Android toolkit
+14:32 - Early research and adopting Kotlin
+17:28 - Moving from XML to code
+32:35 - Building tooling and live previews
+46:14 - The introduction of modifiers
+51:31 - Engineering trade-offs and performance
+55:20 - Reaching the 1.0 milestone
+
+
+Resources:
+Android is Compose-first → https://goo.gle/compost-first
+Jetpack Compose overview → https://goo.gle/compose-overview
+
+
+Watch more Android Developers Backstage → https://goo.gle/adb-podcast     
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+Speakers: Clara Bayarri, Tor Norbye, Chet Haase, Romain Guy
+
+#AndroidDevelopers</media:description>
+   <media:community>
+    <media:starRating count="111" average="5.00" min="1" max="5"/>
+    <media:statistics views="2970"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:bfqd9Y8jztk</id>
+  <yt:videoId>bfqd9Y8jztk</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Is your Android app ready for foldable devices?</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/bfqd9Y8jztk"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-24T16:54:26+00:00</published>
+  <updated>2026-07-29T12:44:03+00:00</updated>
+  <media:group>
+   <media:title>Is your Android app ready for foldable devices?</media:title>
+   <media:content url="https://www.youtube.com/v/bfqd9Y8jztk?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i3.ytimg.com/vi/bfqd9Y8jztk/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Large screens and foldables are the future of mobile. Learn how to optimize your Android apps by implementing dynamic layouts with Jetpack Compose and adaptive principles. We'll help you navigate the opportunities of multi-screen development so you can ship innovative, optimized apps to every device. 
+
+Learn more about building premium Android experiences, watch the Google I/O 2026 playlist → https://goo.gle/4feSjDA 
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+
+#AndroidStudio #AndroidDevelopers #GoogleIO
+
+
+Speaker: Miguel Montemayor
+Products Mentioned: Android</media:description>
+   <media:community>
+    <media:starRating count="131" average="5.00" min="1" max="5"/>
+    <media:statistics views="2499"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:MPJR5aRBhYg</id>
+  <yt:videoId>MPJR5aRBhYg</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Android XR fireside talk: Building the future of spatial experiences</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=MPJR5aRBhYg"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-23T14:45:48+00:00</published>
+  <updated>2026-07-26T20:30:00+00:00</updated>
+  <media:group>
+   <media:title>Android XR fireside talk: Building the future of spatial experiences</media:title>
+   <media:content url="https://www.youtube.com/v/MPJR5aRBhYg?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/MPJR5aRBhYg/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Tune in on the Android Developers YouTube channel for a fireside chat to learn how to build next-generation spatial experiences with Android XR. Following the launch of Samsung Galaxy XR headset in the UK on July 8th, we will discuss spatial design and immersive experiences, building natively, and also touch on  adaptive frameworks that scale seamlessly across the platform. Join Google experts Vinny DaSilva and Stevan Silva alongside Google Developer Experts Ahmed Tikiwa and Julien Salvi, and special guests Karim Morsy (CEO and co-founder of Algoriddim), Colin Yao (CTO at Sphere), and Victor Garcia (Co-Founder and CTO at YBVR).
+
+Chapters:
+0:00 - Introduction
+3:45 - Android XR sci-fi inspiration 
+8:38 - What this hardware leap means for the Android ecosystem
+10:19 - Insights for building natively on Android XR
+14:10 - Quick wins for ensuring 2D apps feel great in Android XR
+18:36 - Transitioning UX paradigms 
+24:36 - Adaptive UI and components in building spatial experiences 
+28:19 - OpenXR, cross-platform strategies, and commercial impact
+32:19 -  How to overcome challenges incorporating media playback 
+35:15 - Architecting applications to support diverse Android form factors
+37:27 - Bridging the gap between 2D UI components and immersive development 
+39:52 -  Cross platform capabilities and the future of Android XR
+41:09 - Designing apps to scale across devices for different use case
+43:26 - Native UI scaling and desktop-style productivity workflows
+47:57 - Support for ambient experiences
+50:11 - Gemini interface handoff and tools for designing 3D content 
+54:08 - Final takeaways
+59:20 - Wrap-up and resources
+
+Resources:
+Get started with the XR Emulator in Android Studio → https://goo.gle/4513vgw
+Find the latest updates about building for Android XR → https://developer.android.com/xr
+
+Subscribe to Android Developers → https://goo.gle/AndroidDevs     
+
+#Android #AndroidDevelopers #AndroidXR
+
+Speakers: Ahmed Tikiwa, Julien Salvi, Karim Morsy, Colin Yao, Victor Garcia
+Products Mentioned: Android, Android XR</media:description>
+   <media:community>
+    <media:starRating count="116" average="5.00" min="1" max="5"/>
+    <media:statistics views="2214"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:pLNJ-fNYTKU</id>
+  <yt:videoId>pLNJ-fNYTKU</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>The future unfolds! How to optimize Android apps for adaptive layouts</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=pLNJ-fNYTKU"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-22T18:59:57+00:00</published>
+  <updated>2026-07-27T13:05:01+00:00</updated>
+  <media:group>
+   <media:title>The future unfolds! How to optimize Android apps for adaptive layouts</media:title>
+   <media:content url="https://www.youtube.com/v/pLNJ-fNYTKU?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/pLNJ-fNYTKU/hqdefault.jpg" width="480" height="360"/>
+   <media:description>The future of devices is unfolding with new foldables and large screens, creating unique development opportunities. Optimize your Android app for new form factors, including foldables and large screens by implementing dynamic layouts with Jetpack Compose and adaptive development principles.
+
+Start building adaptively today and deliver optimized user experience to every screen.
+
+Resources 🔗
+Build adaptive for every screen → https://goo.gle/4phVflI 
+Get your app ready for landscape foldables → https://goo.gle/4gt4Bss 
+Check out our compose and camera skills → https://goo.gle/4gxSg6q 
+Read the blog → https://goo.gle/4pPLuvv
+
+Learn more about building premium Android experiences, watch the Google I/O 2026 playlist → https://goo.gle/4feSjDA 
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+#AndroidStudio #AndroidDevelopers #GoogleIO 
+
+Speaker: Miguel Montemayor
+Products Mentioned: Android</media:description>
+   <media:community>
+    <media:starRating count="136" average="5.00" min="1" max="5"/>
+    <media:statistics views="4609"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:CVj1lp2FplI</id>
+  <yt:videoId>CVj1lp2FplI</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Build Android apps with Gemini 3.6 Flash</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/CVj1lp2FplI"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-21T23:02:49+00:00</published>
+  <updated>2026-07-24T13:03:22+00:00</updated>
+  <media:group>
+   <media:title>Build Android apps with Gemini 3.6 Flash</media:title>
+   <media:content url="https://www.youtube.com/v/CVj1lp2FplI?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i4.ytimg.com/vi/CVj1lp2FplI/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Gemini 3.6 Flash is now available to help you with agentic Android development. This model improves token efficiency, helping to lower costs, and has visual and functional improvements to help you with development. Easily access it in Android Studio with your Gemini API key. You can also use the new model in Antigravity and leverage Android tooling through Android CLI and skills. 
+
+Try it out when building Android apps in Android Studio and Antigravity → https://goo.gle/4yEgfHM 
+
+Subscribe to Android Developers → https://goo.gle/AndroidDevs     
+
+#Android #AndroidDevelopers #AndroidStudio #BuildwithGemini
+
+Speakers: Trevor Johns
+Products Mentioned: Android, Android Studio, Antigravity, Gemini 3.6 Flash</media:description>
+   <media:community>
+    <media:starRating count="106" average="5.00" min="1" max="5"/>
+    <media:statistics views="6275"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:-VEpEm1l7HM</id>
+  <yt:videoId>-VEpEm1l7HM</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Gemini 3.5 Flash-Lite: available for agentic Android development</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/-VEpEm1l7HM"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-21T21:04:01+00:00</published>
+  <updated>2026-07-24T13:06:11+00:00</updated>
+  <media:group>
+   <media:title>Gemini 3.5 Flash-Lite: available for agentic Android development</media:title>
+   <media:content url="https://www.youtube.com/v/-VEpEm1l7HM?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/-VEpEm1l7HM/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Gemini 3.5 Flash-lite is available for Android development. This model is designed for speed and cost-efficiency, helping you scale high-volume workflows. Access it through the Gemini API, directly in Android Studio. Try out the latest Gemini model and see how it enhances your workflows today.
+
+Use it for AI coding assistance through the Gemini API in Android Studio →  https://goo.gle/4yEgfHM
+
+Subscribe to Android Developers → https://goo.gle/AndroidDevs     
+
+
+#Android #AndroidDevelopers #AndroidStudio #BuildwithGemini
+
+
+Speakers: Trevor Johns
+Products Mentioned: Android, Android Studio, Antigravity, Gemini 3.5 Flash-Lite</media:description>
+   <media:community>
+    <media:starRating count="44" average="5.00" min="1" max="5"/>
+    <media:statistics views="3263"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:azX5jb1R8bM</id>
+  <yt:videoId>azX5jb1R8bM</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Random and Anonymous Chat apps, and a Play Console Requirements</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/azX5jb1R8bM"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-17T18:22:04+00:00</published>
+  <updated>2026-07-20T23:46:23+00:00</updated>
+  <media:group>
+   <media:title>Random and Anonymous Chat apps, and a Play Console Requirements</media:title>
+   <media:content url="https://www.youtube.com/v/azX5jb1R8bM?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/azX5jb1R8bM/hqdefault.jpg" width="480" height="360"/>
+   <media:description>We have two major categories to cover this month: updates to our age-related policies for Random and Anonymous Chat apps, and a Play Console Requirements update regarding app package name registration.
+
+Resources 🔗
+Age-Restricted Content → https://goo.gle/age-restricted
+Families Requirement Policy → https://goo.gle/families-reqs
+Child Safety Standards Policy → https://goo.gle/child-safety
+Play Console Requirements → https://play-console-requirements
+
+Watch more Play PolicyBytes → https://goo.gle/PlayPolicyBytes
+Subscribe to Android Developers → https://goo.gle/AndroidDevs
+
+#GooglePlay #Policy #AndroidDevelopers
+
+Speaker: Paul Hua
+Products Mentioned: Google Play for Android</media:description>
+   <media:community>
+    <media:starRating count="54" average="5.00" min="1" max="5"/>
+    <media:statistics views="2153"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:0wdki_Yw3rI</id>
+  <yt:videoId>0wdki_Yw3rI</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Google Play PolicyBytes - July 2026 policy updates</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=0wdki_Yw3rI"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-15T16:57:22+00:00</published>
+  <updated>2026-07-28T17:10:32+00:00</updated>
+  <media:group>
+   <media:title>Google Play PolicyBytes - July 2026 policy updates</media:title>
+   <media:content url="https://www.youtube.com/v/0wdki_Yw3rI?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/0wdki_Yw3rI/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Paul Hua from Regional Operations North America, Trust and Safety, Google Play, covers details about new age requirements for Random and Anonymous Chat Apps and registering Play app package names to fulfill the updated Play Console Requirements. Also, learn how User Data policies apply to third-party AI integrations and important clarifications to Content Ratings and Financial Services. Friendly reminder that your your apps must meet the upcoming Target API level requirements by August 31, 2026.
+
+Chapters:
+0:00 - Introduction
+0:52 - Random and anonymous chat apps
+1:35 - Play Console requirements 
+2:39 - User data 
+2:54 - Content ratings 
+3:03 - Financial services 
+3:20 - SMS or call log permission groups  
+3:40 - Key dates
+3:52 - Reminders
+4:13 - Helpful Resources
+
+Resources:
+Google Play PolicyBytes - July 2026 policy updates → https://goo.gle/policybytes326  
+Policy Announcement → https://goo.gle/policy-announcement 
+Age-Restricted Content → https://goo.gle/age-restricted
+Families Requirement Policy → https://goo.gle/families-reqs
+Child Safety Standards Policy → https://goo.gle/child-safety
+Play Console Requirements → https://goo.gle/play-console-requirements
+User data → https://goo.gle/user-data
+Content ratings → https://goo.gle/play-content-ratings
+Financial services → https://goo.gle/financialservices
+Permission Groups → https://goo.gle/permissiongroup
+Key dates → https://goo.gle/playupdates
+Google Play Policy course → https://g.co/playacademy/policy
+Play Webinars → https://goo.gle/policywebinars 
+Play Console help center → https://Play.google.com/developerhelp   
+
+Watch more Play PolicyBytes → https://goo.gle/PlayPolicyBytes
+Subscribe to Android Developers → https://goo.gle/AndroidDevs
+
+#GooglePlay #Policy #AndroidDevelopers
+
+Speaker: Paul Hua
+Products Mentioned: Google Play for Android</media:description>
+   <media:community>
+    <media:starRating count="93" average="5.00" min="1" max="5"/>
+    <media:statistics views="4172"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:TixoqVwSAxs</id>
+  <yt:videoId>TixoqVwSAxs</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>3 ways to build augmented experiences for glasses</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/TixoqVwSAxs"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-14T23:12:32+00:00</published>
+  <updated>2026-07-24T12:58:02+00:00</updated>
+  <media:group>
+   <media:title>3 ways to build augmented experiences for glasses</media:title>
+   <media:content url="https://www.youtube.com/v/TixoqVwSAxs?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/TixoqVwSAxs/hqdefault.jpg" width="480" height="360"/>
+   <media:description>The secret is out! Developers can build augmented experiences for glasses using Jetpack Projected, Jetpack Compose Glimmer, and XR Emulator in Android Studio. 
+
+
+Resources: 
+🔗 Learn more → https://developer.android.com/xr
+
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+#AndroidDevelopers #Augmented #Glasses #Jetpack #XREmulator #AndroidStudio
+
+Speakers:  Kathleen Bryan
+
+Products Mentioned: Android XR</media:description>
+   <media:community>
+    <media:starRating count="67" average="5.00" min="1" max="5"/>
+    <media:statistics views="3333"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:tU4ajHB96xA</id>
+  <yt:videoId>tU4ajHB96xA</yt:videoId>
+  <yt:channelId>UCVHFbqXqoYvEWM1Ddxl0QDg</yt:channelId>
+  <title>Fix memory leaks LeakCanary in Android Studio</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/tU4ajHB96xA"/>
+  <author>
+   <name>Android Developers</name>
+   <uri>https://www.youtube.com/channel/UCVHFbqXqoYvEWM1Ddxl0QDg</uri>
+  </author>
+  <published>2026-07-14T19:21:13+00:00</published>
+  <updated>2026-07-20T13:27:21+00:00</updated>
+  <media:group>
+   <media:title>Fix memory leaks LeakCanary in Android Studio</media:title>
+   <media:content url="https://www.youtube.com/v/tU4ajHB96xA?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i1.ytimg.com/vi/tU4ajHB96xA/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Get one-click memory leak detection with LeakCanary, now integrated into Android Studio Profiler. This feature automatically injects the necessary dependencies, allowing you to identify and fix leaks more quickly. Android Studio offloads heavy heap analysis to your desktop, providing faster results and smoother analysis. Get started in Android Studio today to optimize your app’s memory usage. 
+
+
+Watch more What's New In Android Studio → https://goo.gle/AndroidStudio-Tools         
+Subscribe to Android Developers → https://goo.gle/AndroidDevs 
+
+#AndroidStudio #AndroidDevelopers #LeadCanary 
+
+Speaker: Amman Fasil Asfaw
+Products Mentioned: Android Studio, Android</media:description>
+   <media:community>
+    <media:starRating count="204" average="5.00" min="1" max="5"/>
+    <media:statistics views="7224"/>
+   </media:community>
+  </media:group>
+ </entry>
+</feed>

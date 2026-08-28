@@ -1,0 +1,140 @@
+# Day News walkthrough — the reader loop end to end against the imported subscriptions.
+#
+#     day launch -p macos-appkit --script dayscript/walkthrough.yaml
+#
+# CONTRACT: expects the store to already hold subscriptions with articles (run
+# dayscript/import.yaml first). Written to be RE-RUNNABLE: it reads from "All Articles", which
+# is unaffected by the read state a previous run left behind, and only asserts emptiness in the
+# unread scope where it has just marked everything read itself.
+name: day-news-walkthrough
+description: Sidebar, timeline, reader, search, and read/unread marking.
+flow:
+  - wait_for: { id: nav }
+  - screenshot: sidebar
+
+  # All Articles: present regardless of what an earlier run marked read.
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0, timeout_secs: 20 }
+  - screenshot: timeline
+
+  # Search filters through the full-text index, then clears. It is a toolbar item on the
+  # desktops and a timeline field on a phone (docs/toolbars.md) — one behaviour, two homes.
+  - toolbar: { item: day.search, text: "swift", skip_on: [ios-uikit, android-mdc, web-dom] }
+  - input: { id: search, text: "swift", only_on: [ios-uikit, android-mdc, web-dom] }
+  - pause: { secs: 1 }
+  - screenshot: search-results
+  - toolbar: { item: day.search, text: "", skip_on: [ios-uikit, android-mdc, web-dom] }
+  - input: { id: search, text: "", only_on: [ios-uikit, android-mdc, web-dom] }
+  - pause: { secs: 1 }
+  - wait_for: { id: article-row-0, timeout_secs: 10 }
+
+  # Opening an article: the native list reports the selection, and selection opens — the
+  # reader renders it in the web view (and marks it read). `select:` feeds the same event
+  # the platform table emits for a click or an arrow step.
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 2 }
+  - assert_visible: { id: reader-web }
+  # ...and that it RENDERED: `assert_visible` only proves the native view exists — an
+  # error page or a blank document would pass it (and did, when Android's WebView refused
+  # file:// URLs). The reader document stamps its title with id="reader-title"; asking the
+  # live page for it proves real content, on the backends whose eval arm exists
+  # (docs/webview-eval.md — gtk has no arm, web-dom's iframe can never have one).
+  - web_eval:
+      id: reader-web
+      script: "document.getElementById('reader-title') ? 'reader-ok' : 'no-title'"
+      text: "reader-ok"
+      only_on: [macos-appkit, ios-uikit, macos-qt, android-mdc]
+  - screenshot: article
+
+  # Selection walks and the reader follows (docs/list.md): the native table owns the arrow
+  # keys; this drives the same selection seam programmatically. Desktop-only to keep the
+  # phones' push-navigation flow linear.
+  - select: { id: timeline, index: 1, skip_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1 }
+  - screenshot: keyboard-next
+  - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1 }
+
+  # Read/unread toggling: the row's TRAILING SWIPE ACTION, the toolbar toggle, and the
+  # Article menu item all flip the same flag. Three toggles net one flip, leaving row 0
+  # unread — which the mark-all-read step below depends on (it fails disabled over an
+  # all-read store). The swipe drives the seam on EVERY platform (native reveal on
+  # macOS/iOS; the other toolkits show no affordance but share the wiring); the toolbar and
+  # menu flips below are desktop-only, so on a phone the swipe's single flip is what
+  # guarantees the unread row the mark-all-read step needs. `key:` pins WHICH button the
+  # offer held — the row was just opened, so it must say Mark as Unread.
+  # Android first steps back out of the reader: its composed push swaps the timeline OUT of
+  # the tree while the reader shows (iOS keeps both in its native stack; the desktops keep
+  # the panes side by side).
+  - tap: { id: article-back, only_on: [android-mdc] }
+  - pause: { secs: 1, only_on: [android-mdc] }
+  - swipe_row: { id: timeline, row: 0, key: mark_unread }
+  - pause: { secs: 1 }
+  - toolbar: { item: read, on: true, skip_on: [ios-uikit, android-mdc, web-dom] }
+  - pause: { secs: 1 }
+  - menu: { key: toggle_read, path: [menu_article], skip_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1 }
+
+  # The LEADING edge stars, and its label is state-dependent too: star, then unstar — the
+  # pair proves the dynamic offer and leaves the store unchanged for the next run.
+  - swipe_row: { id: timeline, row: 0, edge: leading, key: star }
+  - pause: { secs: 1 }
+  - swipe_row: { id: timeline, row: 0, edge: leading, key: unstar }
+  - pause: { secs: 1 }
+
+  # Article ▸ Mark as Unread guarantees the unread scope below is non-empty even when a
+  # previous run left everything read — mark-all-read would otherwise sit disabled.
+  - menu: { key: menu_mark_unread, path: [menu_article], skip_on: [ios-uikit, android-mdc] }
+
+  # Mark-all-read empties the UNREAD timeline specifically.
+  - navigate: { route: unread }
+  - pause: { secs: 1 }
+  - toolbar: { item: mark-all-read, skip_on: [ios-uikit, android-mdc, web-dom] }
+  - tap: { id: mark-all-read, only_on: [ios-uikit, android-mdc, web-dom] }
+  - pause: { secs: 1 }
+  - assert_visible: { id: timeline-empty }
+  - screenshot: all-read
+
+  # Tag the open article through the Article menu (the prompt is scripted); the tag then
+  # scopes the timeline. The route id is the tag name's deterministic hash
+  # (daynews_db::tag_id("keep") — stable across runs and machines).
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0, timeout_secs: 10 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - menu: { key: menu_tag, path: [menu_article], skip_on: [ios-uikit, android-mdc] }
+  - respond: { text: "keep", skip_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1 }
+  - navigate: { route: "tag:6648694386267937070", skip_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1 }
+  - assert_text: { id: scope-title, text: "keep", skip_on: [ios-uikit, android-mdc] }
+  - wait_for: { id: article-row-0, skip_on: [ios-uikit, android-mdc] }
+  - screenshot: tag-scope
+
+  # Untag from inside the tag scope: the row leaves the live tag timeline on the spot, and
+  # the store returns to untagged so the tag steps above repeat cleanly on the next run.
+  # (An aborted run can strand the tag applied; the run after that untags and fails once.)
+  - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1 }
+  - menu: { key: menu_tag, path: [menu_article], skip_on: [ios-uikit, android-mdc] }
+  - respond: { text: "keep", skip_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1 }
+  - assert_visible: { id: timeline-empty, skip_on: [ios-uikit, android-mdc] }
+
+  # Settings: the retention picker is present and live.
+  - navigate: { route: settings }
+  - wait_for: { id: retention-picker }
+  - screenshot: settings
+
+  # The toolbar's sidebar toggle hides the pane and brings it back.
+  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc, web-dom] }
+  - pause: { secs: 1 }
+  - screenshot: sidebar-hidden
+  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc, web-dom] }
+  - pause: { secs: 1 }
+
+  # Subscriptions page: feed list and the OPML controls.
+  - navigate: { route: subscriptions }
+  - wait_for: { id: feeds-count }
+  - assert_visible: { id: opml-export }
+  - screenshot: subscriptions

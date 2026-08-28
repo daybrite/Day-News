@@ -1,0 +1,13 @@
+# Imports the sample subscription list, then waits for the first refresh to populate articles.
+name: day-news-import
+description: Import an OPML file through the real file picker and refresh every feed.
+flow:
+  - wait_for: { id: nav }
+  - navigate: { route: subscriptions }
+  - wait_for: { id: opml-import }
+  - tap: { id: opml-import }
+  - pause: { secs: 1 }
+  - respond: { path: "/Users/marc/Desktop/Day-Sheets-Export.opml" }
+  - pause: { secs: 2 }
+  - assert_text: { id: feeds-count, text: "145 feeds" }
+  - screenshot: imported
