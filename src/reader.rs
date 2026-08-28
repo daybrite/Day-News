@@ -14,7 +14,7 @@ use daynews_core::StoredArticle;
 /// The scratch directory is the one the backend reports as app-writable, which is the only
 /// writable location on iOS and Android.
 pub fn render_to_file(article: &StoredArticle) -> Option<String> {
-    let dir = app_temp_dir().join("sheets-reader");
+    let dir = app_temp_dir().join("news-reader");
     std::fs::create_dir_all(&dir).ok()?;
     // One file per article id: revisiting an article reuses its path, and the set stays bounded
     // by how many distinct articles were opened this session.

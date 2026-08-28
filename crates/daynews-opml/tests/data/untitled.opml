@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+	<opml version="2.0">
+	<head>
+	<title>mySubscriptions.opml</title>
+	</head>
+	<body>
+		<outline xmlUrl="http://example.org/feed1/" htmlUrl="http://example.org/1"/>
+		<outline xmlUrl="http://example.org/feed2/"/>
+	</body>
+	</opml>

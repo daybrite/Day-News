@@ -8,7 +8,7 @@
   <!-- Day icon master (docs/icons.md): full-bleed square backdrop, platforms mask it. -->
   <rect id="day:background" width="1024" height="1024" fill="url(#bg)"/>
   <g id="day:foreground">
-    <!-- A tidy fan of sheets — your feeds, your order. The top sheet is the article:
+    <!-- A tidy fan of News — your feeds, your order. The top sheet is the article:
          an amber headline and body lines that read at large sizes and fall away small. -->
     <rect x="296" y="250" width="432" height="524" rx="34" fill="#7E93B0"
           transform="rotate(-10 512 512)"/>

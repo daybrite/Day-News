@@ -14,7 +14,7 @@
 // include at the bottom of this file from it, and that include wins. These lines only
 // carry a checkout that has not run `day build` yet. Change the app id in Day.toml [app]
 // and the version in Cargo.toml [package].
-PRODUCT_BUNDLE_IDENTIFIER = dev.daybrite.sheets
+PRODUCT_BUNDLE_IDENTIFIER = dev.daybrite.news
 MARKETING_VERSION = 0.1.0
 CURRENT_PROJECT_VERSION = 1
 

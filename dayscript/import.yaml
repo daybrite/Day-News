@@ -7,7 +7,7 @@ flow:
   - wait_for: { id: opml-import }
   - tap: { id: opml-import }
   - pause: { secs: 1 }
-  - respond: { path: "/Users/marc/Desktop/Day-Sheets-Export.opml" }
+  - respond: { path: "/Users/marc/Desktop/Day-News-Export.opml" }
   - pause: { secs: 2 }
   - assert_text: { id: feeds-count, text: "145 feeds" }
   - screenshot: imported

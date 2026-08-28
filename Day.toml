@@ -6,10 +6,10 @@
 schema = 1
 
 [app]
-id = "dev.daybrite.sheets"
+id = "dev.daybrite.news"
 # The deep-link scheme this app SHIPPED (docs/deep-links.md). Left explicit because the
 # default is the id\'s last segment, which is not what this app published.
-scheme = "daysheets"
+scheme = "daynews"
 title = "Day News"
 build = 1
 targets = ["macos-appkit", "macos-gtk", "macos-qt", "windows-xaml", "ios-uikit", "android-mdc", "web-dom"]

@@ -13,6 +13,6 @@ WHAT YOU GET
 
 NO ACCOUNT, NO SYNC SERVICE
 
-Day Sheets talks directly to the sites you subscribe to. There is no account, no server of ours in the middle, and nothing collected about what you read.
+Day News talks directly to the sites you subscribe to. There is no account, no server of ours in the middle, and nothing collected about what you read.
 
-Open source, built with the Day framework: one Rust codebase drawing itself with each platform's real native widgets. github.com/daybrite/Day-Sheets
+Open source, built with the Day framework: one Rust codebase drawing itself with each platform's real native widgets. github.com/daybrite/Day-News

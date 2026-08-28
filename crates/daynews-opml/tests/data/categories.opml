@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<opml version="2.0">
+		<head>
+			<title>mySubscriptions.opml</title>
+		</head>
+		<body>
+			<outline text="My Category 1">
+				<outline text="Feed 1" xmlUrl="http://example.org/feed1/" htmlUrl="http://example.org/1"/>
+				<outline text="Feed 2" xmlUrl="http://example.org/feed2/" htmlUrl="http://example.org/2"/>
+			</outline>
+			<outline text="My Category 2">
+			<outline text="Feed 3" xmlUrl="http://example.org/feed3/" htmlUrl="http://example.org/3"/>
+		</outline>
+		</body>
+	</opml>

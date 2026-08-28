@@ -232,7 +232,7 @@ fn fallback_id(e: &feed_rs::model::Entry, base_url: &str) -> String {
         // different item. It will look new once; there is no better answer.
         eat(&now_secs().to_string());
     }
-    format!("sheets:{h:016x}")
+    format!("news:{h:016x}")
 }
 
 fn now_secs() -> i64 {
