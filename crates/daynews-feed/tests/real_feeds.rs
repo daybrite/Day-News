@@ -20,17 +20,20 @@ const FIXTURES: &[Fixture] = &[
         name: "WordPress RSS + content:encoded",
     },
     Fixture {
-        bytes: include_bytes!("fixtures/feed3.xml"),
+        // feed3–5 live under resource/assets/ — they double as the BUNDLED seed feeds the CI
+        // walkthrough subscribes to via `asset:` URLs (dayscript/seed-fixtures.yaml), so the
+        // one copy serves the parser tests and every platform's offline walkthrough.
+        bytes: include_bytes!("../../../resource/assets/fixtures/feed3.xml"),
         url: "https://forums.swift.org/c/general-announce/24.rss",
         name: "Discourse RSS",
     },
     Fixture {
-        bytes: include_bytes!("fixtures/feed4.xml"),
+        bytes: include_bytes!("../../../resource/assets/fixtures/feed4.xml"),
         url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVHFbqXqoYvEWM1Ddxl0QDg",
         name: "YouTube Atom",
     },
     Fixture {
-        bytes: include_bytes!("fixtures/feed5.xml"),
+        bytes: include_bytes!("../../../resource/assets/fixtures/feed5.xml"),
         url: "https://mas.to/@aabewhite.rss",
         name: "Mastodon RSS",
     },

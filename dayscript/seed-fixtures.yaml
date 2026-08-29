@@ -1,0 +1,31 @@
+# Seeds the store from the BUNDLED fixture feeds — the deterministic, network-free article
+# source the walkthrough's contract needs (its steps read "All Articles" and drive the
+# read/star/tag flows, so the store must already hold subscriptions with articles). The
+# `asset:` scheme resolves inside the app bundle (daynews-core `fetch_feed`), so this runs
+# identically on every platform and on a fresh CI runner — no live feed, no network.
+#
+# The three feeds are the parser's own fixtures (resource/assets/fixtures/, one copy shared
+# with crates/daynews-feed/tests): an Atom/YouTube feed, a Discourse feed, and a Mastodon
+# feed whose items carry no titles — the timeline's derived-title path stays covered.
+#
+# CONTRACT: expects a store with no other subscriptions (the count is the whole sidebar) —
+# CI runners start empty. Re-running adds nothing: feed ids are a hash of the URL.
+name: day-news-seed-fixtures
+description: Subscribe to the bundled fixture feeds — the offline seed for the walkthrough.
+flow:
+  - wait_for: { id: nav, timeout_secs: 30 }
+  - navigate: { route: subscriptions }
+  - wait_for: { id: subscribe-url, timeout_secs: 20 }
+  - input: { id: subscribe-url, text: "asset:fixtures/feed3.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:fixtures/feed4.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:fixtures/feed5.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - assert_text: { id: feeds-count, text: "3 feeds" }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0, timeout_secs: 20 }
+  - screenshot: seeded-fixtures

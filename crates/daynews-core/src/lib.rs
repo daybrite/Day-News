@@ -692,8 +692,23 @@ pub fn refresh_all() {
 }
 
 /// Fetch and store one feed. Returns whether it succeeded.
+/// A feed's bytes, parsed: over HTTP normally, or from the app bundle for `asset:` URLs —
+/// the deterministic, network-free source the walkthrough seeds from on every platform
+/// (dayscript/seed-fixtures.yaml subscribes to the parser fixtures bundled under
+/// `resource/assets/fixtures/`). A missing asset reports as a 404 rather than a new error
+/// arm — the subscription then shows the same failed-refresh state a dead feed does.
+async fn fetch_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed::FeedError> {
+    if let Some(name) = url.strip_prefix("asset:") {
+        return match day_core::resource(day_core::AssetName::dynamic(name.to_string())) {
+            Some(res) => daynews_feed::parse(res.as_slice(), url),
+            None => Err(daynews_feed::FeedError::Status(404)),
+        };
+    }
+    daynews_feed::fetch(url).await
+}
+
 async fn refresh_one(id: u64, url: String) -> bool {
-    match daynews_feed::fetch(&url).await {
+    match fetch_feed(&url).await {
         Ok(parsed) => {
             let items: Vec<IncomingArticle> = parsed
                 .items
@@ -802,7 +817,8 @@ fn to_outline(f: &FeedRow) -> daynews_opml::Outline {
 /// Accept what people paste: bare hosts get a scheme, and whitespace is trimmed.
 pub fn normalize_feed_url(input: &str) -> String {
     let t = input.trim();
-    if t.starts_with("http://") || t.starts_with("https://") {
+    // `asset:` is the bundled-fixture scheme (see `fetch_feed`): pass it through untouched.
+    if t.starts_with("http://") || t.starts_with("https://") || t.starts_with("asset:") {
         t.to_string()
     } else if t.is_empty() {
         String::new()
