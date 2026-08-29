@@ -109,7 +109,14 @@ pub fn parse(bytes: &[u8], base_url: &str) -> Result<ParsedFeed, FeedError> {
 /// Fetch and parse. Sends a browser-ish `Accept` because some hosts serve HTML to unknown
 /// clients, and follows the part's platform-native redirect handling.
 pub async fn fetch(url: &str) -> Result<ParsedFeed, FeedError> {
-    let req = day_part_http::Request::get(url)
+    fetch_with_base(url, url).await
+}
+
+/// [`fetch`] with the parse base split from the fetch target — for a caller whose fetch URL
+/// is not a usable base (the web build fetches bundled `asset:` feeds as RELATIVE same-origin
+/// URLs, and URL resolution inside the parser needs an absolute base).
+pub async fn fetch_with_base(fetch_url: &str, base_url: &str) -> Result<ParsedFeed, FeedError> {
+    let req = day_part_http::Request::get(fetch_url)
         .header(
             "Accept",
             "application/atom+xml, application/rss+xml, application/xml;q=0.9, */*;q=0.8",
@@ -121,7 +128,7 @@ pub async fn fetch(url: &str) -> Result<ParsedFeed, FeedError> {
     if !(200..300).contains(&res.status) {
         return Err(FeedError::Status(res.status));
     }
-    parse(&res.body, url)
+    parse(&res.body, base_url)
 }
 
 /// Identifies us to publishers; several block requests with no agent string.

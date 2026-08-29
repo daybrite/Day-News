@@ -699,6 +699,16 @@ pub fn refresh_all() {
 /// arm — the subscription then shows the same failed-refresh state a dead feed does.
 async fn fetch_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed::FeedError> {
     if let Some(name) = url.strip_prefix("asset:") {
+        // wasm has no filesystem for the resource opener to read; the web dist serves the
+        // same bundle over HTTP instead (`resource/assets/` staged under `assets/data/`,
+        // day-cli web.rs), so the asset rides the ordinary fetch path as a same-origin URL.
+        #[cfg(target_arch = "wasm32")]
+        {
+            // Fetch by the RELATIVE dist URL, parse against the absolute `asset:` base —
+            // the parser's URL resolution rejects a relative base outright.
+            return daynews_feed::fetch_with_base(&format!("assets/data/{name}"), url).await;
+        }
+        #[cfg(not(target_arch = "wasm32"))]
         return match day_core::resource(day_core::AssetName::dynamic(name.to_string())) {
             Some(res) => daynews_feed::parse(res.as_slice(), url),
             None => Err(daynews_feed::FeedError::Status(404)),
