@@ -5,14 +5,15 @@ A feed reader on the [Day](https://daybrite.dev) framework, modeled on
 timeline in the middle, the article on the right — collapsing to push navigation on a phone.
 
 Targets: `macos-appkit`, `macos-gtk`, `macos-qt`, `windows-xaml`, `ios-uikit`, `android-mdc`,
-`web-dom`.
+`web-dom`, `harmony-arkui`.
 
 > `web-dom` builds and runs the whole shell, but a browser may only fetch feeds that send CORS
 > headers, and most publishers do not — so the web build reads what it is allowed to reach
 > rather than any URL you paste. Its article pane is also blank until the reader can hand the
-> web view HTML directly (see *Reader*). Not `harmony-arkui`: `day-piece-webview` ships no
-> ArkUI renderer, so the article pane would be a placeholder there; it needs only that renderer
-> to join.
+> web view HTML directly (see *Reader*). `harmony-arkui` joined when `day-piece-webview` grew
+> its ArkUI renderer — the app builds, installs, and runs in the collapsed phone layout on the
+> Oniro emulator. Whether ArkWeb serves the reader's `file://` document is not yet verified;
+> the walkthrough's `web_eval` check answers that on the CI emulator leg.
 
 ## Crates
 
