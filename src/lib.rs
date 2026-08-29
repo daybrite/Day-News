@@ -19,12 +19,30 @@ use daynews_db::Scope;
 
 // The mobile / embedded entry point. Expands to the export each platform's shell binds against —
 // and to nothing at all on a plain cargo desktop build, where src/main.rs is the entry instead.
-day::day_start!("Day News", root);
+// Both entries hand `launch` the same description, so they open the same window.
+day::day_start!(options: window(), root);
 
-/// Typed constants for the files under `resource/`, generated at build time by `day-build`.
-pub mod res {
-    include!(concat!(env!("OUT_DIR"), "/day_resources.rs"));
+/// The window every entry point opens — `src/main.rs` on the desktop, the platform shells
+/// through the macro above.
+///
+/// `launch` installs the catalog itself, after the OS's languages have reached day-l10n and
+/// before the first localized string is read; installing it here, or in `root`, would resolve
+/// against an empty hint list and open an English window on a French device. The same ordering
+/// is what lets the TITLE come from the catalog (docs/localization.md).
+pub fn window() -> day::WindowOptions {
+    day::WindowOptions {
+        locales: Some((res::locales::DEFAULT, res::locales::CATALOG)),
+        title_fn: Some(|| res::str::app_title().format()),
+        // Three panes need room. At 960 the timeline and the article both end up too narrow to
+        // read comfortably; this is close to NetNewsWire's own default.
+        size: day::prelude::Size::new(1440.0, 900.0),
+        min_size: Some(day::prelude::Size::new(720.0, 480.0)),
+        ..Default::default()
+    }
 }
+
+// Typed constants for the files under `resource/`, generated at build time by `day-build`.
+day::resources!();
 
 /// The sidebar's selection, as a route key. Smart feeds come first (NetNewsWire's "All Unread"
 /// and "Starred"), then one entry per subscription, then the management page.
@@ -55,7 +73,6 @@ fn count(n: i64) -> String {
 }
 
 pub fn root() -> impl Piece {
-    res::locales::install();
     // Open the store and stand up its live queries before the first build, so the sidebar is
     // populated on the very first frame instead of flashing empty.
     daynews_core::init();
