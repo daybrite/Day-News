@@ -87,7 +87,7 @@ pub fn install() {
                         .key("u")
                         .action(|| set_open_read(false)),
                     menu_item(res::str::toggle_read().format()).action(|| {
-                        if let Some(id) = daynews_core::state().selected.get_untracked() {
+                        if let Some(id) = daynews_core::scene().selected.get_untracked() {
                             daynews_core::toggle_read(id);
                         }
                     }),
@@ -104,7 +104,7 @@ pub fn install() {
                     menu_item(res::str::menu_tag().format())
                         .key("t")
                         .action(|| {
-                            if let Some(id) = daynews_core::state().selected.get_untracked() {
+                            if let Some(id) = daynews_core::scene().selected.get_untracked() {
                                 crate::timeline::begin_tag(id);
                             }
                         }),
@@ -121,20 +121,20 @@ pub fn install() {
 /// Read/star the article the reader currently shows. No open article means nothing to do —
 /// the commands stay harmless rather than acting on some other row.
 fn set_open_read(read: bool) {
-    if let Some(id) = daynews_core::state().selected.get_untracked() {
+    if let Some(id) = daynews_core::scene().selected.get_untracked() {
         daynews_core::set_read(id, read);
     }
 }
 
 fn set_open_starred(starred: bool) {
-    if let Some(id) = daynews_core::state().selected.get_untracked() {
+    if let Some(id) = daynews_core::scene().selected.get_untracked() {
         daynews_core::set_starred(id, starred);
     }
 }
 
 /// Hand the article's own link to the platform browser.
 fn open_in_browser() {
-    if let Some(url) = daynews_core::state()
+    if let Some(url) = daynews_core::scene()
         .article
         .get_untracked()
         .and_then(|a| a.url.clone())

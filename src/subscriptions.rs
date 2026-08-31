@@ -3,15 +3,24 @@
 use crate::theme::palette;
 use day::prelude::*;
 use daynews_core::FeedRow;
-use std::cell::OnceCell;
 
-thread_local! {
-    /// Focus for the "add a subscription" field, so File ▸ New Feed can put the cursor there.
-    static URL_FOCUS: OnceCell<Signal<bool>> = const { OnceCell::new() };
+/// Focus for the "add a subscription" field, so File ▸ New Feed can put the cursor there.
+/// PER WINDOW (docs/state.md): the command should focus the field in the window the user is
+/// looking at, not in whichever window happened to build first.
+#[derive(Clone, Copy)]
+pub(crate) struct UrlFocus(Signal<bool>);
+
+impl Ambient for UrlFocus {
+    fn create() -> Self {
+        UrlFocus(Signal::new(false))
+    }
 }
 
 fn url_focus() -> Signal<bool> {
-    URL_FOCUS.with(|c| *c.get_or_init(|| Scope::detached().enter(|| Signal::new(false))))
+    UrlFocus::try_ambient()
+        .or_else(UrlFocus::focused)
+        .expect("no window is open")
+        .0
 }
 
 /// File ▸ New Feed: put the cursor in the URL field (the page may have just mounted).

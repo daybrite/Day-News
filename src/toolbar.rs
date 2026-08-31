@@ -8,29 +8,48 @@
 
 use crate::res;
 use day::prelude::*;
-use std::cell::OnceCell;
 
-thread_local! {
-    /// The search text, shared by the toolbar's search field and (on a phone) the timeline's.
-    /// `global`, NOT `new`: the toolbar outlives any page scope, so a scope-owned signal would
-    /// be disposed under it the first time the reader navigated.
-    static SEARCH: OnceCell<Signal<String>> = const { OnceCell::new() };
-    /// Whether the open article is starred — what the toolbar's star toggle shows.
-    static STARRED: OnceCell<Signal<bool>> = const { OnceCell::new() };
-    /// Whether the open article is read — what the toolbar's read toggle shows.
-    static READ: OnceCell<Signal<bool>> = const { OnceCell::new() };
+/// What this window's toolbar shows — PER WINDOW (docs/state.md), like everything else about
+/// what a window is looking at. The search text is shared with that window's timeline field on
+/// a phone; the star and read toggles mirror ITS open article.
+///
+/// Owned by the window's scope through `Ambient::scoped`, which is what the old `Signal::global`
+/// was standing in for: the toolbar outlives any page scope, so a page-owned signal would be
+/// disposed under it the first time the reader navigated.
+#[derive(Clone, Copy)]
+pub struct Bar {
+    pub search: Signal<String>,
+    starred: Signal<bool>,
+    read: Signal<bool>,
+}
+
+impl Ambient for Bar {
+    fn create() -> Self {
+        Bar {
+            search: Signal::new(String::new()),
+            starred: Signal::new(false),
+            read: Signal::new(false),
+        }
+    }
+}
+
+/// This window's bar — ambient while a piece builds, the focused window's from a handler.
+fn bar() -> Bar {
+    Bar::try_ambient()
+        .or_else(Bar::focused)
+        .expect("no window is open, so there is no toolbar state to act on")
 }
 
 pub fn search() -> Signal<String> {
-    SEARCH.with(|c| *c.get_or_init(|| Signal::global(String::new())))
+    bar().search
 }
 
 fn starred() -> Signal<bool> {
-    STARRED.with(|c| *c.get_or_init(|| Signal::global(false)))
+    bar().starred
 }
 
 fn read() -> Signal<bool> {
-    READ.with(|c| *c.get_or_init(|| Signal::global(false)))
+    bar().read
 }
 
 /// Does this toolkit put commands in a bar? Where it does not, the reader's commands have to
@@ -50,6 +69,7 @@ pub fn install() {
         return;
     }
     let st = daynews_core::state();
+    let sc = daynews_core::scene();
     let search = search();
     let starred = starred();
     let read = read();
@@ -60,13 +80,13 @@ pub fn install() {
     // The star toggle shows the OPEN article's state, so it has to follow the selection as
     // well as the reader's own clicks.
     watch(
-        move || st.article.get().map(|a| a.is_starred).unwrap_or(false),
+        move || sc.article.get().map(|a| a.is_starred).unwrap_or(false),
         move |on, _| starred.set(*on),
     );
     // The read toggle likewise follows the open article — a swipe or menu toggle elsewhere
     // repaints this button without it doing anything.
     watch(
-        move || st.article.get().map(|a| a.is_read).unwrap_or(false),
+        move || sc.article.get().map(|a| a.is_read).unwrap_or(false),
         move |on, _| read.set(*on),
     );
 
@@ -95,19 +115,19 @@ pub fn install() {
                 .enabled_when(move || st.total_unread.get() > 0),
             toolbar_toggle("star", res::str::menu_star(), starred)
                 .icon(Symbol::Star)
-                .enabled_when(move || st.selected.get().is_some())
+                .enabled_when(move || sc.selected.get().is_some())
                 // The signal is already set when this runs, so it is the new state.
                 .action(move || {
-                    if let Some(id) = st.selected.get_untracked() {
+                    if let Some(id) = sc.selected.get_untracked() {
                         daynews_core::set_starred(id, starred.get_untracked());
                     }
                 }),
             toolbar_toggle("read", res::str::toggle_read(), read)
                 .icon(Symbol::CircleFilled)
-                .enabled_when(move || st.selected.get().is_some())
+                .enabled_when(move || sc.selected.get().is_some())
                 // Same shape as the star: the signal already holds the new state.
                 .action(move || {
-                    if let Some(id) = st.selected.get_untracked() {
+                    if let Some(id) = sc.selected.get_untracked() {
                         daynews_core::set_read(id, read.get_untracked());
                     }
                 }),

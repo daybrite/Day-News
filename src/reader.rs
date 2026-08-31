@@ -128,7 +128,7 @@ fn escape(s: &str) -> String {
 
 /// The reader pane. Empty state until an article is open.
 pub fn reader_pane() -> impl Piece {
-    let st = daynews_core::state();
+    let st = daynews_core::scene();
     let url = Signal::new(String::new());
     // The web view's bound URL is imperative BY DESIGN: it loads on creation and thereafter only
     // when a `go` trigger fires (navigation writes the signal back, so auto-loading on every

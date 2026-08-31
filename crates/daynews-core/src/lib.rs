@@ -13,6 +13,7 @@ use std::cell::{OnceCell, RefCell};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use day_core::Ambient;
 use day_persistence::{CountQuery, Query};
 use day_reactive::{Effect, Scope as RScope, Signal, watch};
 use daynews_db::{
@@ -93,12 +94,32 @@ pub struct StoredArticle {
 
 pub use daynews_opml as opml;
 
-/// Everything the UI observes. All fields are `Copy` signals; read them on the main thread.
+/// The app's DATA (docs/state.md): the subscription tree, the smart-feed badges, and the state
+/// of a refresh. One database, one set of feeds, one unread count — a second window is another
+/// view of the same reader, not a second reader.
 #[derive(Clone, Copy)]
 pub struct SheetsState {
     pub feeds: Signal<Vec<FeedRow>>,
     pub folders: Signal<Vec<FolderRow>>,
     pub tags: Signal<Vec<TagRow>>,
+    /// `Some((done, total))` while a refresh runs — the progress NetNewsWire shows in its bar.
+    pub refresh_progress: Signal<Option<(usize, usize)>>,
+    pub total_unread: Signal<i64>,
+    pub total_starred: Signal<i64>,
+    pub total_today: Signal<i64>,
+    /// A short transient message ("Imported 145 feeds", "3 feeds failed").
+    pub status: Signal<String>,
+}
+
+/// Everything ONE WINDOW is looking at (docs/state.md): its sidebar scope, its search text, the
+/// timeline those two produce, and the article it has open.
+///
+/// Per-window because that is what a second window is FOR — one on Unread while another sits in
+/// a folder, each with its own selection and its own reader. The timeline query behind it is
+/// per-window too: `create` stands up one live query and the effects that publish from it, and
+/// those effects hold it (the container keeps a live query weakly, so a dropped one goes quiet).
+#[derive(Clone, Copy)]
+pub struct NewsScene {
     pub scope: Signal<Scope>,
     pub articles: Signal<Vec<ArticleSummary>>,
     /// The open article's id, and its loaded body.
@@ -109,54 +130,141 @@ pub struct SheetsState {
     /// wide layouts keep the reader pane on screen and ignore it.
     pub reader_open: Signal<bool>,
     pub search: Signal<String>,
-    /// `Some((done, total))` while a refresh runs — the progress NetNewsWire shows in its bar.
-    pub refresh_progress: Signal<Option<(usize, usize)>>,
-    pub total_unread: Signal<i64>,
-    pub total_starred: Signal<i64>,
-    pub total_today: Signal<i64>,
-    /// A short transient message ("Imported 145 feeds", "3 feeds failed").
-    pub status: Signal<String>,
     /// Articles marked read while the UNREAD scope shows them: they stay visible (their dot
     /// clears in place) until the scope or search changes — NetNewsWire's rule. The timeline
     /// fetch ORs these ids back into the unread predicate.
     sticky_read: Signal<Vec<u64>>,
 }
 
-thread_local! {
-    static DB: RefCell<Option<Db>> = const { RefCell::new(None) };
-    static STATE: OnceCell<SheetsState> = const { OnceCell::new() };
-    static TIMELINE: OnceCell<Query<Article>> = const { OnceCell::new() };
-    static UNDO: OnceCell<day_model::UndoStack> = const { OnceCell::new() };
+/// The open store and the query handles derived from it — one per PROCESS, held for the app's
+/// lifetime. Not app STATE (nothing here is a signal an app reads): a database connection, an
+/// undo history, and the count queries whose badges feed `SheetsState`. `Ambient::app` owns the
+/// signals; this owns the resources behind them.
+struct Store {
+    db: RefCell<Option<Db>>,
+    undo: OnceCell<day_model::UndoStack>,
     /// Per-feed and per-tag unread badges, created on first sight and reused — each is one
     /// live `SELECT COUNT(*)` that re-runs only when a change touches its dependency set.
-    static FEED_COUNTS: RefCell<HashMap<u64, CountQuery<Article>>> = RefCell::new(HashMap::new());
-    static TAG_COUNTS: RefCell<HashMap<u64, CountQuery<Article>>> = RefCell::new(HashMap::new());
-    static TOTALS: OnceCell<[CountQuery<Article>; 2]> = const { OnceCell::new() };
+    feed_counts: RefCell<HashMap<u64, CountQuery<Article>>>,
+    tag_counts: RefCell<HashMap<u64, CountQuery<Article>>>,
+    totals: OnceCell<[CountQuery<Article>; 2]>,
 }
 
-/// The reactive state, created once in a detached scope so it outlives any UI subtree.
+#[derive(Clone)]
+struct StoreHandle(std::rc::Rc<Store>);
+
+impl Ambient for StoreHandle {
+    fn create() -> Self {
+        StoreHandle(std::rc::Rc::new(Store {
+            db: RefCell::new(None),
+            undo: OnceCell::new(),
+            feed_counts: RefCell::new(HashMap::new()),
+            tag_counts: RefCell::new(HashMap::new()),
+            totals: OnceCell::new(),
+        }))
+    }
+}
+
+/// The process's one store handle. App-scoped like everything else here (docs/state.md), so
+/// there is no `thread_local!` left in this crate at all.
+fn store() -> std::rc::Rc<Store> {
+    StoreHandle::app().0
+}
+
+impl Ambient for SheetsState {
+    /// Created on the reactive ROOT scope by `Ambient::app` — which is what the detached scope
+    /// this replaces existed for: it outlives any UI subtree.
+    fn create() -> Self {
+        SheetsState {
+            feeds: Signal::new(Vec::new()),
+            folders: Signal::new(Vec::new()),
+            tags: Signal::new(Vec::new()),
+            refresh_progress: Signal::new(None),
+            total_unread: Signal::new(0),
+            total_starred: Signal::new(0),
+            total_today: Signal::new(0),
+            status: Signal::new(String::new()),
+        }
+    }
+}
+
+/// The app's data. One reader, one database, one set of badges.
 pub fn state() -> SheetsState {
-    STATE.with(|c| {
-        *c.get_or_init(|| {
-            RScope::detached().enter(|| SheetsState {
-                feeds: Signal::new(Vec::new()),
-                folders: Signal::new(Vec::new()),
-                tags: Signal::new(Vec::new()),
-                scope: Signal::new(Scope::Unread),
-                articles: Signal::new(Vec::new()),
-                selected: Signal::new(None),
-                article: Signal::new(None),
-                reader_open: Signal::new(false),
-                search: Signal::new(String::new()),
-                refresh_progress: Signal::new(None),
-                total_unread: Signal::new(0),
-                total_starred: Signal::new(0),
-                total_today: Signal::new(0),
-                status: Signal::new(String::new()),
-                sticky_read: Signal::new(Vec::new()),
-            })
+    SheetsState::app()
+}
+
+impl Ambient for NewsScene {
+    /// One window's view. Stands up THIS window's timeline query and the effects that publish
+    /// from it — the effects capture the query, which is what keeps it subscribed (the container
+    /// holds a live query weakly).
+    fn create() -> Self {
+        let scene = NewsScene {
+            scope: Signal::new(Scope::Unread),
+            articles: Signal::new(Vec::new()),
+            selected: Signal::new(None),
+            article: Signal::new(None),
+            reader_open: Signal::new(false),
+            search: Signal::new(String::new()),
+            sticky_read: Signal::new(Vec::new()),
+        };
+        wire_scene(scene);
+        scene
+    }
+}
+
+/// The window whose view a call belongs to: the ambient one while a piece BUILDS, the FOCUSED
+/// window's when a command runs later from a handler that belongs to no scope (docs/state.md).
+pub fn scene() -> NewsScene {
+    NewsScene::try_ambient()
+        .or_else(NewsScene::focused)
+        .expect("no window is open, so there is no NewsScene to act on")
+}
+
+/// Stand up one window's timeline: the live query that follows its scope + search, and the
+/// effects that publish rows and the open article from it.
+fn wire_scene(sc: NewsScene) {
+    // No store (open failed): the window still builds, empty.
+    let Some(timeline) = with_db(|db| {
+        db.container.query_fn::<Article>(move || {
+            let mut fetch = timeline_fetch(sc.scope.get(), &sc.search.get(), TIMELINE_LIMIT);
+            let sticky = sc.sticky_read.get();
+            if sc.scope.get() == Scope::Unread && !sticky.is_empty() {
+                // Re-admit the rows read under the cursor, so they clear in place instead of
+                // vanishing (the fetch rebuilds from scratch, so this replaces the filter).
+                fetch = timeline_fetch(Scope::All, &sc.search.get(), TIMELINE_LIMIT);
+                fetch.pred = fetch.pred
+                    & (daynews_db::scope_pred(Scope::Unread) | day_persistence::Pred::IdIn(sticky));
+            }
+            fetch
         })
-    })
+    }) else {
+        return;
+    };
+
+    // Timeline rows: ids from the query, fields read TRACKED so an edit to a visible row
+    // (a star, a read dot) rebuilds exactly this list. The closure holds `timeline`.
+    Effect::new(move || {
+        let rows = build_summaries(&timeline);
+        sc.articles.set(rows);
+    });
+
+    // The reader: whatever article is selected, kept current as its fields change (a
+    // star from the toolbar repaints the open article without any hand patching).
+    Effect::new(move || {
+        let article = sc.selected.get().and_then(build_reader_article);
+        sc.article.set(article);
+    });
+
+    // Closing the reader (the platform's back on a phone) drops the selection with it —
+    // the row un-highlights, and reopening starts from the list.
+    watch(
+        move || sc.reader_open.get(),
+        move |open, _| {
+            if !open {
+                sc.selected.set(None);
+            }
+        },
+    );
 }
 
 /// Open the container and stand up the live pipeline. Call once at startup, before the first
@@ -169,11 +277,13 @@ pub fn init() {
     }
     match Db::open(&dir.join("sheets2.sqlite3")) {
         Ok(db) => {
-            DB.with(|c| *c.borrow_mut() = Some(db));
-            UNDO.with(|c| {
-                let _ = c.set(with_db(|db| db.container.undo(UNDO_LEVELS)).expect("db just set"));
+            store_with(|s| *s.db.borrow_mut() = Some(db));
+            store_with(|s| {
+                let _ = s
+                    .undo
+                    .set(with_db(|db| db.container.undo(UNDO_LEVELS)).expect("db just set"));
             });
-            wire_live_state();
+            wire_app_state();
         }
         Err(e) => state()
             .status
@@ -184,48 +294,32 @@ pub fn init() {
 /// Run `f` against the store. A closed store (open failed) makes this a no-op, so the UI keeps
 /// working — empty — rather than panicking.
 fn with_db<R>(f: impl FnOnce(&Db) -> R) -> Option<R> {
-    DB.with(|c| c.borrow().as_ref().map(f))
+    store_with(|s| s.db.borrow().as_ref().map(f))
 }
 
 /// The container's undo history — `day::install_undo` wires it to the platform.
 pub fn undo_stack() -> Option<day_model::UndoStack> {
-    UNDO.with(|c| c.get().cloned())
+    store_with(|s| s.undo.get().cloned())
 }
 
 // ---- the live pipeline ----------------------------------------------------------------------
 
 /// Stand up the standing effects that DERIVE every published signal from live queries.
-fn wire_live_state() {
+/// Stand up the APP-wide standing effects: the subscription tree and the smart-feed badges.
+/// A window's own timeline is `wire_scene`, run once per window.
+fn wire_app_state() {
     let st = state();
-    let scope = RScope::detached();
-
-    // The timeline query follows the sidebar scope, the search text, and the sticky read ids.
-    let timeline = with_db(|db| {
-        db.container.query_fn::<Article>(move || {
-            let mut fetch = timeline_fetch(st.scope.get(), &st.search.get(), TIMELINE_LIMIT);
-            let sticky = st.sticky_read.get();
-            if st.scope.get() == Scope::Unread && !sticky.is_empty() {
-                // Re-admit the rows read under the cursor, so they clear in place instead of
-                // vanishing (the fetch rebuilds from scratch, so this replaces the filter).
-                fetch = timeline_fetch(Scope::All, &st.search.get(), TIMELINE_LIMIT);
-                fetch.pred = fetch.pred
-                    & (daynews_db::scope_pred(Scope::Unread) | day_persistence::Pred::IdIn(sticky));
-            }
-            fetch
-        })
-    })
-    .expect("wire_live_state runs only with an open db");
-    TIMELINE.with(|c| {
-        let _ = c.set(timeline.clone());
-    });
+    // On the ROOT scope: these outlive every window (the detached scope this replaces existed
+    // for the same reason).
+    let scope = RScope::root();
 
     // Totals: unread and starred are plain count queries; Today re-derives on scope of its
     // predicate (its midnight cutoff re-evaluates whenever the count query re-derives, and a
     // refresh nudges it across midnight).
     let (unread_total, starred_total) =
         with_db(|db| (db.unread_count(Scope::All), db.count(Scope::Starred))).expect("open");
-    TOTALS.with(|c| {
-        let _ = c.set([unread_total.clone(), starred_total.clone()]);
+    store_with(|s| {
+        let _ = s.totals.set([unread_total.clone(), starred_total.clone()]);
     });
     let today_total = with_db(|db| db.unread_count(Scope::Today)).expect("open");
 
@@ -253,13 +347,6 @@ fn wire_live_state() {
     .expect("open");
 
     scope.enter(|| {
-        // Timeline rows: ids from the query, fields read TRACKED so an edit to a visible row
-        // (a star, a read dot) rebuilds exactly this list.
-        Effect::new(move || {
-            let rows = build_summaries(&timeline);
-            st.articles.set(rows);
-        });
-
         // Sidebar: feeds with their badges, folders, tags with theirs.
         Effect::new(move || {
             let rows = build_feed_rows(&feeds_q);
@@ -278,29 +365,11 @@ fn wire_live_state() {
         Effect::new(move || st.total_unread.set(unread_total.get() as i64));
         Effect::new(move || st.total_starred.set(starred_total.get() as i64));
         Effect::new(move || st.total_today.set(today_total.get() as i64));
-
-        // The reader: whatever article is selected, kept current as its fields change (a
-        // star from the toolbar repaints the open article without any hand patching).
-        Effect::new(move || {
-            let article = st.selected.get().and_then(build_reader_article);
-            st.article.set(article);
-        });
-
-        // Closing the reader (the platform's back on a phone) drops the selection with it —
-        // the row un-highlights, and reopening starts from the list.
-        watch(
-            move || st.reader_open.get(),
-            move |open, _| {
-                if !open {
-                    st.selected.set(None);
-                }
-            },
-        );
     });
 }
 
 fn build_summaries(q: &Query<Article>) -> Vec<ArticleSummary> {
-    let Some(db) = DB.with(|c| c.borrow().as_ref().map(|d| d.container.clone())) else {
+    let Some(db) = store_with(|s| s.db.borrow().as_ref().map(|d| d.container.clone())) else {
         return Vec::new();
     };
     let ids = q.ids();
@@ -352,7 +421,7 @@ fn build_summaries(q: &Query<Article>) -> Vec<ArticleSummary> {
 }
 
 fn build_feed_rows(q: &Query<daynews_db::Feed>) -> Vec<FeedRow> {
-    let Some(db) = DB.with(|c| c.borrow().as_ref().map(|d| d.container.clone())) else {
+    let Some(db) = store_with(|s| s.db.borrow().as_ref().map(|d| d.container.clone())) else {
         return Vec::new();
     };
     let ids = q.ids();
@@ -365,8 +434,9 @@ fn build_feed_rows(q: &Query<daynews_db::Feed>) -> Vec<FeedRow> {
             if !f.exists() {
                 return None;
             }
-            let unread = FEED_COUNTS.with(|c| {
-                c.borrow_mut()
+            let unread = store_with(|s| {
+                s.feed_counts
+                    .borrow_mut()
                     .entry(*id)
                     .or_insert_with(|| with_db(|d| d.unread_count(Scope::Feed(*id))).expect("open"))
                     .get() as i64
@@ -389,7 +459,7 @@ fn build_feed_rows(q: &Query<daynews_db::Feed>) -> Vec<FeedRow> {
 }
 
 fn build_folder_rows(q: &Query<daynews_db::Folder>) -> Vec<FolderRow> {
-    let Some(db) = DB.with(|c| c.borrow().as_ref().map(|d| d.container.clone())) else {
+    let Some(db) = store_with(|s| s.db.borrow().as_ref().map(|d| d.container.clone())) else {
         return Vec::new();
     };
     let keys: Vec<u64> = q.ids().iter().map(|i| i.handle()).collect();
@@ -407,7 +477,7 @@ fn build_folder_rows(q: &Query<daynews_db::Folder>) -> Vec<FolderRow> {
 }
 
 fn build_tag_rows(q: &Query<daynews_db::Tag>) -> Vec<TagRow> {
-    let Some(db) = DB.with(|c| c.borrow().as_ref().map(|d| d.container.clone())) else {
+    let Some(db) = store_with(|s| s.db.borrow().as_ref().map(|d| d.container.clone())) else {
         return Vec::new();
     };
     let keys: Vec<u64> = q.ids().iter().map(|i| i.handle()).collect();
@@ -419,8 +489,9 @@ fn build_tag_rows(q: &Query<daynews_db::Tag>) -> Vec<TagRow> {
             if !t.exists() {
                 return None;
             }
-            let count = TAG_COUNTS.with(|c| {
-                c.borrow_mut()
+            let count = store_with(|s| {
+                s.tag_counts
+                    .borrow_mut()
                     .entry(*id)
                     .or_insert_with(|| with_db(|d| d.count(Scope::Tag(*id))).expect("open"))
                     .get() as i64
@@ -465,24 +536,25 @@ fn build_reader_article(id: u64) -> Option<StoredArticle> {
 
 // ---- selection ------------------------------------------------------------------------------
 
-pub fn select_scope(scope: Scope) {
-    let st = state();
-    st.scope.set(scope);
-    st.selected.set(None);
-    st.reader_open.set(false);
-    st.sticky_read.set(Vec::new());
+pub fn select_scope(new_scope: Scope) {
+    let sc = scene();
+    sc.scope.set(new_scope);
+    sc.selected.set(None);
+    sc.reader_open.set(false);
+    sc.sticky_read.set(Vec::new());
 }
 
 pub fn set_search(text: &str) {
-    let st = state();
-    st.search.set(text.to_string());
-    st.sticky_read.set(Vec::new());
+    let sc = scene();
+    sc.search.set(text.to_string());
+    sc.sticky_read.set(Vec::new());
 }
 
 /// Open an article. Reading it marks it read, like every reader does.
 pub fn open_article(id: u64) {
-    state().selected.set(Some(id));
-    state().reader_open.set(true);
+    let sc = scene();
+    sc.selected.set(Some(id));
+    sc.reader_open.set(true);
     let unread = with_db(|d| {
         d.container
             .get::<Article>(id)
@@ -501,9 +573,9 @@ pub fn open_article(id: u64) {
 /// filtered to), wrapping to the top; if nothing there is unread, falls back to the global
 /// unread list so the shortcut still advances from a fully-read view.
 pub fn open_next_unread() -> bool {
-    let st = state();
-    let rows = st.articles.get_untracked();
-    let current = st.selected.get_untracked();
+    let sc = scene();
+    let rows = sc.articles.get_untracked();
+    let current = sc.selected.get_untracked();
     let start = current
         .and_then(|id| rows.iter().position(|r| r.id == id))
         .map(|i| i + 1)
@@ -545,13 +617,15 @@ pub fn open_next_unread() -> bool {
 }
 
 pub fn set_read(id: u64, read: bool) {
-    let st = state();
-    if read && st.scope.get_untracked() == Scope::Unread {
+    // The sticky set belongs to the window that did the reading — only ITS unread timeline
+    // should keep the row visible.
+    let sc = scene();
+    if read && sc.scope.get_untracked() == Scope::Unread {
         // Keep the row visible in the unread timeline until the scope changes.
-        let mut sticky = st.sticky_read.get_untracked();
+        let mut sticky = sc.sticky_read.get_untracked();
         if !sticky.contains(&id) {
             sticky.push(id);
-            st.sticky_read.set(sticky);
+            sc.sticky_read.set(sticky);
         }
     }
     with_db(|d| d.set_read(id, read));
@@ -593,8 +667,8 @@ pub fn toggle_tag(article: u64, name: &str) {
 
 /// "Mark All as Read" for whatever the sidebar has selected.
 pub fn mark_scope_read(read: bool) {
-    let scope = state().scope.get_untracked();
-    with_db(|d| d.set_read_all(scope, read));
+    let in_scope = scene().scope.get_untracked();
+    with_db(|d| d.set_read_all(in_scope, read));
 }
 
 pub fn mark_feed_read(feed: u64, read: bool) {
@@ -635,9 +709,10 @@ pub fn subscribe(url: &str) {
 
 pub fn unsubscribe(feed: u64) {
     with_db(|d| d.delete_feed(feed));
-    let st = state();
-    if st.scope.get_untracked() == Scope::Feed(feed) {
-        st.scope.set(Scope::Unread);
+    // The window that removed the feed cannot stay scoped to it.
+    let sc = scene();
+    if sc.scope.get_untracked() == Scope::Feed(feed) {
+        sc.scope.set(Scope::Unread);
     }
 }
 
@@ -899,4 +974,10 @@ fn android_files_dir() -> Option<PathBuf> {
         let path = read_jstring(env, &as_jstring(obj))?;
         (!path.is_empty()).then(|| PathBuf::from(path))
     })
+}
+
+/// Run `f` against the process store — the shape the old `thread_local!` accessor had, so every
+/// call site below reads the same.
+fn store_with<R>(f: impl FnOnce(&Store) -> R) -> R {
+    f(&store())
 }

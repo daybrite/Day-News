@@ -95,6 +95,20 @@ const OPENING_SECTION: &str = "today";
 
 /// One window's contents. Called again for each File ▸ New Window.
 fn build_shell() -> impl Piece {
+    // This window's view and its bar (docs/state.md): `scoped` creates one of each in the
+    // window's own scope, so a second window browses its own scope, search and selection while
+    // the store, the feeds and the badges below stay shared.
+    daynews_core::NewsScene::scoped(|sc| {
+        // Each of these belongs to the WINDOW, not to a page: the toolbar outlives any page
+        // scope, and File ▸ New Feed focuses the field in the window the user is looking at —
+        // so both are provided here, where `focused()` can find them (docs/state.md).
+        toolbar::Bar::scoped(move |_bar| {
+            subscriptions::UrlFocus::scoped(move |_focus| shell_body(sc))
+        })
+    })
+}
+
+fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     let st = daynews_core::state();
     // Per window, so File ▸ New Window gets its own bar (docs/toolbars.md).
     toolbar::install();
@@ -133,7 +147,7 @@ fn build_shell() -> impl Piece {
         .content_list_for(|k: &Option<String>| {
             !matches!(k.as_deref(), Some("subscriptions") | Some("settings"))
         })
-        .detail_visible(st.reader_open)
+        .detail_visible(sc.reader_open)
         // Smart feeds — Today, All Unread and Starred, in NetNewsWire's order, under their own
         // header. Counts are real badges: right-aligned and de-emphasized by the toolkit.
         .section(res::str::nav_smart_feeds())
@@ -233,7 +247,7 @@ fn reader_dest() -> impl Piece {
     column((
         row((
             button(res::str::back())
-                .action(|| daynews_core::state().reader_open.set(false))
+                .action(|| daynews_core::scene().reader_open.set(false))
                 .id("article-back"),
             spacer(),
         ))

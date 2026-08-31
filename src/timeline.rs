@@ -35,7 +35,7 @@ const SUMMARY_CHARS: usize = 110;
 /// write, so anything captured eagerly freezes at the value the cell was BORN with, not the
 /// article it now shows.
 fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
-    let st = daynews_core::state();
+    let sc = daynews_core::scene();
     let id = move || slot.field(|a| a.id);
     let read = move || slot.field(|a| a.is_read);
 
@@ -134,7 +134,7 @@ fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
     // by the host at the row boundary — nothing else wraps the row.
     .id_of(move || {
         let id = id();
-        let pos = st
+        let pos = sc
             .articles
             .with(|a| a.iter().position(|x| x.id == id))
             .unwrap_or(usize::MAX);
@@ -158,7 +158,8 @@ pub(crate) fn begin_tag(article: u64) {
 /// The heading over the list: which scope is showing, and how much of it is unread.
 fn scope_title() -> String {
     let st = daynews_core::state();
-    match st.scope.get() {
+    let sc = daynews_core::scene();
+    match sc.scope.get() {
         Scope::Today => crate::res::str::nav_today().format(),
         Scope::Unread => crate::res::str::nav_all_unread().format(),
         Scope::Starred => crate::res::str::nav_starred().format(),
@@ -180,6 +181,7 @@ fn scope_title() -> String {
 
 pub fn timeline_pane() -> impl Piece {
     let st = daynews_core::state();
+    let sc = daynews_core::scene();
     // Search lives in the window toolbar where there is one; a phone has none, so the timeline
     // carries the field itself there. Both write the same signal.
     let search = crate::toolbar::search();
@@ -200,7 +202,7 @@ pub fn timeline_pane() -> impl Piece {
                     .color(move || palette().text)
                     .id("scope-title"),
                 label(move || {
-                    let n = st
+                    let n = sc
                         .articles
                         .with(|a| a.iter().filter(|x| !x.is_read).count());
                     crate::res::str::unread_count(n as f64).format()
@@ -273,13 +275,13 @@ pub fn timeline_pane() -> impl Piece {
         ),
         divider(),
         when(
-            move || st.articles.with(|a| a.is_empty()),
+            move || sc.articles.with(|a| a.is_empty()),
             move || {
                 column((
                     spacer(),
                     // An empty unread scope is an achievement, not an absence.
                     label(move || {
-                        if st.scope.get() == Scope::Unread {
+                        if sc.scope.get() == Scope::Unread {
                             crate::res::str::timeline_empty_unread().format()
                         } else {
                             crate::res::str::timeline_empty().format()
@@ -301,8 +303,8 @@ pub fn timeline_pane() -> impl Piece {
             let jump: Signal<Option<usize>> = Signal::new(None);
             watch(
                 move || {
-                    let sel = st.selected.get();
-                    st.articles
+                    let sel = sc.selected.get();
+                    sc.articles
                         .with(|a| sel.and_then(|id| a.iter().position(|x| x.id == id)))
                 },
                 move |pos: &Option<usize>, _| {
@@ -318,7 +320,7 @@ pub fn timeline_pane() -> impl Piece {
             // commands everywhere else).
             list(
                 items(
-                    move || st.articles.get(),
+                    move || sc.articles.get(),
                     |a: &ArticleSummary| a.id.to_string(),
                 ),
                 row_for,
@@ -334,8 +336,8 @@ pub fn timeline_pane() -> impl Piece {
             // Two-way: app-driven selection (Next Unread, the reader's restore) syncs into
             // the native list without re-emitting.
             .selected_rows(move || {
-                let sel = st.selected.get();
-                st.articles
+                let sel = sc.selected.get();
+                sc.articles
                     .with(|a| sel.and_then(|id| a.iter().position(|x| x.id == id)))
                     .into_iter()
                     .collect()
@@ -344,7 +346,7 @@ pub fn timeline_pane() -> impl Piece {
             // The trailing swipe toggles read/unread — Mail's triage gesture. The offer is
             // pulled at GESTURE time, so the button names the flip it would make.
             .swipe_trailing(move |i| {
-                let Some((id, read)) = st.articles.with(|a| a.get(i).map(|x| (x.id, x.is_read)))
+                let Some((id, read)) = sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_read)))
                 else {
                     return Vec::new();
                 };
@@ -370,7 +372,7 @@ pub fn timeline_pane() -> impl Piece {
             // The leading swipe stars, in the star's own warm tint.
             .swipe_leading(move |i| {
                 let Some((id, starred)) =
-                    st.articles.with(|a| a.get(i).map(|x| (x.id, x.is_starred)))
+                    sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_starred)))
                 else {
                     return Vec::new();
                 };
