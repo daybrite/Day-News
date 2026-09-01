@@ -7,19 +7,33 @@ One Rust codebase, native widgets on every platform.
 
 ## Run it
 
-Day compiles **one backend per binary**, so choose a target when you build or launch — a bare
-`cargo build` enables no backend feature and will not link. The Day CLI supplies the right
-feature for each target:
+`day launch --git` clones this repo, builds it for your desktop, and runs it — no checkout needed:
 
 ```sh
-day doctor                   # check the toolchains for your targets
+cargo install day-cli
+day doctor                                                # what's installed, what's missing
+day launch --git https://github.com/daybrite/Day-News.git
+```
+
+`day doctor` prints the fix for anything it can't find. `day launch --git` prints where it put the
+checkout, so you can `cd` there and edit the code.
+
+From inside a clone, name a target instead. Day compiles **exactly one backend per binary**, and
+the Day CLI supplies the right feature for each:
+
+```sh
 day launch -p macos-appkit   # build + run
 day build  -p macos-appkit   # build only
 ```
 
-Targets live in `Day.toml`. To use plain cargo, pass the backend feature yourself, e.g.
-`cargo build --features appkit` (macOS) / `--features gtk` / `--features qt` /
-`--features uikit` / `--features mdc` (Android) / `--features dom` (web).
+Targets live in `Day.toml`. A bare `cargo build` uses this crate's default `mock` backend, which is
+what lets rust-analyzer and `cargo check` work with no flags. To pick a real one from plain cargo,
+turn the default off as well — otherwise `mock` and your choice are both on, which is two backends
+and a compile error:
+
+```sh
+cargo build --no-default-features --features appkit    # or gtk / qt / uikit / mdc / xaml / dom
+```
 
 A fresh install has no subscriptions. Seed one:
 
