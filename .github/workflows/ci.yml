@@ -22,6 +22,19 @@ jobs:
       day-version: main
       scripts: dayscript/seed-fixtures.yaml dayscript/walkthrough.yaml
       locales: en
+      # Two form factors on iOS and Android, each its own job, screenshot artifact and gallery
+      # column: the reader is three panes side by side on a tablet and three pushed screens on
+      # a phone, so the gallery should show both. The same profiles Day-Rise and Day-Showcase
+      # run. `device` is a name PREFIX on iOS (runner images retire exact device names) and an
+      # exact `avdmanager list device` id on Android; the first profile stays primary (it packs
+      # and keeps the plain screenshots-<target> artifact), the second uploads
+      # screenshots-<target>-<slug>.
+      ios-devices: |
+        device=iPhone,           orientation=portrait
+        device=iPad Pro 13-inch, orientation=landscape, slug=ipad
+      android-devices: |
+        device=pixel_5,      os=36, orientation=portrait
+        device=pixel_tablet, os=36, orientation=landscape, slug=tablet
       deploy-web: true
       daysite-version: main
 

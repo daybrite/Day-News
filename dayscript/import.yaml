@@ -2,10 +2,10 @@
 #
 # The OPML is a REPOSITORY fixture (`${project}` is expanded by the CLI to the checkout's
 # path), so this runs on any machine and on CI — test resources must never live outside the
-# repo. It is the same file the daynews-opml unit tests parse; crates/daynews-opml/tests/data
-# records where it came from.
+# repo. It lists the live originals of the bundled fixture feeds, in folders, and is the same
+# file the daynews-opml unit tests parse; crates/daynews-opml/tests/data/README.md describes it.
 #
-# CONTRACT: expects a store that does not already hold these 13 subscriptions — the count
+# CONTRACT: expects a store that does not already hold these 7 subscriptions — the count
 # below is the whole sidebar, not just the import. Re-running is otherwise safe: feed ids are
 # a hash of the feed URL, so importing twice adds nothing the second time.
 name: day-news-import
@@ -17,7 +17,7 @@ flow:
   - tap: { id: opml-import }
   - pause: { secs: 1 }
   - respond:
-      { path: "${project}/crates/daynews-opml/tests/data/mySubscriptions.opml" }
+      { path: "${project}/crates/daynews-opml/tests/data/daynews.opml" }
   - pause: { secs: 2 }
-  - assert_text: { id: feeds-count, text: "13 feeds" }
+  - assert_text: { id: feeds-count, text: "7 feeds" }
   - screenshot: imported

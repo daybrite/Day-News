@@ -1,5 +1,6 @@
-//! Parsing checks against feeds actually captured from the wire — RSS 2.0, Atom, Mastodon and
-//! Discourse variants. Fixtures are bytes, so these run offline and deterministically.
+//! Parsing checks against feeds actually captured from the wire — plain RSS 2.0, WordPress,
+//! Discourse, Atom and Mastodon variants. Fixtures are bytes, so these run offline and
+//! deterministically.
 use daynews_feed::parse;
 
 struct Fixture {
@@ -8,33 +9,44 @@ struct Fixture {
     name: &'static str,
 }
 
+// One copy, under resource/assets/: the same files are the BUNDLED seed feeds the CI
+// walkthrough subscribes to via `asset:` URLs (dayscript/seed-fixtures.yaml), so the parser
+// tests and every platform's offline walkthrough read identical bytes. The README beside them
+// records where each came from.
 const FIXTURES: &[Fixture] = &[
     Fixture {
-        bytes: include_bytes!("fixtures/feed1.xml"),
-        url: "https://andrewkelley.me/rss.xml",
+        bytes: include_bytes!("../../../resource/assets/fixtures/merriam-webster.xml"),
+        url: "https://www.merriam-webster.com/wotd/feed/rss2",
         name: "plain RSS 2.0",
     },
     Fixture {
-        bytes: include_bytes!("fixtures/feed2.xml"),
-        url: "https://blog.cryptographyengineering.com/feed/",
+        bytes: include_bytes!("../../../resource/assets/fixtures/sciencedaily.xml"),
+        url: "https://www.sciencedaily.com/rss/all.xml",
+        name: "plain RSS 2.0, summaries only",
+    },
+    Fixture {
+        bytes: include_bytes!("../../../resource/assets/fixtures/nasa.xml"),
+        url: "https://www.nasa.gov/feed/",
         name: "WordPress RSS + content:encoded",
     },
     Fixture {
-        // feed3–5 live under resource/assets/ — they double as the BUNDLED seed feeds the CI
-        // walkthrough subscribes to via `asset:` URLs (dayscript/seed-fixtures.yaml), so the
-        // one copy serves the parser tests and every platform's offline walkthrough.
-        bytes: include_bytes!("../../../resource/assets/fixtures/feed3.xml"),
-        url: "https://forums.swift.org/c/general-announce/24.rss",
+        bytes: include_bytes!("../../../resource/assets/fixtures/quanta.xml"),
+        url: "https://www.quantamagazine.org/feed/",
+        name: "WordPress RSS + media thumbnails",
+    },
+    Fixture {
+        bytes: include_bytes!("../../../resource/assets/fixtures/rust-forum.xml"),
+        url: "https://users.rust-lang.org/c/announcements/6.rss",
         name: "Discourse RSS",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/feed4.xml"),
-        url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVHFbqXqoYvEWM1Ddxl0QDg",
-        name: "YouTube Atom",
+        bytes: include_bytes!("../../../resource/assets/fixtures/rust-blog.xml"),
+        url: "https://blog.rust-lang.org/feed.xml",
+        name: "Atom",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/feed5.xml"),
-        url: "https://mas.to/@aabewhite.rss",
+        bytes: include_bytes!("../../../resource/assets/fixtures/rust-mastodon.xml"),
+        url: "https://social.rust-lang.org/@rust.rss",
         name: "Mastodon RSS",
     },
 ];
@@ -134,7 +146,10 @@ fn non_feed_input_errors_cleanly() {
 /// escaped markup resolved rather than shown.
 #[test]
 fn microblog_items_derive_a_title_from_content() {
-    let f = &FIXTURES[4];
+    let f = FIXTURES
+        .iter()
+        .find(|f| f.name == "Mastodon RSS")
+        .expect("the Mastodon fixture");
     let feed = parse(f.bytes, f.url).expect("parse");
     let first = feed.items.first().expect("an item");
     assert!(first.title.is_none(), "Mastodon items carry no <title>");
@@ -195,6 +210,49 @@ fn real_feed_summaries_have_no_raw_entities() {
                     f.name
                 );
             }
+        }
+    }
+}
+
+/// `&#149;` is a Windows-1252 bullet, not the C1 control U+0095 that number names in Unicode:
+/// browsers read numeric references 128–159 through Windows-1252 (the HTML standard says so),
+/// and Merriam-Webster separates its pronunciations exactly this way. The XML layer resolves
+/// the reference before this crate sees it, so the raw control has to be remapped as a
+/// character — in titles, summaries and bodies alike — or Android draws a box.
+#[test]
+fn c1_controls_decode_as_windows_1252() {
+    let xml = "<?xml version=\"1.0\"?><rss version=\"2.0\"><channel><title>T</title>\
+      <link>https://e.example/</link>\
+      <item><title>a &#149; b &#151; c &#x92; d \u{96}</title><link>https://e.example/a</link>\
+      <guid>a</guid><description>&lt;p&gt;x &amp;#149; y&lt;/p&gt;</description>\
+      <content:encoded xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">\
+      &lt;p&gt;body &#149; here&lt;/p&gt;</content:encoded></item></channel></rss>";
+    let feed = parse(xml.as_bytes(), "https://e.example/f").expect("parse");
+    let it = &feed.items[0];
+    assert_eq!(it.title.as_deref(), Some("a • b — c ’ d –"));
+    assert_eq!(
+        it.summary.as_deref(),
+        Some("x • y"),
+        "double-escaped reference"
+    );
+    assert_eq!(
+        it.content_html.as_deref(),
+        Some("<p>body • here</p>"),
+        "the body is remapped too"
+    );
+    for f in FIXTURES {
+        let feed = parse(f.bytes, f.url).expect("parse");
+        for text in feed
+            .items
+            .iter()
+            .flat_map(|i| [i.title.as_deref(), i.summary.as_deref()])
+            .flatten()
+        {
+            assert!(
+                !text.chars().any(|c| ('\u{80}'..='\u{9f}').contains(&c)),
+                "{}: C1 control in {text:.80?}",
+                f.name
+            );
         }
     }
 }

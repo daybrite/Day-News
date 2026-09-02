@@ -19,8 +19,10 @@ flow:
 
   # Search filters through the full-text index, then clears. It is a toolbar item on the
   # desktops and a timeline field on a phone (docs/toolbars.md) — one behaviour, two homes.
-  - toolbar: { item: day.search, text: "swift", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - input: { id: search, text: "swift", only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  # "space" hits several of the seeded fixture feeds (NASA, Quanta, ScienceDaily), so the
+  # results shot has rows from more than one subscription.
+  - toolbar: { item: day.search, text: "space", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - input: { id: search, text: "space", only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
   - screenshot: search-results
   - toolbar: { item: day.search, text: "", skip_on: [ios-uikit, android-mdc, harmony-arkui] }

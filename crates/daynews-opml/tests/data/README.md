@@ -1,12 +1,18 @@
-# Vendored OPML samples
+# OPML samples
 
 Fixtures for the `daynews-opml` tests, kept in the repository so the suite runs on any
 machine. The tests previously read one developer's personal export from `~/Desktop`, which
 meant they compiled nowhere else.
 
-## Source
+## Authored here
 
-All three files come from [Miniflux](https://github.com/miniflux/v2)'s OPML parser tests
+| File | What it covers |
+|---|---|
+| `daynews.opml` | The sample subscription list `dayscript/import.yaml` hands to the file picker: the seven feeds bundled as parser fixtures (`resource/assets/fixtures/README.md` records each source), grouped into two folders with one subscription left at the top level, so an import exercises both shapes at once |
+
+## Vendored from Miniflux
+
+The other three files come from [Miniflux](https://github.com/miniflux/v2)'s OPML parser tests
 (`internal/reader/opml/parser_test.go`), licensed Apache-2.0 — the license this app ships
 under.
 
@@ -16,8 +22,6 @@ under.
 Miniflux keeps them as Go raw-string literals. They are stored here as standalone `.opml`
 files, with the literal's trailing indentation trimmed so each file ends at `</opml>`; the
 document content is otherwise unchanged.
-
-## The files
 
 | File | What it covers |
 |---|---|

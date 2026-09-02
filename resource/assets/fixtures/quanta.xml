@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:media="http://search.yahoo.com/mrss/"
+  xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+  xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>Quanta Magazine</title>
+	<atom:link href="https://www.quantamagazine.org/feed/" rel="self" type="application/rss+xml"></atom:link>
+	<link>https://www.quantamagazine.org</link>
+	<description>Illuminating science</description>
+	<lastBuildDate>Tue, 01 Sep 2026 14:25:39 -0400</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>hourly</sy:updatePeriod>
+	<sy:updateFrequency>1</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=7.1</generator>
+	<item>
+		<title>‘Stunning’ Percolation Proof Solves Decades-Old Puzzle About Phase Transitions</title>
+		<link>https://www.quantamagazine.org/stunning-percolation-proof-solves-decades-old-puzzle-about-phase-transitions-20260831/</link>
+		<comments>https://www.quantamagazine.org/stunning-percolation-proof-solves-decades-old-puzzle-about-phase-transitions-20260831/#respond</comments>
+		<pubDate>Mon, 31 Aug 2026 14:24:27 +0000</pubDate>
+    <dc:creator><![CDATA[Leila Sloman]]></dc:creator>
+				<category><![CDATA[Mathematics]]></category>
+
+		<guid isPermaLink="false">https://www.quantamagazine.org/?p=166338</guid>
+		<description><![CDATA[Mathematicians found that a broad class of networks will abruptly shift behavior past a critical point.            <p>The post <a href="https://www.quantamagazine.org/stunning-percolation-proof-solves-decades-old-puzzle-about-phase-transitions-20260831/" target="_blank">‘Stunning’ Percolation Proof Solves Decades-Old Puzzle About Phase Transitions</a> first appeared on <a href="https://www.quantamagazine.org" target="_blank">Quanta Magazine</a></p>]]></description>
+				<content:encoded><![CDATA[<p>The week before Christmas 2025, five mathematicians were holed up in a classroom at ETH Zurich. The mood was electric: They were this close to a career&#x2d;defining breakthrough. The group &mdash; consisting of then&#x2d;postdocs Sahar Diskin and Philip Easo, graduate student Ritvik Ramanan Radhakrishnan, Benny Sudakov, and Vincent Tassion &mdash; was perfecting a solution to one of the biggest open problems in&#8230;</p>
+<p><a href="https://www.quantamagazine.org/stunning-percolation-proof-solves-decades-old-puzzle-about-phase-transitions-20260831/" rel="nofollow">Source</a></p>]]></content:encoded>
+			<wfw:commentRss>https://www.quantamagazine.org/stunning-percolation-proof-solves-decades-old-puzzle-about-phase-transitions-20260831/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+<media:content url="https://www.quantamagazine.org/wp-content/uploads/2026/08/Percolation-cr-DVDP-Default.webp" type="image/jpg"></media:content>
+	</item>
+		<item>
+		<title>Does Computer Science Need Computers?</title>
+		<link>https://www.quantamagazine.org/does-computer-science-need-computers-20260828/</link>
+		<comments>https://www.quantamagazine.org/does-computer-science-need-computers-20260828/#respond</comments>
+		<pubDate>Fri, 28 Aug 2026 13:30:34 +0000</pubDate>
+    <dc:creator><![CDATA[Ben Brubaker]]></dc:creator>
+				<category><![CDATA[Computer Science]]></category>
+
+		<guid isPermaLink="false">https://www.quantamagazine.org/?p=166297</guid>
+		<description><![CDATA[The theoretical side of the field doesn’t require computing machines. But many questions would never have been posed without them.             <p>The post <a href="https://www.quantamagazine.org/does-computer-science-need-computers-20260828/" target="_blank">Does Computer Science Need Computers?</a> first appeared on <a href="https://www.quantamagazine.org" target="_blank">Quanta Magazine</a></p>]]></description>
+				<content:encoded><![CDATA[<p>The pioneering computer scientist Edsger Dijkstra, winner of the 1972 A.M. Turing Award and inventor of one of the most iconic algorithms in all of computing, was nothing if not opinionated. Certain programming languages drew his ire, for example: He once dubbed Fortran &ldquo;the infantile disorder&rdquo; and stated that &ldquo;the use of COBOL cripples the mind; its teaching should, therefore, be regarded as a&#8230;</p>
+<p><a href="https://www.quantamagazine.org/does-computer-science-need-computers-20260828/" rel="nofollow">Source</a></p>]]></content:encoded>
+			<wfw:commentRss>https://www.quantamagazine.org/does-computer-science-need-computers-20260828/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+<media:content url="https://www.quantamagazine.org/wp-content/uploads/2026/08/Qualia_TheoreticalCS-crKristinaArmitage-Default.webp" type="image/jpg"></media:content>
+	</item>
+		<item>
+		<title>In Hilbert Space, All Things Are Quantumly Possible</title>
+		<link>https://www.quantamagazine.org/in-hilbert-space-all-things-are-quantumly-possible-20260826/</link>
+		<comments>https://www.quantamagazine.org/in-hilbert-space-all-things-are-quantumly-possible-20260826/#respond</comments>
+		<pubDate>Wed, 26 Aug 2026 14:30:35 +0000</pubDate>
+    <dc:creator><![CDATA[Charlie Wood]]></dc:creator>
+				<category><![CDATA[Physics]]></category>
+
+		<guid isPermaLink="false">https://www.quantamagazine.org/?p=166153</guid>
+		<description><![CDATA[To explore quantum phenomena, we must leave the familiar world and enter the abstract realm of Hilbert space.            <p>The post <a href="https://www.quantamagazine.org/in-hilbert-space-all-things-are-quantumly-possible-20260826/" target="_blank">In Hilbert Space, All Things Are Quantumly Possible</a> first appeared on <a href="https://www.quantamagazine.org" target="_blank">Quanta Magazine</a></p>]]></description>
+				<content:encoded><![CDATA[<p>At the heart of quantum mechanics lie a few sacred rules for how to use the theory. First and foremost is, roughly, that thou shalt not think about ordinary objects presently whizzing through ordinary space. Rather, quantum mechanics predicts &mdash; in exquisite detail &mdash; all the possible ways that an object might turn out to be in the future. Exploring those possible futures requires tracking an&#8230;</p>
+<p><a href="https://www.quantamagazine.org/in-hilbert-space-all-things-are-quantumly-possible-20260826/" rel="nofollow">Source</a></p>]]></content:encoded>
+			<wfw:commentRss>https://www.quantamagazine.org/in-hilbert-space-all-things-are-quantumly-possible-20260826/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+<media:content url="https://www.quantamagazine.org/wp-content/uploads/2026/08/HilbertSpace-cr-Tommy-Parket-Default.webp" type="image/jpg"></media:content>
+	</item>
+		<item>
+		<title>A New Framework for How the Brain Compresses Our Noisy World</title>
+		<link>https://www.quantamagazine.org/a-new-framework-for-how-the-brain-compresses-our-noisy-world-20260824/</link>
+		<comments>https://www.quantamagazine.org/a-new-framework-for-how-the-brain-compresses-our-noisy-world-20260824/#respond</comments>
+		<pubDate>Mon, 24 Aug 2026 14:00:55 +0000</pubDate>
+    <dc:creator><![CDATA[Conor Feehly]]></dc:creator>
+				<category><![CDATA[Biology]]></category>
+
+		<guid isPermaLink="false">https://www.quantamagazine.org/?p=166076</guid>
+		<description><![CDATA[An updated view of categorization reflects the modern understanding that the nervous system is more of a prediction engine than a filing cabinet.            <p>The post <a href="https://www.quantamagazine.org/a-new-framework-for-how-the-brain-compresses-our-noisy-world-20260824/" target="_blank">A New Framework for How the Brain Compresses Our Noisy World</a> first appeared on <a href="https://www.quantamagazine.org" target="_blank">Quanta Magazine</a></p>]]></description>
+				<content:encoded><![CDATA[<p>Every moment of our lives, our bodies are awash in sensory signals. Photons hit our retinas. Waves of compressed air collide with our eardrums. Volatile molecules bind to receptors in our nostrils, and chemicals slather our taste buds. Pressure and heat activate nerve endings in our skin. We are able to navigate this torrent because the brain does an enormous amount of data compression.</p>
+<p><a href="https://www.quantamagazine.org/a-new-framework-for-how-the-brain-compresses-our-noisy-world-20260824/" rel="nofollow">Source</a></p>]]></content:encoded>
+			<wfw:commentRss>https://www.quantamagazine.org/a-new-framework-for-how-the-brain-compresses-our-noisy-world-20260824/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+<media:content url="https://www.quantamagazine.org/wp-content/uploads/2026/08/Predictive-Categorization-cr-Zara-Picken-Default.webp" type="image/jpg"></media:content>
+	</item>
+		<item>
+		<title>‘Huge Breakthrough’ in the Math of Imbalance</title>
+		<link>https://www.quantamagazine.org/huge-breakthrough-in-the-math-of-imbalance-20260821/</link>
+		<comments>https://www.quantamagazine.org/huge-breakthrough-in-the-math-of-imbalance-20260821/#respond</comments>
+		<pubDate>Fri, 21 Aug 2026 14:53:32 +0000</pubDate>
+    <dc:creator><![CDATA[Max G. Levy]]></dc:creator>
+				<category><![CDATA[Mathematics]]></category>
+
+		<guid isPermaLink="false">https://www.quantamagazine.org/?p=166010</guid>
+		<description><![CDATA[For the first time in 30 years, computer scientists have found a better way to allocate objects evenly between two groups.            <p>The post <a href="https://www.quantamagazine.org/huge-breakthrough-in-the-math-of-imbalance-20260821/" target="_blank">‘Huge Breakthrough’ in the Math of Imbalance</a> first appeared on <a href="https://www.quantamagazine.org" target="_blank">Quanta Magazine</a></p>]]></description>
+				<content:encoded><![CDATA[<p>One does not need a doctorate in mathematics to split 12 eager trivia buffs into two competitive teams. But consider that each person arrives with unique strengths and liabilities: One may be a geography obsessive with no ear for music, another could be a naturalist who doesn&rsquo;t own a television, and another could be a cinephile who never reads. Balancing traits between two camps becomes a lot&#8230;</p>
+<p><a href="https://www.quantamagazine.org/huge-breakthrough-in-the-math-of-imbalance-20260821/" rel="nofollow">Source</a></p>]]></content:encoded>
+			<wfw:commentRss>https://www.quantamagazine.org/huge-breakthrough-in-the-math-of-imbalance-20260821/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+<media:content url="https://www.quantamagazine.org/wp-content/uploads/2026/08/Vector-tugofwar-cr-Ada-Zejun-Shen-Default.webp" type="image/jpg"></media:content>
+	</item>
+	</channel>
+</rss>
+

@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+	<channel>
+		<title>Latest Science News -- ScienceDaily</title>
+		<link>https://www.sciencedaily.com/news/</link>
+		<description></description>
+		<language>en-us</language>
+		<pubDate>Tue, 01 Sep 2026 08:59:01 EDT</pubDate>
+		<lastBuildDate>Tue, 01 Sep 2026 08:59:01 EDT</lastBuildDate>
+		<ttl>60</ttl>
+		<image>
+			<title>Latest Science News -- ScienceDaily</title>
+			<url>https://www.sciencedaily.com/images/scidaily-logo-rss.png</url>
+			<link>https://www.sciencedaily.com/news/</link>
+			<description>For more science news, visit ScienceDaily.</description>
+		</image>
+		<atom:link xmlns:atom="http://www.w3.org/2005/Atom" rel="self" href="https://www.sciencedaily.com/rss/all.xml" type="application/rss+xml" />
+		<item>
+			<title>Scientists discover why snake embryos twist into spirals</title>
+			<link>https://www.sciencedaily.com/releases/2026/09/260901070516.htm</link>
+			<description>Snake embryos begin life curled into a distinctive right-handed spiral, and scientists may finally know why. Their bodies grow faster than their guts, creating a tether that forces the lengthening embryo to buckle and twist inside the egg. Researchers reached the conclusion after studying more than 900 embryos and using CT scans to reveal the hidden anatomy behind the coils.</description>
+			<pubDate>Tue, 01 Sep 2026 08:38:16 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/09/260901070516.htm</guid>
+		</item>
+		<item>
+			<title>Mindfulness may lower blood pressure in just 8 weeks</title>
+			<link>https://www.sciencedaily.com/releases/2026/09/260901010721.htm</link>
+			<description>Mindfulness, gratitude, and optimism training may improve blood pressure, inflammation, and other heart-health measures within just eight to 12 weeks. The strongest programs paired daily practice with regular reinforcement, suggesting that improving psychological well-being could become another tool for protecting cardiovascular health.</description>
+			<pubDate>Tue, 01 Sep 2026 08:58:41 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/09/260901010721.htm</guid>
+		</item>
+		<item>
+			<title>One of Earth’s driest places was just covered in snow</title>
+			<link>https://www.sciencedaily.com/releases/2026/09/260901010709.htm</link>
+			<description>Rare storms covered huge stretches of Chile’s Atacama Desert in snow and dumped extraordinary amounts of rain on one of the driest regions on Earth. The extreme weather shut down observatories, triggered damaging floods and mudflows, and unfolded against the backdrop of a strengthening El Niño.</description>
+			<pubDate>Tue, 01 Sep 2026 05:06:10 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/09/260901010709.htm</guid>
+		</item>
+		<item>
+			<title>NASA delays Crew-13 launch after leak found on SpaceX Dragon</title>
+			<link>https://www.sciencedaily.com/releases/2026/09/260901010705.htm</link>
+			<description>NASA and SpaceX have delayed Crew-13 after finding an oxidizer leak in the Dragon spacecraft’s propulsion system during prelaunch preparations. Engineers are investigating the problem before the four-person crew can begin its journey to the International Space Station.</description>
+			<pubDate>Tue, 01 Sep 2026 01:33:37 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/09/260901010705.htm</guid>
+		</item>
+		<item>
+			<title>NASA’s Swift telescope is back, but time is running out</title>
+			<link>https://www.sciencedaily.com/releases/2026/09/260901010702.htm</link>
+			<description>NASA has brought two of Swift’s telescopes back online after technical problems derailed a commercial mission intended to rescue the aging observatory by raising its orbit. With atmospheric drag pulling the spacecraft downward faster than expected, scientists may have only another month or two before Swift falls below a critical operating altitude.</description>
+			<pubDate>Tue, 01 Sep 2026 01:43:54 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/09/260901010702.htm</guid>
+		</item>
+		<item>
+			<title>NASA’s Roman Space Telescope launches to reveal the Universe’s darkest secrets</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260831035213.htm</link>
+			<description>NASA’s Roman Space Telescope has launched on a million mile journey to L2, where it will scan huge portions of the cosmos for clues about dark matter, dark energy, and distant worlds. With survey speeds roughly 1,000 times faster than Hubble and a torrent of 1.4 terabytes of data per day, Roman could uncover cosmic surprises astronomers have never seen before.</description>
+			<pubDate>Mon, 31 Aug 2026 05:23:21 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260831035213.htm</guid>
+		</item>
+		<item>
+			<title>A massive plume deep beneath Africa is pulling the continent apart</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260831015210.htm</link>
+			<description>A vast plume rising from deep inside Earth may be responsible for mysterious movements along the East African Rift. The discovery reveals how forces deep in the mantle are working alongside shallower geological forces as the continent slowly pulls apart.</description>
+			<pubDate>Tue, 01 Sep 2026 06:41:10 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260831015210.htm</guid>
+		</item>
+		<item>
+			<title>Scientists find why the liver may not heal even after you stop drinking</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260831015205.htm</link>
+			<description>Alcohol-related liver disease may trap damaged liver cells in a regenerative limbo, preventing the organ from rebuilding itself even after drinking stops. Researchers linked the problem to inflammation-driven RNA errors and identified a pathway that could potentially be targeted to restore liver repair.</description>
+			<pubDate>Mon, 31 Aug 2026 06:43:38 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260831015205.htm</guid>
+		</item>
+		<item>
+			<title>Goodbye CPAP? New sleep apnea pill cuts breathing events by 44%</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260831015203.htm</link>
+			<description>A once-nightly pill cut breathing interruptions by about 44% in a major phase 3 sleep apnea trial, while improving oxygen levels and disease severity. By strengthening the muscles that keep the airway open during sleep, AD109 could offer a new option for people unable to tolerate CPAP.</description>
+			<pubDate>Tue, 01 Sep 2026 00:49:31 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260831015203.htm</guid>
+		</item>
+		<item>
+			<title>Scientists find a human-only gene that may help explain our brainpower</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260831015141.htm</link>
+			<description>Scientists discovered that human microglia, immune cells that help shape developing brain circuits, can take four to eight years to mature instead of just weeks as they do in mice. The unusually slow process may help explain how the human brain develops its remarkable complexity and cognitive abilities.</description>
+			<pubDate>Mon, 31 Aug 2026 23:54:40 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260831015141.htm</guid>
+		</item>
+		<item>
+			<title>Popular sweeteners may leave effects that last for generations</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260830000019.htm</link>
+			<description>Two widely used zero-calorie sweeteners, sucralose and stevia, may have effects that linger far longer than the sweet taste itself. In mice, researchers found that both sweeteners altered the gut microbiome, reduced beneficial compounds produced by gut bacteria, and changed the activity of genes involved in metabolism and inflammation. Some of those changes were also detected in later generations that had never consumed the sweeteners themselves.</description>
+			<pubDate>Mon, 31 Aug 2026 10:04:01 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260830000019.htm</guid>
+		</item>
+		<item>
+			<title>HEPA air purifiers may boost brain function after just one month</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260830000016.htm</link>
+			<description>Adults aged 40 and older performed about 12% faster on a test of executive function after using a HEPA air purifier at home for one month. The findings suggest that cleaner indoor air could offer a simple way to help protect the brain from the effects of traffic-related pollution.</description>
+			<pubDate>Sun, 30 Aug 2026 09:33:54 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260830000016.htm</guid>
+		</item>
+		<item>
+			<title>A “quantum bath” puts quantum entanglement on autopilot</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260830000002.htm</link>
+			<description>Physicists have demonstrated a new way to entangle distant quantum bits without the constant measurements and active control normally required. The team created a “quantum bath,” a shared environment filled with correlated microwave photons that automatically pushes separated qubits into an entangled state and helps keep them there. The experiment confirms a theoretical prediction made more than 20 years ago and could offer a simpler way to connect modules in future quantum computers.</description>
+			<pubDate>Mon, 31 Aug 2026 09:08:37 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260830000002.htm</guid>
+		</item>
+		<item>
+			<title>Scientists challenge a 70-year-old “lizard brain” myth</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829235958.htm</link>
+			<description>A long-standing picture of brain evolution as newer, rational layers stacked on top of an ancient “lizard brain” may be deeply misleading. Researchers found that evolution instead appears to balance two competing styles of brain wiring, expanding one while shrinking the other depending on what an animal needs to survive.</description>
+			<pubDate>Mon, 31 Aug 2026 08:53:45 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829235958.htm</guid>
+		</item>
+		<item>
+			<title>Reaching 90 without dementia doesn’t mean you’re in the clear</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829235953.htm</link>
+			<description>A study of people over 90 found that dementia risk remains strongly shaped by sex, race and genetics, with women and black participants facing notably higher risks. Intriguingly, some people stayed cognitively healthy despite carrying major risk factors, potentially offering clues to how the brain can resist dementia deep into old age.</description>
+			<pubDate>Tue, 01 Sep 2026 08:09:42 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829235953.htm</guid>
+		</item>
+		<item>
+			<title>High blood sugar may help cancer cells hide from the immune system</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829235950.htm</link>
+			<description>Researchers discovered a possible way cancer cells hide from the immune system: they build a thick, sugar-rich coating around themselves. High blood sugar can strengthen this protective shield under conditions that resemble the environment inside tumors, with the protein HSF1 playing a key role. Blocking this process could make cancer cells easier for the immune system to recognize and destroy.</description>
+			<pubDate>Mon, 31 Aug 2026 22:39:55 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829235950.htm</guid>
+		</item>
+		<item>
+			<title>One injection could keep osteoarthritis drugs working for weeks</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829235947.htm</link>
+			<description>Scientists have created an injectable gel that can remain inside arthritic joints for weeks, slowly releasing medication while also improving lubrication. The approach could make it easier to deliver disease-modifying drugs directly where they are needed while limiting exposure elsewhere in the body.</description>
+			<pubDate>Mon, 31 Aug 2026 09:52:45 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829235947.htm</guid>
+		</item>
+		<item>
+			<title>Fossil feet may be misleading scientists about human evolution</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829235942.htm</link>
+			<description>Wild monkeys in West Africa can climb vertical tree trunks using foot flexibility scientists did not realize they possessed. The discovery challenges a key assumption about what the last common ancestor of humans and chimpanzees looked like and how it moved.</description>
+			<pubDate>Mon, 31 Aug 2026 08:38:26 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829235942.htm</guid>
+		</item>
+		<item>
+			<title>Hundreds of hidden earthquakes found at Antarctica’s Doomsday Glacier</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035328.htm</link>
+			<description>Hundreds of previously overlooked seismic events have been detected beneath Antarctica, including 245 near the marine edge of the Thwaites Glacier. Many appear to be glacial earthquakes caused when huge icebergs break off, capsize, and collide with the glacier. The surge in activity coincided with a period when Thwaites was flowing faster toward the ocean, hinting that changing ocean conditions may be destabilizing the ice.</description>
+			<pubDate>Sun, 30 Aug 2026 09:07:17 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035328.htm</guid>
+		</item>
+		<item>
+			<title>Long-term melatonin use linked to 90% higher heart failure risk</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035228.htm</link>
+			<description>People with chronic insomnia who used melatonin long term had a roughly 90% higher risk of developing heart failure over five years, according to a large preliminary study. The findings do not prove melatonin causes heart problems, but they raise new questions about the safety of taking the popular sleep supplement for extended periods.</description>
+			<pubDate>Sat, 29 Aug 2026 06:52:20 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035228.htm</guid>
+		</item>
+		<item>
+			<title>Researchers unveil sustainable spirulina solution to vitamin B12 deficiency</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035227.htm</link>
+			<description>Researchers have produced a form of Spirulina containing biologically active vitamin B12 at levels comparable to beef. By carefully controlling the light used to grow the algae, they overcame a major problem with conventional Spirulina, which mainly contains a form of B12 the human body cannot use. The carbon-neutral system could provide a more sustainable source of the essential vitamin.</description>
+			<pubDate>Sun, 30 Aug 2026 01:17:05 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035227.htm</guid>
+		</item>
+		<item>
+			<title>This strange “spacetime crystal” can suddenly become a black hole</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035225.htm</link>
+			<description>Physicists have mathematically captured a bizarre “spacetime crystal” that can either dissolve or collapse into a microscopic black hole after only a tiny change in energy. Their breakthrough came from an unusual trick involving infinitely many dimensions, potentially giving researchers a new tool for studying primordial and microscopic black holes.</description>
+			<pubDate>Sun, 30 Aug 2026 11:05:09 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035225.htm</guid>
+		</item>
+		<item>
+			<title>Scientists discover diamonds can generate electricity</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035223.htm</link>
+			<description>Diamond was thought to be incapable of producing electricity through mechanical deformation, but ultrathin flexible diamond membranes have now shown a strong and repeatable piezoelectric effect. The unexpected discovery could open the door to diamond-powered sensors, tiny energy systems, and self-powered medical implants.</description>
+			<pubDate>Mon, 31 Aug 2026 00:13:53 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035223.htm</guid>
+		</item>
+		<item>
+			<title>1.4-million-year-old footprints reveal a surprisingly large human relative</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035221.htm</link>
+			<description>Ancient footprints in Kenya reveal that eight Paranthropus boisei may have traveled together 1.4 million years ago, with some individuals reaching surprisingly large, human-like body sizes. The tracks offer a rare glimpse of their social behavior and suggest these extinct human relatives may have lived in more complex groups than previously thought.</description>
+			<pubDate>Sun, 30 Aug 2026 11:17:06 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035221.htm</guid>
+		</item>
+		<item>
+			<title>IBM quantum computer solves classically intractable problem in 15 minutes</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035219.htm</link>
+			<description>IBM and University of Chicago researchers have completed a quantum computation that leading classical methods could not practically reproduce. The system used 70 error-corrected logical qubits and finished the task in roughly 15 minutes while also providing statistical evidence that the result was reliable.</description>
+			<pubDate>Sun, 30 Aug 2026 10:08:13 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035219.htm</guid>
+		</item>
+		<item>
+			<title>Common supplements rival antibiotics for severe gum disease</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035216.htm</link>
+			<description>Omega-3 and low-dose aspirin matched the effectiveness of antibiotics in a year-long study of patients with severe gum disease, with both approaches helping about 58% reach the treatment goal. The unexpected result could point to a new way to treat some patients while reducing reliance on antibiotics and the growing problem of antibiotic resistance.</description>
+			<pubDate>Sun, 30 Aug 2026 10:35:22 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035216.htm</guid>
+		</item>
+		<item>
+			<title>Australia’s red soil may be hiding a massive clean energy source</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035214.htm</link>
+			<description>Researchers have discovered that Western Australia’s iron-rich rocks can naturally generate hydrogen and that the process may be boosted to produce much larger amounts. If it can be scaled up, the vast formations beneath the Pilbara could become a major new source of low-emission energy for Australia and potentially the world.</description>
+			<pubDate>Sat, 29 Aug 2026 06:05:43 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035214.htm</guid>
+		</item>
+		<item>
+			<title>Your waist size may reveal health risks BMI misses</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260829035208.htm</link>
+			<description>A simple waist measurement may be nearly as effective as more complicated methods for detecting unhealthy levels of body fat. Researchers also found that BMI alone missed many people with obesity, suggesting waist size could provide an important warning sign.</description>
+			<pubDate>Mon, 31 Aug 2026 09:43:59 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260829035208.htm</guid>
+		</item>
+		<item>
+			<title>The next Cascadia megaquake could hit Oregon harder than expected</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082350.htm</link>
+			<description>The Juan de Fuca plate beneath northern Oregon appears to be shallower than previously estimated, potentially making shaking from a future Cascadia megathrust earthquake significantly stronger. Scientists also found a deep basin beneath Tillamook that could trap seismic waves and intensify the shaking even further.</description>
+			<pubDate>Sun, 30 Aug 2026 00:12:10 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082350.htm</guid>
+		</item>
+		<item>
+			<title>Ancient Egyptian princesses were buried with weapons. Their bones reveal why</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082348.htm</link>
+			<description>Weapons buried with ancient Egyptian princesses may have been more than ceremonial decorations. Researchers studying royal mummies from Dahshur found bone changes consistent with years of archery and other strenuous weapon use. Several women also showed evidence of healed injuries, suggesting surprisingly active lifestyles that may have included hunting or military training.</description>
+			<pubDate>Sun, 30 Aug 2026 05:30:18 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082348.htm</guid>
+		</item>
+		<item>
+			<title>Seven new frog species were hiding beneath Madagascar’s forest floor</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082347.htm</link>
+			<description>Scientists have discovered seven new species of Madagascar’s elusive diamond frogs, using DNA from modern and century-old museum specimens to solve a long-running biological puzzle. The findings reveal surprising hidden diversity and could help protect these little-known amphibians as their forest habitats disappear.</description>
+			<pubDate>Sun, 30 Aug 2026 06:28:59 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082347.htm</guid>
+		</item>
+		<item>
+			<title>Rocky planets may have formed just 100 million years after the Big Bang</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082345.htm</link>
+			<description>Rocky planets may have been able to start forming just 100 million years after the Big Bang, thanks to enormous early supernovae that scattered planet-building elements across space. Simulations found enough solid material and water around a young star to suggest that Earth-like worlds could have appeared far earlier than previously believed.</description>
+			<pubDate>Mon, 31 Aug 2026 01:00:01 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082345.htm</guid>
+		</item>
+		<item>
+			<title>Dogs may hold surprising clues to human longevity</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082341.htm</link>
+			<description>Dogs and humans may have more in common when it comes to aging than scientists realized. Researchers with the Dog Aging Project found that patterns of small molecules in dogs’ blood were linked to longer or shorter lifespans in remarkably similar ways to those seen in people. These metabolic “fingerprints” could offer clues about the biological processes that drive aging, including metabolism, inflammation, and cellular stress.</description>
+			<pubDate>Sat, 29 Aug 2026 08:47:55 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082341.htm</guid>
+		</item>
+		<item>
+			<title>Scientists discover a massive heat anomaly deep inside Mars</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082336.htm</link>
+			<description>Mars has a hidden temperature divide, with its southern interior potentially hundreds of degrees hotter than the north and partially molten. The discovery could help explain several long-standing Martian mysteries, including unusual magnetism, seismic behavior, and clues to the planet’s ancient water history.</description>
+			<pubDate>Sun, 30 Aug 2026 08:27:59 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082336.htm</guid>
+		</item>
+		<item>
+			<title>NASA’s Roman telescope will see 100 times more sky than Hubble</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082333.htm</link>
+			<description>NASA’s Roman Space Telescope will combine Hubble-like detail with a field of view 100 times larger, giving astronomers a sweeping new way to explore the cosmos. Its observations could uncover hidden planets, map billions of cosmic objects, and help scientists unravel the mysteries of dark matter and dark energy.</description>
+			<pubDate>Fri, 28 Aug 2026 09:54:53 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082333.htm</guid>
+		</item>
+		<item>
+			<title>A cancer therapy put severe rheumatoid arthritis into remission</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082330.htm</link>
+			<description>CAR T-cell therapy dramatically reduced disease activity in six people with severe rheumatoid arthritis that had resisted other treatments, with three achieving medication-free remission. The treatment may work by clearing out harmful immune cells and effectively rebooting part of the immune system, although much larger studies are still needed.</description>
+			<pubDate>Sat, 29 Aug 2026 21:28:13 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082330.htm</guid>
+		</item>
+		<item>
+			<title>Keto diet cut liver fat by 67% in a clinical trial</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082327.htm</link>
+			<description>A ketogenic diet outperformed Mediterranean and low-fat diets in several measures of metabolic health during a clinical trial involving people with obesity, prediabetes, and fatty liver disease. All three groups lost about 10% of their body weight, but keto reduced liver fat by 67%, compared with 45% for the other diets. About half of the keto group also no longer qualified as having prediabetes after four to five months.</description>
+			<pubDate>Sat, 29 Aug 2026 09:32:50 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082327.htm</guid>
+		</item>
+		<item>
+			<title>The universe is still speeding up, but nobody knows why</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828082325.htm</link>
+			<description>A major new analysis challenges recent claims that the universe&#039;s expansion is slowing, finding that the evidence for cosmic acceleration remains strong. The findings preserve the leading role of dark energy, while leaving scientists with the enduring mystery of what this strange cosmic force actually is.</description>
+			<pubDate>Sat, 29 Aug 2026 07:41:30 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828082325.htm</guid>
+		</item>
+		<item>
+			<title>Scientists discover why damaged nerves struggle to heal</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005427.htm</link>
+			<description>Scientists have identified a protein that acts like a brake on the nervous system’s ability to repair damaged connections. Blocking AHR helped injured nerve fibers regrow and improved movement and sensation in mice with nerve or spinal cord injuries. The discovery could eventually point toward new treatments designed to shift neurons from simply surviving an injury to actively rebuilding themselves.</description>
+			<pubDate>Fri, 28 Aug 2026 22:59:06 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005427.htm</guid>
+		</item>
+		<item>
+			<title>Some signs of quantum gravity may be an illusion</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005226.htm</link>
+			<description>Quantum mechanics and Einstein’s theory of gravity explain almost everything we see in nature, yet physicists still do not know how to unite them. A new theoretical framework suggests that some experiments that appear to show gravity behaving quantum mechanically may have a much more ordinary explanation. Researchers found that scenarios involving a supposed “superposition of gravity” can sometimes be described equally well as quantum particles moving through classical spacetime.</description>
+			<pubDate>Sat, 29 Aug 2026 22:58:40 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005226.htm</guid>
+		</item>
+		<item>
+			<title>Experimental eye drops help blind mice see again</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005224.htm</link>
+			<description>Scientists have created light-activated drugs that helped blind mice perceive light again and restored visually guided behavior without gene therapy, implants, or specialized lighting. Even more intriguingly, two of the most promising compounds worked when administered as eye drops, pointing toward a potentially simple new approach to restoring vision.</description>
+			<pubDate>Fri, 28 Aug 2026 10:21:46 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005224.htm</guid>
+		</item>
+		<item>
+			<title>Scientists discover two superconducting states hiding as one</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005222.htm</link>
+			<description>Scientists have uncovered hidden complexity inside two ultrathin superconductors that seemed much simpler than they really are. Niobium diselenide and tantalum disulfide appeared to have a single superconducting state, but highly sensitive measurements revealed that each actually contains two strongly interacting states working so closely together that they masquerade as one.</description>
+			<pubDate>Mon, 31 Aug 2026 09:29:42 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005222.htm</guid>
+		</item>
+		<item>
+			<title>Scientists turn one of the hardest plastics to recycle into high-performance engine lubricant</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005220.htm</link>
+			<description>Researchers have discovered a way to turn notoriously difficult-to-recycle PVC plastic into a key ingredient used in high-performance lubricants such as engine oil. The technique could give mountains of plastic waste a valuable second life while making lubricant production more sustainable.</description>
+			<pubDate>Sat, 29 Aug 2026 08:24:41 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005220.htm</guid>
+		</item>
+		<item>
+			<title>Your sleep may be hiding an early clue to Alzheimer’s</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005218.htm</link>
+			<description>Frequent micro-awakenings during sleep were linked to higher genetic risk for Alzheimer’s in healthy middle-aged adults who had no symptoms. The discovery raises the possibility that subtle changes during sleep could offer an early warning signal years before memory problems appear.</description>
+			<pubDate>Fri, 28 Aug 2026 23:45:37 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005218.htm</guid>
+		</item>
+		<item>
+			<title>Scientists tested 212 plant-based meat alternatives. Every one contained fungal toxins</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005216.htm</link>
+			<description>Every one of 212 plant-based meat alternatives and drinks tested in the UK contained at least one naturally occurring fungal toxin, though concentrations remained below recommended EU guideline levels. Researchers say the bigger question is whether regularly eating large amounts of these foods could lead to potentially concerning cumulative exposure over time.</description>
+			<pubDate>Fri, 28 Aug 2026 05:01:51 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005216.htm</guid>
+		</item>
+		<item>
+			<title>A common vape flavoring may disrupt early embryo development</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005215.htm</link>
+			<description>A popular vanilla flavoring in e-cigarettes may interfere with some of the earliest steps of human development. In lab experiments, vanillin caused embryonic stem cells to lose their ability to develop normally and pushed them toward forming only certain types of tissue.</description>
+			<pubDate>Fri, 28 Aug 2026 08:49:37 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005215.htm</guid>
+		</item>
+		<item>
+			<title>Researchers followed 400,000 kids for 20 years and found a lasting pre-K advantage</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260828005213.htm</link>
+			<description>A 20-year study of 400,000 students found that children who attended public school pre-K earned better grades and test scores through high school than those in other childcare settings. Better-trained teachers and earlier exposure to structured classrooms may help explain why the advantage lasted so long.</description>
+			<pubDate>Fri, 28 Aug 2026 08:14:20 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260828005213.htm</guid>
+		</item>
+		<item>
+			<title>Scientists tracked 4,500 animals and found a surprising human effect</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010517.htm</link>
+			<description>Scientists tracking thousands of animals found that our physical presence can reshape where wildlife moves and lives, sometimes as strongly as roads, cities, and other human development. Because different species reacted in very different ways, conservation efforts may need to become much more targeted.</description>
+			<pubDate>Fri, 28 Aug 2026 01:22:04 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010517.htm</guid>
+		</item>
+		<item>
+			<title>Your dislike of eating bugs may be 9,000 years old</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010516.htm</link>
+			<description>Ancient teeth and human DNA are revealing a surprising history of insect eating. Modern humans in northern Eurasia appear to have eaten insects only occasionally, while Neanderthals may have consumed them much more regularly. Populations near the tropics also retained genes that make insect exoskeletons easier to digest.</description>
+			<pubDate>Thu, 27 Aug 2026 08:18:38 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010516.htm</guid>
+		</item>
+		<item>
+			<title>“I jumped from my chair” – Astronomers spot Betelgeuse’s hidden companion</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010514.htm</link>
+			<description>Astronomers have captured their clearest image yet of Betelgeuse’s long-suspected companion, potentially ending a search that lasted about 100 years. The surprisingly massive hidden star could help explain Betelgeuse’s changing brightness and may influence its future supernova.</description>
+			<pubDate>Thu, 27 Aug 2026 08:43:27 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010514.htm</guid>
+		</item>
+		<item>
+			<title>A new recipe unlocks “impossible” nanocrystals for LEDs, implants, and superconductors</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010510.htm</link>
+			<description>Scientists have cracked a long-standing chemistry problem, creating nanocrystals from tough metal nitrides that were previously extremely difficult to produce at this scale. The breakthrough could turn familiar materials used in LEDs, implants, and superconductors into building blocks for flexible electronics, printable devices, and other technologies.</description>
+			<pubDate>Sun, 30 Aug 2026 07:45:32 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010510.htm</guid>
+		</item>
+		<item>
+			<title>Vitamin C won’t prevent most colds, but it may do one small thing</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010507.htm</link>
+			<description>The belief that huge doses of vitamin C can ward off colds was popularized more than 50 years ago by Nobel Prize winner Linus Pauling. Since then, larger studies have found that vitamin C does not prevent most people from catching a cold, although regularly taking it may make severe symptoms slightly shorter or milder.</description>
+			<pubDate>Thu, 27 Aug 2026 06:38:30 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010507.htm</guid>
+		</item>
+		<item>
+			<title>AI searched 100 million possibilities and found a cheaper way to 3D-print a NASA rocket alloy</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010504.htm</link>
+			<description>Researchers used AI to search through more than 100 million possible settings for 3D-printing a high-performance NASA alloy. After only 40 experiments, the system identified six successful configurations, including one that worked at a record-low 500 watts. That could allow GRCop-42, currently difficult and expensive to print, to be made with much more widely available equipment.</description>
+			<pubDate>Thu, 27 Aug 2026 09:08:01 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010504.htm</guid>
+		</item>
+		<item>
+			<title>Why scientists asked 1,000 people to bury their underwear</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010501.htm</link>
+			<description>More than 1,000 volunteers buried cotton underwear across Switzerland to help scientists measure how active different soils are. The faster the fabric disappeared, the more biological activity was taking place underground. Gardens showed the fastest decomposition, while lawns had the least, revealing how strongly land management can shape soil life.</description>
+			<pubDate>Fri, 28 Aug 2026 00:23:16 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010501.htm</guid>
+		</item>
+		<item>
+			<title>Scientists find a huge hidden ice reservoir beneath Utah’s mountains</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010459.htm</link>
+			<description>Beneath the rocky slopes of Mount Timpanogos lies far more ice than anyone walking across the surface might suspect. Researchers used gravity measurements to map the buried glacier in 3D and found it is about 83% ice, with enough frozen water to fill 600 Olympic swimming pools. Their findings suggest rock glaciers form as falling debris buries persistent snow and preserves it for thousands of years. Similar formations around the world may collectively store tens of gigatons of hidden water.</description>
+			<pubDate>Thu, 27 Aug 2026 23:48:29 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010459.htm</guid>
+		</item>
+		<item>
+			<title>A mysterious cosmic hum may come from 13-billion-year-old dark stars</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010457.htm</link>
+			<description>Today’s mysterious gravitational-wave background may preserve clues about how the Universe’s first supermassive black holes formed. Descendants of hypothetical Dark Stars could be responsible for a major portion of the signal, offering a surprising new way to investigate cosmic dawn and dark matter.</description>
+			<pubDate>Thu, 27 Aug 2026 06:26:04 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010457.htm</guid>
+		</item>
+		<item>
+			<title>324-million-year-old fossil reveals how insects conquered land</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260827010455.htm</link>
+			<description>Ancient fossils suggest insects conquered land through a long amphibious phase rather than making an abrupt jump from water to dry ground. A newly identified 324-million-year-old species still carried paddle-like abdominal limbs, revealing an evolutionary bridge between aquatic ancestors and modern six-legged insects.</description>
+			<pubDate>Thu, 27 Aug 2026 03:22:34 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260827010455.htm</guid>
+		</item>
+		<item>
+			<title>Smart nanoparticles light up brain cancer and destroy what surgery misses</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260826060617.htm</link>
+			<description>Scientists created smart nanoparticles that can both illuminate hidden glioblastoma cells during surgery and destroy microscopic cancer left behind afterward. In mice, the treatment prevented recurrence and led to 100% survival at 60 days, though it has not yet been tested in humans.</description>
+			<pubDate>Thu, 27 Aug 2026 01:52:48 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260826060617.htm</guid>
+		</item>
+		<item>
+			<title>Scientists may have found a shortcut to calorie restriction’s anti-aging benefits</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260826055508.htm</link>
+			<description>Moderate calorie restriction lowered an immune protein called C3 that appears to help drive chronic inflammation as the body ages. Blocking the same protein reduced age related inflammation in mice, raising the possibility that future treatments could mimic some benefits of calorie restriction without severe dieting.</description>
+			<pubDate>Wed, 26 Aug 2026 09:00:53 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260826055508.htm</guid>
+		</item>
+		<item>
+			<title>Chimpanzees have been hurling rocks at the same trees for more than a decade</title>
+			<link>https://www.sciencedaily.com/releases/2026/08/260826055506.htm</link>
+			<description>Some chimpanzees in West Africa repeatedly throw rocks at particular trees, creating piles of stones that can remain in use for more than a decade. Researchers think this unusual behavior may be cultural and could serve as a form of communication, territorial signaling, or something more symbolic. Camera traps and audio recordings are now being used to reveal who throws the stones and how nearby chimpanzees respond.</description>
+			<pubDate>Fri, 28 Aug 2026 09:07:11 EDT</pubDate>
+			<guid isPermaLink="true">https://www.sciencedaily.com/releases/2026/08/260826055506.htm</guid>
+		</item>
+	</channel>
+</rss>
+<!-- cached Tue, 01 Sep 2026 08:58:59 EDT -->

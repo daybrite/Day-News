@@ -1,0 +1,1150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:discourse="http://www.discourse.org/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>announcements - The Rust Programming Language Forum</title>
+    <link>https://users.rust-lang.org/c/announcements/6</link>
+    <description>Topics in the &#39;announcements&#39; category Announcements of any sort, project updates, meetups, etc.</description>
+    
+      <lastBuildDate>Tue, 01 Sep 2026 00:57:48 +0000</lastBuildDate>
+      <atom:link href="https://users.rust-lang.org/c/announcements/6.rss" rel="self" type="application/rss+xml" />
+        <item>
+          <title>Xazz — An open-source data &amp; ML DSL built from scratch in Rust</title>
+          <dc:creator><![CDATA[Jangseowoo]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Hi everyone</p>
+<p>I'm a high school student and developer from South Korea, and I've been building a programming language and platform for AI/data pipelines in Rust.</p>
+<p>It's called <strong>Xazz</strong>.</p>
+<p>I started the project after running into a few problems with the usual Python-based workflow (<code>pandas</code> + PyTorch):</p>
+<ol>
+<li>Type and missing-value errors often surface only at runtime.</li>
+<li>Moving data between pandas, NumPy, and PyTorch can introduce additional conversions and copies.</li>
+<li>Data pipelines usually don't have a first-class policy/security layer.</li>
+</ol>
+<p>So instead of building another Python wrapper, I decided to explore what it would look like to build the language and runtime layer itself.</p>
+<p>Xazz currently includes:</p>
+<ul>
+<li>A compiler pipeline written in Rust: <strong>Lexer → Parser → AST → Type Checking → IR</strong></li>
+<li>A <strong>Polars LazyFrame-based</strong> data-processing runtime</li>
+<li>Schema-aware and statically checked data pipelines</li>
+<li><code>Option&lt;T&gt;</code> for nullable values</li>
+<li>A node-based <strong>Visual IDE</strong></li>
+<li>A <strong>Burn</strong> integration for defining and running ML models</li>
+<li>A Synthetic Data Engine (SDE)</li>
+<li>A Neural Query Planner (NQP) research prototype</li>
+<li>Policy-as-Code and audit-related components for data pipelines</li>
+</ul>
+<p>A small example looks like this:</p>
+<pre data-code-wrap="rust"><code class="lang-rust">
+</code></pre>
+<pre data-code-wrap="rust"><code class="lang-rust">type AirData = {
+    temp:     float,
+    humidity: float,
+    pm10:     Option&lt;float&gt;,
+}
+
+v dataset = load("air_data.csv") :: AirData
+    |&gt; fillNull("pm10", strategy: "mean")
+    |&gt; select(["temp", "humidity", "pm10"])
+
+model AirPredictor {
+    Dense(64) -&gt; ReLU() -&gt; Dense(1)
+}
+
+v model = dataset
+    |&gt; train(AirPredictor, target: "pm10", epochs: 10)
+
+v prediction = dataset
+    |&gt; predict(model, as: "pm10_pred")
+    |&gt; chart {
+        type: line,
+        x: station,
+        y: pm10_pred,
+        title: "PM10 Prediction",
+    }
+</code></pre>
+<p>I also benchmarked the same four-stage pipeline on real Seoul air-quality data.</p>
+<p>For datasets ranging up to <strong>4.09 million rows</strong>, Xazz was measured at up to <strong>2.62× faster than pandas</strong> in my benchmark.</p>
+<p>The project is still experimental, and there are definitely rough edges. I've had plenty of crashes, cross-compilation problems, edge cases, and other bugs along the way. Building the parser, type checker, runtime, execution layer, and tooling myself has been a much bigger challenge than I initially expected.</p>
+<p>That's also why I'm opening the source.</p>
+<p>I'd particularly appreciate feedback on:</p>
+<ul>
+<li>language and type-system design</li>
+<li>compiler architecture</li>
+<li>runtime/data representation</li>
+<li>Rust implementation choices</li>
+<li>safety and policy enforcement</li>
+<li>areas where the current design is unnecessarily complicated</li>
+</ul>
+<p>If you're interested in taking a look, the repository is here:</p>
+<p><a href="https://github.com/x1zzdev/Xazz?utm_source=chatgpt.com" rel="noopener nofollow ugc">github.com/x1zzdev/Xazz</a></p>
+<p>I'm still learning a lot from this project, so <strong>critical feedback is very welcome</strong>.</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/xazz-an-open-source-data-ml-dsl-built-from-scratch-in-rust/142159">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/xazz-an-open-source-data-ml-dsl-built-from-scratch-in-rust/142159</link>
+          <pubDate>Tue, 01 Sep 2026 00:57:48 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142159</guid>
+          <source url="https://users.rust-lang.org/t/xazz-an-open-source-data-ml-dsl-built-from-scratch-in-rust/142159.rss">Xazz — An open-source data &amp; ML DSL built from scratch in Rust</source>
+        </item>
+        <item>
+          <title>Tiberius-ng — a maintained continuation of the tiberius SQL Server driver</title>
+          <dc:creator><![CDATA[mattjackson]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Hi all,</p>
+<p>tiberius (<a href="https://crates.io/crates/tiberius" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a>), the async SQL Server (TDS) driver for Rust, has been effectively unmaintained for a while. Issues and PRs have gone unanswered, and it currently ships open, unpatched RustSec advisories in its TLS path (cert-verification issues via the rustls/webpki chain).</p>
+<p>I've taken over maintenance as tiberius-ng (<a href="https://github.com/MattJackson/tiberius-ng" class="inline-onebox" rel="noopener nofollow ugc">GitHub - MattJackson/tiberius-ng: TDS 7.2–8.0 (Microsoft SQL Server) driver for Rust — actively-maintained community fork (crate: tiberius-ng) · GitHub</a>). It is a standalone continuation with the full history and all original contributors preserved (Apache-2.0, same as upstream).</p>
+<p>What's already done:</p>
+<ul>
+<li><img src="https://emoji.discourse-cdn.com/twitter/white_check_mark.png?v=15" title=":white_check_mark:" class="emoji" alt=":white_check_mark:" loading="lazy" width="20" height="20"> Fixed the open cert-verification advisories (RUSTSEC-2026-0098 / -0099 / -0104) and the h2 advisory</li>
+<li><img src="https://emoji.discourse-cdn.com/twitter/white_check_mark.png?v=15" title=":white_check_mark:" class="emoji" alt=":white_check_mark:" loading="lazy" width="20" height="20"> Green build + CI, cargo audit clean</li>
+<li><img src="https://emoji.discourse-cdn.com/twitter/white_check_mark.png?v=15" title=":white_check_mark:" class="emoji" alt=":white_check_mark:" loading="lazy" width="20" height="20"> Merged a backlog of real fixes and features: TDS 8.0 strict encryption, MultiSubnetFailover, SQL_VARIANT / UDT / ALTMETADATA token decoding, query cancellation, transactions, and more</li>
+</ul>
+<p>If you depend on tiberius, especially if you care about the TLS advisories, it's intended as a drop-in successor. Feedback, issues, and PRs very welcome.</p>
+<p>Repo: <a href="https://github.com/MattJackson/tiberius-ng" class="inline-onebox" rel="noopener nofollow ugc">GitHub - MattJackson/tiberius-ng: TDS 7.2–8.0 (Microsoft SQL Server) driver for Rust — actively-maintained community fork (crate: tiberius-ng) · GitHub</a></p>
+<p>Thanks to the 61 original contributors whose work this builds on.</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/tiberius-ng-a-maintained-continuation-of-the-tiberius-sql-server-driver/142157">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/tiberius-ng-a-maintained-continuation-of-the-tiberius-sql-server-driver/142157</link>
+          <pubDate>Mon, 31 Aug 2026 21:08:02 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142157</guid>
+          <source url="https://users.rust-lang.org/t/tiberius-ng-a-maintained-continuation-of-the-tiberius-sql-server-driver/142157.rss">Tiberius-ng — a maintained continuation of the tiberius SQL Server driver</source>
+        </item>
+        <item>
+          <title>Orion 0.18 - Post-quantum (ML-KEM, ML-DSA, X-Wing) support and large API refinements</title>
+          <dc:creator><![CDATA[brycx]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>GitHub: <a href="https://github.com/orion-rs/orion" class="inline-onebox" rel="noopener nofollow ugc">GitHub - orion-rs/orion: Usable, easy and safe pure-Rust crypto · GitHub</a><br>
+Crates: <a href="https://crates.io/crates/orion" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a></p>
+<p>It's been, if not a couple years, since I've last posted an update but I figured the amount of changes since the last breaking change justify it. Orion is a cryptography library written in pure Rust. It aims to provide easy and usable crypto while trying to minimize the use of unsafe code.</p>
+<p>Most of the public API prior to <code>0.18</code> was based/designed on Rust editions dating back to 2018 and this breaking change moves away from this. It's a rework of the distinct types, moving from macro-only to two generically defined structs, with concrete marker types.</p>
+<p>Non-exhaustive highlights of what has been added:</p>
+<ul>
+<li>ML-KEM, ML-DSA and X-Wing.
+<ul>
+<li>Orion has historically not supported signature schemes up until now.</li>
+</ul>
+</li>
+<li>Argon2id, moving the high-level/non-hazardous API to this (was Argon2i before).</li>
+<li>Scrypt.</li>
+<li>HPKE, specifically also suites combining ChaCha20-Poly1305 w. X-Wing.
+<ul>
+<li>This has replaced the <code>0.17</code> <code>orion::kex</code> which was libsodium-based X25519, making the high-level API a PQ/T hybrid construction under <code>orion::hpke</code>.</li>
+</ul>
+</li>
+<li>BLAKE3.</li>
+</ul>
+<p>A huge thanks to the contributors that brought BLAKE3, Scrypt and others with a lot of other improvements!</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/orion-0-18-post-quantum-ml-kem-ml-dsa-x-wing-support-and-large-api-refinements/142145">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/orion-0-18-post-quantum-ml-kem-ml-dsa-x-wing-support-and-large-api-refinements/142145</link>
+          <pubDate>Sun, 30 Aug 2026 21:12:04 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142145</guid>
+          <source url="https://users.rust-lang.org/t/orion-0-18-post-quantum-ml-kem-ml-dsa-x-wing-support-and-large-api-refinements/142145.rss">Orion 0.18 - Post-quantum (ML-KEM, ML-DSA, X-Wing) support and large API refinements</source>
+        </item>
+        <item>
+          <title>Markdown-doctest: transform code blocks and include them as doctests</title>
+          <dc:creator><![CDATA[Marcono1234]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>I would like to present to you <a href="https://github.com/Marcono1234/markdown-doctest" rel="noopener nofollow ugc">markdown-doctest</a>, a Rust library for including and transforming Rust code blocks of Markdown files as Rust doctests.</p>
+<p>While regular doctests can use the prefix <code># </code> to hide lines from the rendered documentation, this is not possible for code blocks in Markdown files. So if you want to for example test code snippets of your README, you normally need to include redundant boilerplate code in them<sup class="footnote-ref"><a href="https://users.rust-lang.org#footnote-577876-1" id="footnote-ref-577876-1">[1]</a></sup>.</p>
+<p><em>markdown-doctest</em> supports specifying transforms which can insert and replace lines, for example add <code>use ...</code> imports or <code>Ok</code> results to allow using the <code>?</code> operator.</p>
+<p>Here is a small example; consider this Markdown text:</p>
+<pre data-code-wrap="markdown"><code class="lang-markdown">How to read a file:
+
+```rust
+let content = fs::read_to_string("my-file.txt")?;
+println!("content: {s}");
+```
+</code></pre>
+<p>To run it as part of the doctests, you can use <em>markdown-doctest</em> in your <code>src/lib.rs</code> like this:</p>
+<pre data-code-wrap="rust"><code class="lang-rust">#[cfg(doctest)]
+markdown_doctest::md_doctest!(
+    "../README.md",
+    transforms = {
+        *: {
+            // insert the import as first line
+            ^ =&gt; "use std::fs;",
+            // replace the file path
+            (*&lt;"my-file.txt"&gt;*) =&gt; "test-resource.txt",
+            // return Ok to allow using `?`
+            $ =&gt; "Ok::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;(())",
+        },
+    }
+);
+</code></pre>
+<p>See the project README and the <a href="https://github.com/Marcono1234/markdown-doctest/blob/main/Usage.md" rel="noopener nofollow ugc">Usage guide</a> for more details.</p>
+<hr>
+<p>The project is not published on crates.io yet, but since it is only needed as dev dependency, you can include it as Git dependency. For example:</p>
+<pre data-code-wrap="toml"><code class="lang-toml">[dev-dependencies]
+markdown_doctest = { git = "https://github.com/Marcono1234/markdown-doctest.git", rev = "72e3f8ade4a6abd8b51bda69d6b883213f75bbf5" }
+</code></pre>
+<p>(or any newer commit)</p>
+<p>What do you think about this project, and do you consider it useful? Any feedback is appreciated (here or on GitHub)!</p>
+<p>This was also an opportunity for me to get a bit more familiar with proc macros.</p>
+<p>The README also has a section about <a href="https://github.com/Marcono1234/markdown-doctest#similar-projects" rel="noopener nofollow ugc">Similar projects</a>, in case you are looking for other projects which support this or similar functionality.</p>
+<hr class="footnotes-sep">
+
+<ol class="footnotes-list">
+<li id="footnote-577876-1" class="footnote-item"><p>See also <a href="https://github.com/rust-lang/cargo/issues/383" class="inline-onebox" rel="noopener nofollow ugc">Run doc tests on README · Issue #383 · rust-lang/cargo · GitHub</a> <a href="https://users.rust-lang.org#footnote-ref-577876-1" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/markdown-doctest-transform-code-blocks-and-include-them-as-doctests/142144">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/markdown-doctest-transform-code-blocks-and-include-them-as-doctests/142144</link>
+          <pubDate>Sun, 30 Aug 2026 20:29:42 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142144</guid>
+          <source url="https://users.rust-lang.org/t/markdown-doctest-transform-code-blocks-and-include-them-as-doctests/142144.rss">Markdown-doctest: transform code blocks and include them as doctests</source>
+        </item>
+        <item>
+          <title>Maxx — A little &quot;RAD&quot; experiment for Rust</title>
+          <dc:creator><![CDATA[nseaSeb]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Hi everyone,</p>
+<p>A few months ago, I started looking into Rust as a hobby.</p>
+<p>One of the things that made me curious about Rust in the first place was <strong>Zed</strong>. I really like the editor, and knowing that it was built with Rust and GPUI made me want to understand what was going on under the hood and, more importantly, <strong>try building something with its GUI toolkit myself</strong>.</p>
+<p>So I started playing with Rust and GPUI without any particular goal.</p>
+<p>And, as it often happens with side projects, I ended up thinking:</p>
+<blockquote>
+<p>"What if I tried to build a little RAD tool for Rust?"</p>
+</blockquote>
+<p>I had no idea whether it was a good idea or not.</p>
+<p>So I built it anyway. <img src="https://emoji.discourse-cdn.com/twitter/grinning_face_with_smiling_eyes.png?v=15" title=":grinning_face_with_smiling_eyes:" class="emoji" alt=":grinning_face_with_smiling_eyes:" loading="lazy" width="20" height="20"></p>
+<p>This became <strong>maxx</strong>:<br>
+To be honest, I used my remaining Claude tokens to create it.</p>
+<p><a href="https://crates.io/crates/maxx" class="onebox" target="_blank" rel="noopener nofollow ugc">https://crates.io/crates/maxx</a></p>
+<p>GitHub:</p>
+<aside class="onebox githubrepo" data-onebox-src="https://github.com/nseaSeb/maxx">
+  <header class="source">
+
+      <a href="https://github.com/nseaSeb/maxx" target="_blank" rel="noopener nofollow ugc">github.com</a>
+  </header>
+
+  <article class="onebox-body">
+    <div class="github-row" data-github-private-repo="false">
+  <img width="690" height="344" src="https://opengraph.githubassets.com/cacbb9922ea14626c1cd5d5172276c18/nseaSeb/maxx" class="thumbnail">
+
+  <h3><a href="https://github.com/nseaSeb/maxx" target="_blank" rel="noopener nofollow ugc">GitHub - nseaSeb/maxx</a></h3>
+
+    <p><span class="github-repo-description">Contribute to nseaSeb/maxx development by creating an account on GitHub.</span></p>
+</div>
+
+  </article>
+
+  <div class="onebox-metadata">
+    
+    
+  </div>
+
+  <div style="clear: both"></div>
+</aside>
+
+<p>The basic idea is to experiment with a visual environment for building GPUI applications, while generating and working with actual Rust code.</p>
+<p>It's very much a hobby project.</p>
+<p>I built it primarily because <strong>I wanted to use something like this myself</strong>, and because it was a fun excuse to learn more Rust, GPUI and the surrounding ecosystem.</p>
+<p>I'm not trying to build a new Rust framework or turn this into a product. There is no business plan behind it and no ambitious roadmap.</p>
+<p>It's really just:</p>
+<p><strong>I discovered Rust through Zed → wanted to play with GPUI → had a weird idea → built it.</strong></p>
+<p>And now I'm curious about what other Rust developers think.</p>
+<p>Maybe the idea is useful.</p>
+<p>Maybe it's completely pointless.</p>
+<p>Maybe I'm solving a problem nobody has.</p>
+<p>Maybe I'm approaching it in a completely wrong way.</p>
+<p><strong>I'm genuinely open to hearing that.</strong></p>
+<p>I'm particularly interested in feedback from people who know Rust and GPUI better than I do. Suggestions, criticism, ideas, discussions — all welcome.</p>
+<p>And if someone finds the project interesting enough to contribute, that's welcome too.</p>
+<p>For now, I'm mainly doing this to learn, experiment and have fun with Rust.</p>
+<p>Thanks for taking a look!</p>
+            <p><small>7 posts - 3 participants</small></p>
+            <p><a href="https://users.rust-lang.org/t/maxx-a-little-rad-experiment-for-rust/142138">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/maxx-a-little-rad-experiment-for-rust/142138</link>
+          <pubDate>Sun, 30 Aug 2026 11:16:41 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142138</guid>
+          <source url="https://users.rust-lang.org/t/maxx-a-little-rad-experiment-for-rust/142138.rss">Maxx — A little &quot;RAD&quot; experiment for Rust</source>
+        </item>
+        <item>
+          <title>Foremerge: a Git like coordination protocol for parallel coding agents. One binary, SQLite, deterministic conflict rules</title>
+          <dc:creator><![CDATA[foremerge]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>We open-sourced Foremerge today: a git like coordination for multiple coding agents working one repository, built above Git rather than inside it. It started as an internal tool at GPTree, our AI product.</p>
+<p>The Rust bits people here might care about:</p>
+<ul>
+<li>
+<p>Single binary: CLI, an axum loopback JSON API, and an MCP server over stdio are all adapters over one rusqlite (bundled) store. No required daemon.</p>
+</li>
+<li>
+<p>Every mutation updates typed SQLite projections, materializes graph edges, and appends a hash-chained semantic event in one transaction.</p>
+</li>
+<li>
+<p>Deterministic conflict rules (for example destructive_vs_additive) over declared semantic scopes and operations (--scope symbol:PaymentService=replace). No model calls in the detection path, so findings are reproducible and explainable.</p>
+</li>
+<li>
+<p>Verification gate: it executes your named check (say cargo test --all-targets) against an exact candidate fingerprint and refuses acceptance if the tree changed since validation.</p>
+</li>
+<li>
+<p>Edition 2024, MSRV 1.85, clap derive, tokio. cargo install foremerge, cargo binstall foremerge, or a checksum-verified install script.</p>
+</li>
+</ul>
+<p>Honest limits: pre-1.0, heuristic detection that can warn on compatible work, local first, benchmark harness exists but no published results yet.</p>
+<p>Repo: <a href="https://github.com/naw103/foremerge" class="inline-onebox" rel="noopener nofollow ugc">GitHub - naw103/foremerge: Catch intent conflicts before code conflicts. The open-source coordination protocol for coding agents, built above Git. · GitHub</a></p>
+<p>Protocol feedback is what I am after: is the scope vocabulary (symbol, api, schema, config, migration, contract, ...) the right shape?</p>
+            <p><small>5 posts - 3 participants</small></p>
+            <p><a href="https://users.rust-lang.org/t/foremerge-a-git-like-coordination-protocol-for-parallel-coding-agents-one-binary-sqlite-deterministic-conflict-rules/142084">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/foremerge-a-git-like-coordination-protocol-for-parallel-coding-agents-one-binary-sqlite-deterministic-conflict-rules/142084</link>
+          <pubDate>Thu, 27 Aug 2026 15:09:14 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142084</guid>
+          <source url="https://users.rust-lang.org/t/foremerge-a-git-like-coordination-protocol-for-parallel-coding-agents-one-binary-sqlite-deterministic-conflict-rules/142084.rss">Foremerge: a Git like coordination protocol for parallel coding agents. One binary, SQLite, deterministic conflict rules</source>
+        </item>
+        <item>
+          <title>PurrGress Major 0.6 Update</title>
+          <dc:creator><![CDATA[Honami]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <h2><a name="p-577504-changelog-v060-1" class="anchor" href="https://users.rust-lang.org#p-577504-changelog-v060-1" aria-label="Heading link"></a>CHANGELOG v0.6.0</h2>
+<h3><a name="p-577504-english-2" class="anchor" href="https://users.rust-lang.org#p-577504-english-2" aria-label="Heading link"></a>English</h3>
+<p><em>(major break of the command protocol + removal of the byte codec — the actor model is now 100% actor)</em></p>
+<ul>
+<li>
+<p><strong><code>launch</code></strong> - now <code>self.main_train.extend_from_slice(branch)</code>, instead of <code>self.main_train.extend(branch.clone())</code>, since <code>branch</code> (<code>RouteBox</code>) supports <code>Copy</code></p>
+</li>
+<li>
+<p>in <strong><code>PurrSiding</code></strong>, <code>main_train</code> renamed to <code>main_line</code></p>
+</li>
+<li>
+<p>in <strong><code>PurrSiding</code></strong>, <code>change_rule</code> - cut in the usual sense</p>
+</li>
+<li>
+<p>in <strong><code>PurrSiding</code></strong>, the <code>switches</code> field completely removed as unneeded and inconvenient</p>
+</li>
+<li>
+<p>in <strong><code>PurrSiding</code></strong>, cut: <code>find_index_few</code>, <code>find_index</code>, <code>find_index_many</code>, <code>get_switches</code>, <code>clear_switches</code> - meant for working with <code>switches</code></p>
+</li>
+<li>
+<p>in <strong><code>PurrSiding</code></strong>, new methods <code>change_rule</code> and <code>change_rule_few</code>, which behave smarter, working with rules directly without unnecessary collecting</p>
+</li>
+<li>
+<p>in <strong><code>PurrDesign</code></strong>, <code>chain</code> was renamed to <code>design_chain</code>, and <code>new_chain</code> to <code>chain</code> - since it's a more fitting form of addition</p>
+</li>
+<li>
+<p>added <code>TrainError&lt;T&gt;</code> and <code>TrainResult&lt;V, T&gt;</code> - now every function from the train section returns <code>TrainResult</code></p>
+</li>
+<li>
+<p><code>PurrError</code> from the dispatcher section renamed to <code>DispatcherError</code></p>
+</li>
+<li>
+<p><strong><code>RouteAction</code></strong> and <strong><code>DispatcherCommand</code></strong> are now <code>Copy</code></p>
+</li>
+<li>
+<p><code>DispatcherCommand</code>:</p>
+<ul>
+<li><code>Attach</code></li>
+<li><code>Replace</code></li>
+<li><code>RerouteAt</code></li>
+</ul>
+<p>now take <code>carriage: T</code> instead of <code>Vec&lt;T, U&gt;</code> under the hood, or <code>Bytes</code> in the original</p>
+</li>
+<li>
+<p><strong><code>PurrDispatcher::dispatch</code></strong> - got dumber, no longer handles <code>Attach</code> / <code>Replace</code> / <code>RerouteAt</code> - you're on your own with those now. And it no longer returns <code>Option&lt;C&gt;</code> (key), but:</p>
+</li>
+</ul>
+<pre data-code-wrap="rust"><code class="lang-rust">#[derive(Debug, Clone, Copy, MakeFull)]
+pub struct DispatchData&lt;T: PurrStep, C: PurrKey&gt; {
+    #[None] pub command: Option&lt;DispatcherCommand&lt;T, C&gt;&gt;,
+    #[None] pub key: Option&lt;C&gt;,
+    #[None] pub carriage: Option&lt;T&gt;,
+    #[None] pub insert_position: Option&lt;InsertPosition&gt;,
+    #[None] pub line_length: Option&lt;usize&gt;,
+    #[None] pub action: Option&lt;RouteAction&gt;
+}
+</code></pre>
+<p>with all possible data</p>
+<ul>
+<li>the error enum now looks like this:</li>
+</ul>
+<pre data-code-wrap="rust"><code class="lang-rust">#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DispatcherError {
+    DuplicateInFastRoutes,
+    DuplicateInDynamicRoutes,
+    CursorNotFound,
+    LineChannelClosed,
+    RouteChannelClosed,
+    Internal(String),
+}
+</code></pre>
+<p><code>LineChannelClosed</code> and <code>RouteChannelClosed</code> are new: <em>Line channel is closed, receiver dropped</em> and <em>Route reply channel is closed, receiver dropped</em></p>
+<ul>
+<li><strong><code>bytes</code></strong> and <strong><code>rkyv</code></strong> fully removed as a standard for the dispatcher</li>
+<li><code>train_codec</code> - the dispatcher's deserialization/byte-handling section fully removed from the lib</li>
+</ul>
+<hr>
+<p><strong>Easier</strong> client-side work - no more need to think about bytes or routes inside every client</p>
+<p><strong>Harder</strong> dispatcher structure and flow, since now you're required to manually handle <code>Attach</code> / <code>Replace</code> / <code>RerouteAt</code> commands, and the design - route - siding blueprint work moved into the dispatcher's own flow</p>
+<p>Massive allocation optimization inside the dispatcher and stations, and in my opinion - easier work and more control, but also more responsibility.</p>
+<p><strong>I WILL NOT SHOVE ROUTING TIES INSIDE THE DISPATCHER. I'M FOR EXPLICIT UNDERSTANDING OF HOW THE TRACK AND DATA STORAGE WORK. SORRY.</strong></p>
+<h3><a name="p-577504-h-3" class="anchor" href="https://users.rust-lang.org#p-577504-h-3" aria-label="Heading link"></a>Русский</h3>
+<p><em>(мажорный слом протокола команд + удаление байткодека — акторная модель теперь на 100% акторная)</em></p>
+<ul>
+<li>
+<p><strong><code>launch</code></strong> - теперь <code>self.main_train.extend_from_slice(branch)</code>, а не <code>self.main_train.extend(branch.clone())</code>, так как <code>branch</code> (<code>RouteBox</code>) поддерживает <code>Copy</code></p>
+</li>
+<li>
+<p>в <strong><code>PurrSiding</code></strong>, <code>main_train</code> переименован в <code>main_line</code></p>
+</li>
+<li>
+<p>в <strong><code>PurrSiding</code></strong>, <code>change_rule</code> - вырезана в привычном смысле</p>
+</li>
+<li>
+<p>в <strong><code>PurrSiding</code></strong>, поле <code>switches</code> полностью вырезано за ненадобностью и неудобством</p>
+</li>
+<li>
+<p>в <strong><code>PurrSiding</code></strong>, вырезаны: <code>find_index_few</code>, <code>find_index</code>, <code>find_index_many</code>, <code>get_switches</code>, <code>clear_switches</code> - предназначенные для работы с <code>switches</code></p>
+</li>
+<li>
+<p>в <strong><code>PurrSiding</code></strong>, новые методы <code>change_rule</code> и <code>change_rule_few</code>, которые ведут себя более умно, сразу работая с правилами без лишнего сбора</p>
+</li>
+<li>
+<p>в <strong><code>PurrDesign</code></strong>, <code>chain</code> был переименован в <code>design_chain</code>, а <code>new_chain</code> в <code>chain</code> - так как является более ликвидной формой добавления</p>
+</li>
+<li>
+<p>добавлен <code>TrainError&lt;T&gt;</code> и <code>TrainResult&lt;V, T&gt;</code> - теперь все функции из train-раздела возращают именно <code>TrainResult</code></p>
+</li>
+<li>
+<p><code>PurrError</code> из раздела dispatcher переименован в <code>DispatcherError</code></p>
+</li>
+<li>
+<p><strong><code>RouteAction</code></strong> и <strong><code>DispatcherCommand</code></strong> теперь <code>Copy</code></p>
+</li>
+<li>
+<p><code>DispatcherCommand</code>:</p>
+<ul>
+<li><code>Attach</code></li>
+<li><code>Replace</code></li>
+<li><code>RerouteAt</code></li>
+</ul>
+<p>теперь принимают <code>carriage: T</code> вместо <code>Vec&lt;T, U&gt;</code> под катом или <code>Bytes</code> в оригинале</p>
+</li>
+<li>
+<p><strong><code>PurrDispatcher::dispatch</code></strong> - стал более глупым, больше не работает с <code>Attach</code> / <code>Replace</code> / <code>RerouteAt</code> — вы сами обязаны с ними работать. А возращает больше не <code>Option&lt;C&gt;</code> (key), а:</p>
+</li>
+</ul>
+<pre data-code-wrap="rust"><code class="lang-rust">#[derive(Debug, Clone, Copy, MakeFull)]
+pub struct DispatchData&lt;T: PurrStep, C: PurrKey&gt; {
+    #[None] pub command: Option&lt;DispatcherCommand&lt;T, C&gt;&gt;,
+    #[None] pub key: Option&lt;C&gt;,
+    #[None] pub carriage: Option&lt;T&gt;,
+    #[None] pub insert_position: Option&lt;InsertPosition&gt;,
+    #[None] pub line_length: Option&lt;usize&gt;,
+    #[None] pub action: Option&lt;RouteAction&gt;
+}
+</code></pre>
+<p>со всеми возможными данными</p>
+<ul>
+<li>энум ошибок теперь выглядит так:</li>
+</ul>
+<pre data-code-wrap="rust"><code class="lang-rust">#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DispatcherError {
+    DuplicateInFastRoutes,
+    DuplicateInDynamicRoutes,
+    CursorNotFound,
+    LineChannelClosed,
+    RouteChannelClosed,
+    Internal(String),
+}
+</code></pre>
+<p><code>LineChannelClosed</code> и <code>RouteChannelClosed</code> - новые: <em>Line channel is closed, receiver dropped</em> и <em>Route reply channel is closed, receiver dropped</em></p>
+<ul>
+<li><strong><code>bytes</code></strong> и <strong><code>rkyv</code></strong> полностью удалены как стандарт для диспетчера</li>
+<li><code>train_codec</code> - раздел диспетчера по десериализации и работе с байтами полностью удален из либы</li>
+</ul>
+<hr>
+<p><strong>Облегчение</strong> работы с клиентами - больше не нужно задумываться о байтах и маршрутах внутри каждого клиента</p>
+<p><strong>Усложнение</strong> структуры и потока диспетчера, так как теперь вы обязаны вручную обрабатывать команды <code>Attach</code> / <code>Replace</code> / <code>RerouteAt</code>, так же работа с чертежами design - route - siding переехала внутрь потока диспетчера</p>
+<p>Гигантская оптимизация аллокаций внутри диспетчера и станций, и по моему мнению - облегчение работы и больше контроля, но и больше ответственности.</p>
+<p><strong>Я НЕ БУДУ СУВАТЬ МАРШРУТНЫЕ СВЯЗИ ВНУТРЬ ДИСПЕТЧЕРА. Я ЗА ЯВНОЕ ПОНИМАНИЕ РАБОТЫ ТРЕКА И ХРАНЕНИЯ ИНФОРМАЦИИ. ПРОСТИТЕ.</strong></p>
+<ul>
+<li><strong>GitHub:</strong> <a href="https://github.com/Honami333/purrgress" class="inline-onebox" rel="noopener nofollow ugc">GitHub - Honami333/Purrgress: An ultra-fast, ergonomic DOD stage manager and async sequencer combining zero-cost performance with total runtime dynamism. · GitHub</a></li>
+<li><strong><a href="http://Crates.io" rel="noopener nofollow ugc">Crates.io</a>:</strong> <a href="https://crates.io/crates/purrgress" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a></li>
+<li><strong>Telegram Channel:</strong> <a href="https://t.me/cat_garden_news" class="inline-onebox" rel="noopener nofollow ugc">Telegram: View @cat_garden_news</a></li>
+</ul>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/purrgress-major-0-6-update/142055">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/purrgress-major-0-6-update/142055</link>
+          <pubDate>Tue, 25 Aug 2026 18:06:55 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142055</guid>
+          <source url="https://users.rust-lang.org/t/purrgress-major-0-6-update/142055.rss">PurrGress Major 0.6 Update</source>
+        </item>
+        <item>
+          <title>I&#39;ve drawn a lovely splash for my handy error-handling crate - erratic✨</title>
+          <dc:creator><![CDATA[lan]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p></p><div class="lightbox-wrapper"><a class="lightbox" href="https://us1.discourse-cdn.com/flex019/uploads/rust_lang/original/3X/7/2/72dfeed8702f458efa4a09138a24cad501fb9c7d.png" data-download-href="/uploads/short-url/goecLhL8AMIjNFyLXtVZcMx6uQd.png?dl=1" title="splash" rel="noopener nofollow ugc"><img src="https://us1.discourse-cdn.com/flex019/uploads/rust_lang/optimized/3X/7/2/72dfeed8702f458efa4a09138a24cad501fb9c7d_2_690x301.png" alt="splash" data-base62-sha1="goecLhL8AMIjNFyLXtVZcMx6uQd" width="690" height="301" srcset="https://us1.discourse-cdn.com/flex019/uploads/rust_lang/optimized/3X/7/2/72dfeed8702f458efa4a09138a24cad501fb9c7d_2_690x301.png, https://us1.discourse-cdn.com/flex019/uploads/rust_lang/optimized/3X/7/2/72dfeed8702f458efa4a09138a24cad501fb9c7d_2_1035x451.png 1.5x, https://us1.discourse-cdn.com/flex019/uploads/rust_lang/optimized/3X/7/2/72dfeed8702f458efa4a09138a24cad501fb9c7d_2_1380x602.png 2x" data-dominant-color="F0EEF3"></a></div><p></p>
+<p>Here it is. <a href="https://github.com/lansyin/erratic" rel="noopener nofollow ugc">erratic</a>.</p>
+<p>Since I keep running into binary projects where errors need to be handled differently by type, designing error types for every module has really been giving me a headache.</p>
+<p>So I ended up making an error type <code>Error&lt;S = Stateless&gt;</code>, a bit like <code>Box&lt;dyn Error&gt;</code>, but with a generic parameter attached. That generic can be any type that implements <code>Debug</code> (mostly an <code>enum</code>), and it's used to mark the error state (like <code>ErrorKind</code>) that need to be handled by the upper layers.</p>
+<p>Then I also applied a small trick: Making <code>Stateless: ?Sized</code>. That way <code>From&lt;Error&gt; for Error&lt;S&gt;</code> satisfies coherence, and propagating errors with <code>?</code> becomes really convenient. It gives you a bit of orthogonality: once an error you don't care about is erased, you can just ignore the State type entirely and keep bubbling it up.</p>
+<p>The efficiency is... not too bad, I think? It's only 1 usize in size. If the error is constructed from a string literal, it costs almost as little as &amp;'static str. If it comes from a state type smaller than 1 usize (given that its alignment fits), it avoids allocation altogether. And in other cases does it actually allocate.</p>
+<p>I've been tinkering with this for a few months now. English isn't my first language, so the naming and docs are a bit rough around the edges. Any advice or suggestions would mean a lot to me, especially on the naming and docs. <img src="https://emoji.discourse-cdn.com/twitter/smiling_face_with_three_hearts.png?v=15" title=":smiling_face_with_three_hearts:" class="emoji" alt=":smiling_face_with_three_hearts:" loading="lazy" width="20" height="20"><img src="https://emoji.discourse-cdn.com/twitter/smiling_face_with_three_hearts.png?v=15" title=":smiling_face_with_three_hearts:" class="emoji" alt=":smiling_face_with_three_hearts:" loading="lazy" width="20" height="20"><img src="https://emoji.discourse-cdn.com/twitter/smiling_face_with_three_hearts.png?v=15" title=":smiling_face_with_three_hearts:" class="emoji" alt=":smiling_face_with_three_hearts:" loading="lazy" width="20" height="20"></p>
+<p>Edit: This splash is written in <a href="https://github.com/lansyin/erratic/blob/main/splash.typ" rel="noopener nofollow ugc">Typst</a>, and the positioning is automatically calculated. Feel free to edit the script to make one for your own crate!</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/ive-drawn-a-lovely-splash-for-my-handy-error-handling-crate-erratic/142049">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/ive-drawn-a-lovely-splash-for-my-handy-error-handling-crate-erratic/142049</link>
+          <pubDate>Tue, 25 Aug 2026 01:07:53 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142049</guid>
+          <source url="https://users.rust-lang.org/t/ive-drawn-a-lovely-splash-for-my-handy-error-handling-crate-erratic/142049.rss">I&#39;ve drawn a lovely splash for my handy error-handling crate - erratic✨</source>
+        </item>
+        <item>
+          <title>Wibr new 0.2 version</title>
+          <dc:creator><![CDATA[Honami]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>English</p>
+<p>I've pushed v0.2.0 for wibr — fully customizable constructors and fallible iterator adapters. MakeFull derive: a step up from Make. #[Fn(name)] names the constructor whatever you want. #[Extern(name: Type)] adds an argument that isn't a struct field at all, only used inside setup code. #[Code({ ... })] runs arbitrary code before the struct is built — on the struct itself or on a specific field, doesn't matter, they all run in order. #[Functional] fields aren't arguments and have no default — their value comes from a Code block, matched by variable name. TryIterator: try_map and try_filter_map work like map/filter_map, but the closure returns a Result, and the walk stops at the first error instead of panicking or silently dropping it. Pull the error back out with .take_err() (error + iterator) or .take_okk() (Result&lt;iterator, error&gt;), or skip straight to .try_collect::() for Result&lt;C, error&gt; in one call. TryRetainable: try_retain — same as retain, except the predicate returns Result&lt;bool, E&gt;, so you can use ? right inside it instead of unwrapping by hand. Same rule as v0.1.0: nothing implicit, nothing you couldn't write yourself, just less of it to write.</p>
+<p>Русский</p>
+<p>Выкатил v0.2.0 для wibr — полностью настраиваемые конструкторы и фейлящиеся адаптеры итераторов. Дерайв MakeFull: шаг вперёд от Make. #[Fn(name)] называет конструктор как хочешь. #[Extern(name: Type)] добавляет аргумент, который вообще не является полем структуры, нужен только внутри кода инициализации. #[Code({ ... })] выполняет произвольный код перед сборкой структуры — хоть на самой структуре, хоть на конкретном поле, неважно, выполняются по порядку. Поля #[Functional] не становятся аргументами и не имеют значения по умолчанию — их значение приходит из блока Code, сопоставляется по имени переменной. TryIterator: try_map и try_filter_map работают как map/filter_map, но замыкание возвращает Result, и обход останавливается на первой ошибке вместо паники или тихого выбрасывания. Достать ошибку обратно можно через .take_err() (ошибка + итератор) или .take_okk() (Result&lt;итератор, ошибка&gt;), либо сразу .try_collect::() для Result&lt;C, ошибка&gt; одним вызовом. TryRetainable: try_retain — то же самое, что retain, только предикат возвращает Result&lt;bool, E&gt;, поэтому внутри него можно прямо использовать ? вместо ручного unwrap. Правило то же, что и в v0.1.0: ничего неявного, ничего такого, что вы не написали бы сами, просто меньше писанины.</p>
+<p>GitHub:<a href="https://github.com/Honami333/Wirb" class="inline-onebox" rel="noopener nofollow ugc">GitHub - Honami333/Wibr: What ought to be in Rust by default, but the developers decided otherwise. Micro syntactic sugar just for you. · GitHub</a><br>
+<a href="http://Crates.io" rel="noopener nofollow ugc">Crates.io</a>: <a href="https://crates.io/crates/wibr" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a><br>
+Telegram Channel: [Telegram: View <span class="mention">@cat_garden_news</span>](<a href="https://t.me/cat_garden_news" class="inline-onebox" rel="noopener nofollow ugc">Telegram: View @cat_garden_news</a>)</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/wibr-new-0-2-version/142005">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/wibr-new-0-2-version/142005</link>
+          <pubDate>Sat, 22 Aug 2026 07:47:59 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142005</guid>
+          <source url="https://users.rust-lang.org/t/wibr-new-0-2-version/142005.rss">Wibr new 0.2 version</source>
+        </item>
+        <item>
+          <title>Edid-seria EDID parsing and serialization</title>
+          <dc:creator><![CDATA[kouhe3]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>This is my 2nd crate, hope you test it</p>
+<p><a href="https://crates.io/crates/edid-seria" class="onebox" target="_blank" rel="noopener nofollow ugc">https://crates.io/crates/edid-seria</a></p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/edid-seria-edid-parsing-and-serialization/142003">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/edid-seria-edid-parsing-and-serialization/142003</link>
+          <pubDate>Sat, 22 Aug 2026 07:17:09 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-142003</guid>
+          <source url="https://users.rust-lang.org/t/edid-seria-edid-parsing-and-serialization/142003.rss">Edid-seria EDID parsing and serialization</source>
+        </item>
+        <item>
+          <title>Jord — Singularity-free 3D spherical geometry, navigation and kinematics</title>
+          <dc:creator><![CDATA[ofmooseandmen]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p><strong>Title:</strong> <code>[Showcase] jord — Singularity-free, vector-based 3D spherical navigation</code></p>
+<hr>
+<p>Hi everyone!</p>
+<p>I'd like to share <strong><a href="https://github.com/ofmooseandmen/jord-rs" rel="noopener nofollow ugc"><code>jord</code></a></strong>, a pure Rust crate for 3D spherical geometry, geodesy, navigation and kinematics.</p>
+<h3><a name="p-577106-why-jord-1" class="anchor" href="https://users.rust-lang.org#p-577106-why-jord-1" aria-label="Heading link"></a>Why <code>jord</code>?</h3>
+<p>Standard latitude/longitude calculations suffer from singularities at the poles, discontinuities across the anti-meridian, and heavy trigonometric CPU overhead. <code>jord</code> implements Kenneth Gade’s <strong>n-vector</strong> representation, replacing spherical trigonometry with 3D linear algebra:</p>
+<ul>
+<li><strong>Singularity-Free:</strong> Continuous math across poles and the ±180° meridian without edge-case branching.</li>
+<li><strong>CPU Efficient:</strong> Vector operations are typically less CPU intensive than trig-heavy lat/lon formulas.</li>
+<li><strong>NavLab Verified:</strong> Solves and validates all 10 canonical navigation benchmark problems.</li>
+</ul>
+<h3><a name="p-577106-code-examples-links-2" class="anchor" href="https://users.rust-lang.org#p-577106-code-examples-links-2" aria-label="Heading link"></a>Code Examples &amp; Links</h3>
+<p>Check out the README for code examples covering great-circle navigation, track interceptions, and frame transformations.</p>
+<ul>
+<li><strong>GitHub:</strong> <a href="https://github.com/ofmooseandmen/jord-rs" rel="noopener nofollow ugc"><code>ofmooseandmen/jord-rs</code></a></li>
+<li><strong><a href="http://Crates.io" rel="noopener nofollow ugc">Crates.io</a>:</strong> <a href="https://crates.io/crates/jord" rel="noopener nofollow ugc"><code>jord</code></a></li>
+<li><strong>Docs.rs:</strong> <a href="https://docs.rs/jord" rel="noopener nofollow ugc"><code>docs.rs/jord</code></a></li>
+</ul>
+<h3><a name="p-577106-question-for-the-community-3" class="anchor" href="https://users.rust-lang.org#p-577106-question-for-the-community-3" aria-label="Heading link"></a>Question for the Community</h3>
+<p>I’m considering adding <strong>GeoRust interop</strong> (<code>geo-types</code> / <code>geo-traits</code>) in an upcoming release. Would this be useful for your projects?</p>
+<p>Feedback on the API ergonomics or feature set is very welcome!</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/jord-singularity-free-3d-spherical-geometry-navigation-and-kinematics/141993">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/jord-singularity-free-3d-spherical-geometry-navigation-and-kinematics/141993</link>
+          <pubDate>Fri, 21 Aug 2026 09:53:29 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141993</guid>
+          <source url="https://users.rust-lang.org/t/jord-singularity-free-3d-spherical-geometry-navigation-and-kinematics/141993.rss">Jord — Singularity-free 3D spherical geometry, navigation and kinematics</source>
+        </item>
+        <item>
+          <title>Gametools v0.11.0</title>
+          <dc:creator><![CDATA[pygmy-twylyte]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Hi rust-lang --</p>
+<p>I just published v0.11.0 of `gametools` (<a href="https://github.com/pygmy-twylyte/gametools/releases/tag/v0.11.0" rel="noopener nofollow ugc">github</a>) (<a href="https://crates.io/crates/gametools" rel="noopener nofollow ugc">crates</a>), which is a library I've been gradually building to aggregate structures and algorithms I finding to be frequently useful in game and simulation programming.</p>
+<p>This release's high points:</p>
+<ol>
+<li>
+<p><code>pathfinding</code> module, implementing Dijkstra maps, standard A*, weighted A*, and dynamically weighted A* over a <code>Grid&lt;T&gt;</code> (see <span class="hashtag-raw">#3</span> below). The pathfinders accept arbitrary move sets, so you can calculate paths for things that move irregularly (think chess knight) just as easily as those that can only move to a neighboring cell.</p>
+</li>
+<li>
+<p><code>fov</code> module. The two most common algorithms (perimeter raycasting and recursive shadowcasting) for field-of-view are implemented over <code>Grid&lt;T&gt;</code>. A third algorithm using preprocessed blocking rectangles is also implemented, described in a <a href="https://doi.org/10.48550/arXiv.2101.11002" rel="noopener nofollow ugc">2021 paper by Debenham and Solis-Oba</a> which is reported to be more performant at scale -- though I confess I haven't had a good platform to test that claim directly. At the scales I've been able to test, all three algorithms seem to behave similarly. I haven't seen the rectangular algorithm in other pathfinding crates, though I very well may have missed one somewhere.</p>
+</li>
+<li>
+<p>Toroidal geometry for <code>Grid&lt;T&gt;</code>. In previous versions <code>Grid&lt;T&gt;</code> could only represent bounded regions. It now supports wrapping geometry, and the pathfinding algorithms also work correctly either way.</p>
+</li>
+</ol>
+<p>I couldn't figure out how to make the FOV algorithms work over a toroid. In theory, almost any ray cast from any point would infinitely wrap around and cover every point on the toroid. You could see something behind an opaque object in front of you just by looking to the side.</p>
+<p><em>So, I leave FOV over a toroid as an "exercise for the reader".</em>  </p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/gametools-v0-11-0/141989">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/gametools-v0-11-0/141989</link>
+          <pubDate>Fri, 21 Aug 2026 04:14:57 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141989</guid>
+          <source url="https://users.rust-lang.org/t/gametools-v0-11-0/141989.rss">Gametools v0.11.0</source>
+        </item>
+        <item>
+          <title>My rust sugar lib - Wibr</title>
+          <dc:creator><![CDATA[Honami]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>English<br>
+I'd like to share my Rust library wibr and its first release, v0.1.0.</p>
+<p>The idea is simple: there's a set of tiny patterns you write dozens of times a day in Rust — .to_string(), .into(), if/else as an expression, unwrapping Option/Result with a fallback, boilerplate constructors — and none of them have a one-word shorthand. wibr is a small set of macros and derives that closes that gap, with zero implicit behavior — every macro expands to exactly the code you'd write by hand, nothing hidden:</p>
+<p>Conversion shorthands (s!, io!): One-word replacements for .to_string() and .into(). No trait magic, expands directly to the same call.<br>
+New derive: Generates a new(...) constructor from your struct's fields, in declaration order. No manual boilerplate, no typos in field order.<br>
+Make derive: A more convenient constructor. Mark a field #[None] or #[Some(expr)] and it's excluded from new()'s arguments entirely — the constructor only asks for what actually varies per instance.<br>
+Ternary operators (iff!, get!, okk!): Collapse if a { b } else { c }, if let Some(b) = a { b } else { c }, and if let Ok(b) = a { b } else { c } into single expressions.</p>
+<p>That's it — pure syntactic sugar for convenience, nothing implicit, nothing you couldn't write yourself in one more line.</p>
+<p>Русский<br>
+Хочу поделиться своей библиотекой wibr и её первым релизом v0.1.0.</p>
+<p>Идея простая: в Rust есть набор мелких паттернов, которые пишешь по десять раз на дню — .to_string(), .into(), if/else как выражение, разворачивание Option/Result с фолбэком, конструкторы-бойлерплейт — и ни у одного из них нет однословного сокращения. wibr — небольшой набор макросов и дерайвов, закрывающий этот пробел, без единого неявного поведения — каждый макрос разворачивается ровно в тот код, который вы написали бы руками, ничего не скрыто:</p>
+<p>Сокращения для конвертаций (s!, io!): Однословная замена .to_string() и .into(). Никакой магии трейтов, разворачивается напрямую в тот же вызов.<br>
+Дерайв New: Генерирует конструктор new(...) по полям структуры, в порядке объявления. Без ручного бойлерплейта и без ошибок в порядке полей.<br>
+Дерайв Make: Более удобный конструктор. Помечаете поле #[None] или #[Some(expr)] — и оно полностью исключается из аргументов new(). Конструктор просит только то, что реально меняется от экземпляра к экземпляру.<br>
+Тернарные операторы (iff!, get!, okk!): Сворачивают if a { b } else { c }, if let Some(b) = a { b } else { c } и if let Ok(b) = a { b } else { c } в одно выражение.</p>
+<p>Вот и всё — чистый синтаксический сахар для удобства, ничего неявного, ничего такого, что вы не написали бы сами одной строкой больше.</p>
+<p>GitHub:<a href="https://github.com/Honami333/Wirb" class="inline-onebox" rel="noopener nofollow ugc">GitHub - Honami333/Wibr: What ought to be in Rust by default, but the developers decided otherwise. Micro syntactic sugar just for you. · GitHub</a><br>
+<a href="http://Crates.io" rel="noopener nofollow ugc">Crates.io</a>: <a href="https://crates.io/crates/wibr" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a><br>
+Telegram Channel: <a href="https://t.me/cat_garden_news" rel="noopener nofollow ugc">Telegram: View @cat_garden_news</a></p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/my-rust-sugar-lib-wibr/141980">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/my-rust-sugar-lib-wibr/141980</link>
+          <pubDate>Thu, 20 Aug 2026 13:09:27 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141980</guid>
+          <source url="https://users.rust-lang.org/t/my-rust-sugar-lib-wibr/141980.rss">My rust sugar lib - Wibr</source>
+        </item>
+        <item>
+          <title>[Show] daegun 1.0: an all-in-one text engine with no dependencies</title>
+          <dc:creator><![CDATA[silly-tae]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>I have just released <a href="https://crates.io/crates/daegun" rel="noopener nofollow ugc">daegun</a> 1.0.0</p>
+<p>Putting text on screen normally means assembling a stack: one crate reads the font, another shapes the script, another rasterizes, another subsets. Each brings its own dependency tree, and they do not always agree about what a glyph is. daegun is all of that in one crate.</p>
+<pre data-code-wrap="toml"><code class="lang-toml">[dependencies]
+daegun = "1.0.0"
+</code></pre>
+<p>It parses TrueType, CFF, CFF2 and variable fonts, shapes with GSUB and GPOS in full plus Apple morx and kerx, handles bidi and line breaking and justification, hints, rasterizes on the CPU or the GPU, and subsets a font down to the glyphs a page actually uses.</p>
+<p>Two constraints shaped most of it:</p>
+<p>No dependencies at all. The supply chain is rustc and nothing else. no_std with alloc; std is a default feature you can turn off. MSRV is 1.97.1, edition 2024.</p>
+<p>forbid(unsafe) in every parser and in the shaper, so an inner allow is a hard error rather than a warning. A font file is data from strangers and I wanted the compiler enforcing that rather than my own review. Only the GPU backends and the C layer opt back in, and they say so at the top of their own files.</p>
+<p>One thing that turned out interesting: the CPU rasterizer accumulates signed area per scanline and the GPU one casts two rays per sample in the shader. Two entirely different algorithms, so there is a test that renders the same outline both ways and holds them to a tolerance. It caught a real bug where overlapping contours double counted antialiased edge pixels.</p>
+<p>There is also a C ABI beside the Rust API, checked for parity on every build: if a Rust call stops being reachable from C, the build fails.</p>
+<p>Docs: <a href="https://dg.calia.cc" rel="noopener nofollow ugc">https://dg.calia.cc</a><br>
+Source: <a href="https://github.com/silly-tae/daegun" class="inline-onebox" rel="noopener nofollow ugc">GitHub - silly-tae/daegun: Your all-in-one text engine. Rust, no_std, zero dependencies · GitHub</a></p>
+<p>Note: Heavy use of AI was involved in the project to speed up testing, development, etc.<br>
+No such thing as "claude skiddadle this, make no mistakes" lmao<br>
+Manual code review is done constantly, along with constant testing and confirmations as well as  improving things in general.</p>
+<p>Feedback very welcome, particularly from anyone who has fought shaping or subsetting before. Those are the parts I would most like to have wrong pointed out.</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/show-daegun-1-0-an-all-in-one-text-engine-with-no-dependencies/141974">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/show-daegun-1-0-an-all-in-one-text-engine-with-no-dependencies/141974</link>
+          <pubDate>Thu, 20 Aug 2026 03:11:46 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141974</guid>
+          <source url="https://users.rust-lang.org/t/show-daegun-1-0-an-all-in-one-text-engine-with-no-dependencies/141974.rss">[Show] daegun 1.0: an all-in-one text engine with no dependencies</source>
+        </item>
+        <item>
+          <title>Middlewest - reqwest wrapper for middleware chains</title>
+          <dc:creator><![CDATA[06chaynes]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p><a href="https://github.com/06chaynes/middlewest" rel="noopener nofollow ugc">middlewest</a> is a fork of <a href="https://github.com/TrueLayer/reqwest-middleware" rel="noopener nofollow ugc">reqwest-middleware</a> that tweaks a few things such as an optional redirect feature for tighter control of those flows, the removal of async-trait, and a boxed error path. This was mostly driven by what I was running into with <a href="https://github.com/06chaynes/http-cache" rel="noopener nofollow ugc">http-cache</a>, which will soon receive optional support for middlewest. I included the original two middleware crates for retry and tracing logic as well.</p>
+<aside class="onebox githubrepo" data-onebox-src="https://github.com/06chaynes/middlewest">
+  <header class="source">
+
+      <a href="https://github.com/06chaynes/middlewest" target="_blank" rel="noopener nofollow ugc">github.com</a>
+  </header>
+
+  <article class="onebox-body">
+    <div class="github-row" data-github-private-repo="false">
+  <img width="690" height="344" src="https://opengraph.githubassets.com/81b3433c1ba95ffa4e9aebc65f79a80b/06chaynes/middlewest" class="thumbnail">
+
+  <h3><a href="https://github.com/06chaynes/middlewest" target="_blank" rel="noopener nofollow ugc">GitHub - 06chaynes/middlewest: Wrapper around reqwest to allow for client...</a></h3>
+
+    <p><span class="github-repo-description">Wrapper around reqwest to allow for client middleware chains.</span></p>
+</div>
+
+  </article>
+
+  <div class="onebox-metadata">
+    
+    
+  </div>
+
+  <div style="clear: both"></div>
+</aside>
+<p><a href="https://crates.io/crates/middlewest" class="onebox" target="_blank" rel="noopener nofollow ugc">https://crates.io/crates/middlewest</a><br>
+<a href="https://crates.io/crates/middlewest-retry" class="onebox" target="_blank" rel="noopener nofollow ugc">https://crates.io/crates/middlewest-retry</a><br>
+<a href="https://crates.io/crates/middlewest-tracing" class="onebox" target="_blank" rel="noopener nofollow ugc">https://crates.io/crates/middlewest-tracing</a></p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/middlewest-reqwest-wrapper-for-middleware-chains/141970">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/middlewest-reqwest-wrapper-for-middleware-chains/141970</link>
+          <pubDate>Wed, 19 Aug 2026 22:57:52 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141970</guid>
+          <source url="https://users.rust-lang.org/t/middlewest-reqwest-wrapper-for-middleware-chains/141970.rss">Middlewest - reqwest wrapper for middleware chains</source>
+        </item>
+        <item>
+          <title>Maudio updates + auditorium / audctl</title>
+          <dc:creator><![CDATA[someotherself]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>I'm bundling 3 projects in one as they are all related and dependencies of each other.</p>
+<h1><a name="p-576839-maudiohttpscratesiocratesmaudio-1" class="anchor" href="https://users.rust-lang.org#p-576839-maudiohttpscratesiocratesmaudio-1" aria-label="Heading link"></a><a href="https://crates.io/crates/maudio" rel="noopener nofollow ugc">maudio</a></h1>
+<p>maudio has had a few big improvements over the last month or so. Some things are stuff I've procrastinated about, but others are feature I've been working on for a while.</p>
+<ul>
+<li>My favorite feature, the custom decoder has been added. It allows you to use a 3rd party decoder to expand the formats supported and let you control it with from the maudio api. Implementing this almost broke me, but I've simplified the interface from C by a lot and I am pretty happy with how it looks. Examples <a href="https://github.com/someotherself/maudio/blob/main/crates/maudio/examples/204_decoder_symphonia.rs" rel="noopener nofollow ugc">here</a> and <a href="https://github.com/someotherself/maudio/blob/main/crates/maudio/examples/111_decoder_symphonia.rs" rel="noopener nofollow ugc">here</a> for a symponia decoder implementation.</li>
+<li>The cross platform compatibility has <a href="https://github.com/someotherself/maudio#status-of-cross-platform-compatibility" rel="noopener nofollow ugc">improved</a> a lot. Android and iOS still need some testing, but I'll need some hardware for that. Until then, I think the current targets should cover almost all usage.</li>
+<li>Pre-gen bindings now exist for all mainstream targets and static libraries for miniaudio are also available separately on the release section on github. They are a bit too large to include in the project, but <a href="https://github.com/someotherself/maudio/tree/main/crates/maudio-sys#configuration" rel="noopener nofollow ugc">easy to add</a> and also include instruction how to generate them yourself.</li>
+<li>The high level API - Engine, NodeGraph, Sound had their API re-designed to make it much more ergonomic, and almost all lifetimes removed. The first implementation was a bit restrictive, and I eventually got a better understanding of their thread safety model in C.</li>
+<li>The ResourceManager is now a lot more useful and thread-safe. <a href="https://github.com/someotherself/maudio/blob/main/crates/maudio/examples/205_res_man.rs" rel="noopener nofollow ugc">Example</a>. Its great at loading audio in a thread and playing it in another and managing loaded audio for multiple engines / devices.</li>
+</ul>
+<h1><a name="p-576839-auditoriumhttpscratesiocratesauditorium-2" class="anchor" href="https://users.rust-lang.org#p-576839-auditoriumhttpscratesiocratesauditorium-2" aria-label="Heading link"></a><a href="https://crates.io/crates/auditorium" rel="noopener nofollow ugc">auditorium</a></h1>
+<p>This project existed for almost as long as maudio, in one form or another, mostly as a local testing ground. But it developed into its own crate to abstract over maudio. Everything in auditorium lives in a control thread and is controlled with a queue. The main objective was to get maudio to a state where this can be implemented in 100% safe rust (self referential structs who?). It does a lot, but still barely touches the full capabilities of miniaudio.<br>
+Notable points:</p>
+<ul>
+<li>almost all types exposed are send, sync and clone.</li>
+<li>It supports most relevant <a href="https://github.com/someotherself/auditorium#supported-targets" rel="noopener nofollow ugc">targets</a> out of the box.</li>
+<li>supports both capture and playback</li>
+<li>both device types use a nodegraph, so the same dsp chaining system and audio sources work on both capture and playback.</li>
+<li>all the dsp types available by maudio are available and can be applied to all sources (including the capture device itself). A bit rudimentary for now, but I have ideas how to improve it.</li>
+<li>supports audio (decoder backed) source, pulse, noise and wave generators.</li>
+<li>it comes with a built-in sympnonia decoder</li>
+<li>my favorite convenience, a <code>device.is_producing()</code> that tells you if any audio sources produce frames (only on playback device for now).</li>
+</ul>
+<h1><a name="p-576839-audctlhttpscratesiocratesaudctl-3" class="anchor" href="https://users.rust-lang.org#p-576839-audctlhttpscratesiocratesaudctl-3" aria-label="Heading link"></a><a href="https://crates.io/crates/audctl" rel="noopener nofollow ugc">audctl</a></h1>
+<p>Nothing too notable here, just a cli app. Except maybe to show how easy it was to use auditorium to handle the audio part.</p>
+<p>I needed to build something with auditorium and this felt like something I could see muself using. A really simple, no  nonsense app to play and record audio, without leaving the command like environment.</p>
+<p>Both auditorium and audctl were made to improve maudio. Some issues in maudio only became relevant until I was implementing audctl - 2 dependents down. Hopefully, this ironed out a lot of issues so users don't have to deal with them. Maybe I'll be able to rest a bit.</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/maudio-updates-auditorium-audctl/141941">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/maudio-updates-auditorium-audctl/141941</link>
+          <pubDate>Tue, 18 Aug 2026 16:09:01 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141941</guid>
+          <source url="https://users.rust-lang.org/t/maudio-updates-auditorium-audctl/141941.rss">Maudio updates + auditorium / audctl</source>
+        </item>
+        <item>
+          <title>Taskvisor 0.8: task ownership from submission to cleanup</title>
+          <dc:creator><![CDATA[mr-chelyshkin]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Hi all,</p>
+<p>In June, I <a href="https://users.rust-lang.org/t/taskvisor-0-2-event-driven-task-supervision-for-tokio-restart-policies-backoff-event-bus/140625">introduced Taskvisor 0.2</a> as a Tokio task supervisor with restart policies, backoff, lifecycle events, and dynamic task control.</p>
+<p>After that release, I kept moving the project forward one practical problem at a time. I wanted final outcomes to be reliable, controller admission to be predictable, shutdown to be bounded, and runtime limits to describe the real load.</p>
+<p>Each change made sense on its own, and this worked for a while. By 0.7, however, I felt stuck. Fixing one edge of the task lifecycle often meant adding another rule somewhere else, especially in three places:</p>
+<p><strong>Observed state.</strong><br>
+I wanted lifecycle events to remain best-effort observability, yet activity queries <a href="https://github.com/soltiHQ/taskvisor/blob/9d461e640075137748fb733095bd2ea5e8771c3e/src/core/runtime/event_relay.rs#L13-L31" rel="noopener nofollow ugc">were built from those events</a>. The public view could lag behind the runtime state it tried to describe.</p>
+<p><strong>One completion boundary.</strong><br>
+I was using one completion point for several meanings: the final outcome, registry removal, physical actor exit, and controller slot reuse. When grace period expired, 0.7 <a href="https://github.com/soltiHQ/taskvisor/blob/9d461e640075137748fb733095bd2ea5e8771c3e/src/core/registry/removal.rs#L343-L369" rel="noopener nofollow ugc">requested abort and still waited for the actor handle</a> before producing the outcome.</p>
+<p>Waiting protected against early reuse, but a synchronous poll or blocking destructor could keep shutdown running past its grace period. Releasing everything at the deadline was not safe either: new work could reuse the same name or slot while the old task was still active.</p>
+<p><strong>Capacity beyond queues.</strong><br>
+Taskvisor could limit concurrent attempts and internal queues, but it had no supervisor-wide bound for all accepted task and subscriber values retained through the rest of their lifecycle. The existing limits did not describe all user values the runtime still owned.</p>
+<p>I kept calling all these moments <code>"finished"</code>. Finished for the caller, the registry, the actor, and the destructor were not always the same moment.</p>
+<p>Force-abort brought the ownership problem into focus. In 0.7, Taskvisor did not report <code>ForceAborted</code> until the actor handle returned. A synchronous poll or blocking destructor could therefore keep the task name and any controller slot reserved and push shutdown past its grace period.</p>
+<p>Reporting the logical outcome at the deadline was only half a fix: releasing the name and slot at the same moment would let old and new work overlap. I needed to separate the logical deadline from the later physical exit without losing ownership of either side.</p>
+<p>Around this point, I came across <strong>Yosh Wuyts’s</strong> <a href="https://blog.yoshuawuyts.com/tree-structured-concurrency/index" rel="noopener nofollow ugc">Tree-Structured Concurrency</a>. Its view of concurrent work through ownership and lifetime gave me a different way to look at the problem.</p>
+<p>I searched further and found <a href="https://without.boats/blog/asynchronous-clean-up/" rel="noopener nofollow ugc">Asynchronous clean-up</a>. I then returned to the Tokio task documentation, which makes a small but important distinction: <a href="https://docs.rs/tokio/latest/tokio/task/struct.JoinHandle.html#method.abort" rel="noopener nofollow ugc"><code>abort()</code> requests cancellation</a>, while physical completion is observed later through the task handle.<br>
+That was the distinction I had been missing.</p>
+<p>I took this idea back to Taskvisor and mapped every stage that could still own a task: submission, admission, attempts, terminal reporting, physical exit, and final value cleanup.</p>
+<p>At every transition, someone still owns the task. Releasing that ownership too early can allow overlap. Holding it without a limit can hide resource pressure or delay shutdown.</p>
+<p>This became the main question behind Taskvisor 0.8:</p>
+<blockquote>
+<p>Who owns the task now, and when is it safe to release that ownership?</p>
+</blockquote>
+<p>The main change from 0.7 to 0.8 looks like this:</p>
+<pre><code class="lang-plaintext"># 0.7
+events ─────────► best-effort activity view
+grace expires ──► abort request ──► wait for actor exit
+                                              ▼
+                                  outcome + resource release
+
+# 0.8
+registry + physical-exit tracker ──► authoritative activity
+grace expires
+     ├── logical ──► ForceAborted + registry removal
+     │                           └──► TaskWaiter (if watched)
+     └── physical ──► actor exit + terminal match
+                                 ▼
+                        release task name
+                                 ▼
+                  hand values to cleanup
+                    ├──► physical completion ──► release slot
+                    └──► clean destruction ────► return capacity
+</code></pre>
+<p>The <a href="https://github.com/soltiHQ/taskvisor/blob/9f38afd668a7fb8a7d03e6e042809c05aed81e4d/src/ARCHITECTURE.md#L34-L48" rel="noopener nofollow ugc">ownership boundaries are now explicit</a>. The controller owns a pending payload until registry hand-off. The registry owns admitted membership, identity, and final classification. The task actor owns one task lifecycle and runs one non-overlapping attempt at a time.</p>
+<p>After a logical force-abort, <a href="https://github.com/soltiHQ/taskvisor/blob/9f38afd668a7fb8a7d03e6e042809c05aed81e4d/src/core/registry/scheduler/reaper.rs#L1-L15" rel="noopener nofollow ugc">a physical-exit tracker keeps the task name and activity reserved</a> until the actor exist. Cleanup workers then retain task and subscriber values until their destruction finishes.</p>
+<p>The ownership model also clarified the public contract. <a href="https://github.com/soltiHQ/taskvisor/blob/9f38afd668a7fb8a7d03e6e042809c05aed81e4d/src/core/outcome.rs#L1-L20" rel="noopener nofollow ugc"><code>TaskWaiter</code> is the direct path to a final <code>TaskOutcome</code></a>. In 0.8, activity queries read the registry and physical-exit tracker instead of reconstructing state from lifecycle events. Events remain best-effort observability for logs, metrics, tracing, and diagnostics.</p>
+<p><a href="https://github.com/soltiHQ/taskvisor/blob/9f38afd668a7fb8a7d03e6e042809c05aed81e4d/src/core/config.rs#L172-L181" rel="noopener nofollow ugc">A separate ownership-capacity limit now follows accepted task and subscriber lifetimes through cleanup</a>. The registration name now <a href="https://github.com/soltiHQ/taskvisor/blob/9f38afd668a7fb8a7d03e6e042809c05aed81e4d/src/tasks/spec.rs#L1-L20" rel="noopener nofollow ugc">lives in <code>TaskSpec</code></a>, it belongs to one registration, not to reusable task behavior.</p>
+<p>Taskvisor remains an in-process supervisor, not a durable job queue. Aborting a Tokio task cannot interrupt arbitrary synchronous code while it is running, and a grace deadline cannot prove that such code has exited.</p>
+<p>The difference in 0.8 is that Taskvisor no longer treats every meaning of <code>"finished"</code> as one event. On force-abort, it can report a logical outcome while continuing to own and track the remaining physical work.</p>
+<hr>
+<p>Taskvisor <code>0.8</code> is available on</p>
+<ul>
+<li><a href="https://github.com/soltiHQ/taskvisor" rel="noopener nofollow ugc">GitHub</a>,</li>
+<li><a href="https://crates.io/crates/taskvisor" rel="noopener nofollow ugc">crates.io</a>,</li>
+<li><a href="https://docs.rs/taskvisor/0.8.0/taskvisor/" rel="noopener nofollow ugc">API documentation</a>.</li>
+</ul>
+<p>Thanks!</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/taskvisor-0-8-task-ownership-from-submission-to-cleanup/141917">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/taskvisor-0-8-task-ownership-from-submission-to-cleanup/141917</link>
+          <pubDate>Mon, 17 Aug 2026 08:51:31 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141917</guid>
+          <source url="https://users.rust-lang.org/t/taskvisor-0-8-task-ownership-from-submission-to-cleanup/141917.rss">Taskvisor 0.8: task ownership from submission to cleanup</source>
+        </item>
+        <item>
+          <title>Resync: brand-new synchronization approach</title>
+          <dc:creator><![CDATA[vi-is-ramen]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Hey there, everyone! I've been working on my project <a href="https://github.com/vi-is-ramen/resync" rel="noopener nofollow ugc"><strong>Resync</strong></a> for the last week.</p>
+<p>It's a library/framework for composable synchronization primitives. You can select independently how to lock, how to retry and how to poison (and even do it or not).</p>
+<p>Quick example:</p>
+<pre data-code-wrap="rust"><code class="lang-rust">// tiny critical section,
+// instant locking required,
+// guaranteed no panics in critical section
+type FastMutex&lt;T&gt; = resync::Mutex&lt;T,
+    resync::lock::Atomic,
+    resync::retry::Busy,
+    resync::poison::NoPoison
+&gt;;
+
+// high contention,
+// writers starvation possible,
+// critical section is huge,
+// panics in critical section are possible
+type ComplexRwLock&lt;T&gt; = resync::Sharex&lt;T,
+    resync::lock::Shield&lt;resync::lock::Futex&gt;, // &lt;-- updated to match current API
+    // resync::retry::Yield, // it's default
+    // resync::poison::StdPoison // it's default
+&gt;;
+
+// we are in OS kernel,
+// resource is shared with interrupt handlers,
+// we have our own poisoning policy implemented
+type GlobRes&lt;T&gt; = resync::Sharex&lt;T,
+    resync::lock::Irq&lt;resync::lock::Atomic&gt;,
+    resync::retry::Busy, // or own retry policy with project-specific yielding
+    MyPoisoningPolicy // must implement `resync::api::PoisonPolicy`
+&gt;;
+</code></pre>
+<p>Crate published on <a href="https://crates.io/crates/resync" rel="noopener nofollow ugc">crates.io</a>. It already has more than hundred downloads and a fully green CI pipeline across all targets! I have spent a lot of time on it: the crate is tested on Linux, Windows and macOS, on stable, beta and nightly Rust and with all possible feature sets.</p>
+<p>I'm planning to publish 1.0 soon and finish tests and benchmarks.</p>
+<p>I really need your feedback! I'm a sole developer and it's my first big open-source project, s so a star, an issue report, or even a quick comment would be incredibly helpful.</p>
+<p>Thanks for your attention!</p>
+            <p><small>8 posts - 3 participants</small></p>
+            <p><a href="https://users.rust-lang.org/t/resync-brand-new-synchronization-approach/141909">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/resync-brand-new-synchronization-approach/141909</link>
+          <pubDate>Sun, 16 Aug 2026 22:32:35 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141909</guid>
+          <source url="https://users.rust-lang.org/t/resync-brand-new-synchronization-approach/141909.rss">Resync: brand-new synchronization approach</source>
+        </item>
+        <item>
+          <title>We Are Forking dotenvy into dotenv-ng</title>
+          <dc:creator><![CDATA[domenkozar]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>We encountered a dotenvy bug where bcrypt fragments such as $2a$10$... were interpreted as variable substitutions, silently changing the value.</p>
+<p>Since the required fix targets an unreleased API, we forked dotenvy 0.15.7 and released dotenv-ng 1.0.</p>
+<p>It includes a rewritten parser, literal dollar signs by default, round-trip rendering, structured errors, and property tests.</p>
+<p>Feedback on the API and dotenv compatibility is welcome.</p>
+<p>Blog post: <a href="https://secretspec.dev/blog/we-are-forking-dotenvy-into-dotenv-ng/" class="inline-onebox" rel="noopener nofollow ugc">We Are Forking dotenvy into dotenv-ng | SecretSpec</a><br>
+Crate: <a href="https://crates.io/crates/dotenv-ng" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a></p>
+            <p><small>5 posts - 4 participants</small></p>
+            <p><a href="https://users.rust-lang.org/t/we-are-forking-dotenvy-into-dotenv-ng/141905">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/we-are-forking-dotenvy-into-dotenv-ng/141905</link>
+          <pubDate>Sun, 16 Aug 2026 14:37:08 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141905</guid>
+          <source url="https://users.rust-lang.org/t/we-are-forking-dotenvy-into-dotenv-ng/141905.rss">We Are Forking dotenvy into dotenv-ng</source>
+        </item>
+        <item>
+          <title>Tenferro-rs: a scientific tensor runtime for Rust</title>
+          <dc:creator><![CDATA[shinaoka]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>We are developing tenferro-rs, a Rust-native tensor runtime for scientific computing:</p><aside class="onebox githubrepo" data-onebox-src="https://github.com/tensor4all/tenferro-rs">
+  <header class="source">
+
+      <a href="https://github.com/tensor4all/tenferro-rs" target="_blank" rel="noopener nofollow ugc">github.com</a>
+  </header>
+
+  <article class="onebox-body">
+    <div class="github-row" data-github-private-repo="false">
+  <img width="690" height="344" src="https://opengraph.githubassets.com/c41dfe32d9393c57c02c62781069218f/tensor4all/tenferro-rs" class="thumbnail">
+
+  <h3><a href="https://github.com/tensor4all/tenferro-rs" target="_blank" rel="noopener nofollow ugc">GitHub - tensor4all/tenferro-rs: A Rust-native tensor &amp; autodiff stack for...</a></h3>
+
+    <p><span class="github-repo-description">A Rust-native tensor &amp; autodiff stack for scientific computing</span></p>
+</div>
+
+  </article>
+
+  <div class="onebox-metadata">
+    
+    
+  </div>
+
+  <div style="clear: both"></div>
+</aside>
+
+<p>It started as the computational core for our own tensor network calculations in physics, but we are now shaping it into a general-purpose library. It currently provides CPU and CUDA backends, eager and traced automatic differentiation, einsum, FFT, and linear algebra.</p>
+<p>A key design choice is explicit backend and session management. Execution resources such as CPU thread pools, NUMA domains, GPU devices, streams, memory pools, and backend-specific handles are all explicit, while tensor values themselves stay independent of the execution context.</p>
+<p>It is not meant to replace existing Rust array libraries, and we see it as complementary to ML-oriented stacks such as Candle and CubeCL rather than competing with them. For example, ndarray or mdarray storage can be borrowed through strided tensor views, so tenferro can serve purely as the computation layer. We also try to contribute upstream where possible: we are extending CubeCL with complex number support (<a href="https://github.com/tracel-ai/cubecl/pull/1300" rel="noopener nofollow ugc">tracel-ai/cubecl#1300</a>), and some of our changes have already been merged (<a href="https://github.com/tracel-ai/cubecl/pull/1301" rel="noopener nofollow ugc">#1301</a>).</p>
+<p>We also rely heavily on AI coding agents in development, and we are experimenting with stricter engineering practices for AI-assisted scientific software: strict repository rules, executable documentation, backend-parity tests, automated correctness checks, and benchmark gates against performance regressions.</p>
+<p>The project has grown quite a bit recently, and we would appreciate feedback from people doing scientific computing in Rust, especially on the API, the execution model, interoperability, and performance. Since our own use cases are biased toward tensor networks, we would particularly like to hear about use cases in other fields that the current design does not serve well.</p>
+            <p><small>2 posts - 2 participants</small></p>
+            <p><a href="https://users.rust-lang.org/t/tenferro-rs-a-scientific-tensor-runtime-for-rust/141873">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/tenferro-rs-a-scientific-tensor-runtime-for-rust/141873</link>
+          <pubDate>Fri, 14 Aug 2026 12:46:03 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141873</guid>
+          <source url="https://users.rust-lang.org/t/tenferro-rs-a-scientific-tensor-runtime-for-rust/141873.rss">Tenferro-rs: a scientific tensor runtime for Rust</source>
+        </item>
+        <item>
+          <title>EPUB/FB2 Console Reader</title>
+          <dc:creator><![CDATA[Aleix]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Welcome <a href="https://github.com/am-kantox/fbii" rel="noopener nofollow ugc">FBII</a> — the high-performance terminal e-book reader for <strong>FB2</strong>, <strong>FB2-in-ZIP</strong>, and <strong>EPUB (2.x / 3.x)</strong> written in Rust with Vim-like navigation controls.</p>
+<h3><a name="p-576510-features-1" class="anchor" href="https://users.rust-lang.org#p-576510-features-1" aria-label="Heading link"></a><strong>Features</strong></h3>
+<ul>
+<li><strong>Format Parsing</strong>: Seamless parsing of <code>.fb2</code>, <code>.fb2.zip</code>, and <code>.epub</code> archives.</li>
+<li><strong>Auto Character Encoding</strong>: Auto-detects XML charset declarations and BOMs (UTF-8, Windows-1251, ISO-8859-1) via <code>encoding_rs</code>.</li>
+<li><strong>Database Storage</strong>: Async SQLite library management (<code>sqlx</code>) tracking reading history, progress, bookmarks, and reading sessions.</li>
+<li><strong>Library Management</strong>: Recursively scan a directory to bulk-import books (<code>:scan &lt;dir&gt;</code> or <code>--scan-dir</code>), delete books/bookmarks, sort the library (recent/title/author), and live-filter the library list.</li>
+<li><strong>Layout &amp; Unicode Wrapping</strong>: <code>unicode-width</code> line wrapping with custom measure limits, configurable line/paragraph spacing, and hyphenation.</li>
+<li><strong>Full-Text Search Index</strong>: Fast NFKD Unicode-normalized search (stripping accents &amp; diacritics), with correct word wrapping for space-free scripts (CJK, etc.).</li>
+<li><strong>Inplace Image Rendering</strong>: Images are rendered directly inside the scrollable text layout at their exact reading position using Kitty, Sixel, iTerm2, or Unicode half-blocks; press <code>v</code> to zoom any image to full size. Book cover art is also displayed in the Info modal (<code>i</code>).</li>
+<li><strong>CSS-Aware EPUB Parsing</strong>: Content marked with an inline <code>display: none</code> style is hidden by default; toggle <code>C</code> to reveal it.</li>
+<li><strong>Reading Stats</strong>: Session count and total pages read are tracked per book and shown in the Info modal.</li>
+<li><strong>OPDS Catalogs</strong>: Browse and download books from OPDS feeds; custom catalogs are persisted to the config file.</li>
+<li><strong>Themes</strong>: Built-in color palettes (<code>dracula</code>, <code>monokai</code>, <code>github-dark</code>, <code>github-light</code>).</li>
+</ul>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/epub-fb2-console-reader/141871">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/epub-fb2-console-reader/141871</link>
+          <pubDate>Fri, 14 Aug 2026 10:54:38 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141871</guid>
+          <source url="https://users.rust-lang.org/t/epub-fb2-console-reader/141871.rss">EPUB/FB2 Console Reader</source>
+        </item>
+        <item>
+          <title>My state lib PurrGress</title>
+          <dc:creator><![CDATA[Honami]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <h3><a name="p-576467-english-1" class="anchor" href="https://users.rust-lang.org#p-576467-english-1" aria-label="Heading link"></a>English</h3>
+<p>I'd like to share my Rust library <strong>purrgress</strong> and its major <strong>v0.5.0</strong> release.</p>
+<p>The library was built to completely eliminate dynamic dispatch (<code>dyn</code> / <code>Box</code>) and heap-hopping inside performance-critical loops. Instead of traditional nested state machines, it uses a Data-Oriented Design (DOD) architecture with flat, linear "trains":</p>
+<ul>
+<li><strong>Graph Baking:</strong> You define states and dependency graphs upfront via <code>PurrDesign</code> and bake them into <code>PurrRoute</code>. Heavy recursive lookups and cyclic checks run strictly once at compile/init time, turning runtime route preparation into O(1) memory copies.</li>
+<li><strong>Isolated Assembly (<code>PurrSiding</code>):</strong> A dedicated buffer where you can assemble sequences, look up specific carriages without <code>.find()</code>, and rewrite timers or flags before pushing them to the main line.</li>
+<li><strong>Cursor-Based Execution (<code>PurrTrain</code>):</strong> The engine advances via a pointer shift over contiguous memory. Completed stages stay in place, making step transitions cost 0 nanoseconds.</li>
+</ul>
+<h4><a name="p-576467-whats-new-in-v050-2" class="anchor" href="https://users.rust-lang.org#p-576467-whats-new-in-v050-2" aria-label="Heading link"></a>What's new in v0.5.0:</h4>
+<ol>
+<li><strong>Async Dispatcher &amp; Actor Engine (<code>PurrDispatcher</code>):</strong> A central async command runner built on Tokio. It processes queue operations step-by-step (<code>dispatch()</code>) in an isolated task without mutexes or <code>Arc</code> locks.</li>
+<li><strong>Client Infrastructure (<code>PurrLink</code> &amp; <code>PurrStation</code>):</strong> <code>PurrLink</code> acts as a lightweight factory to spawn independent <code>tx</code> channels from any thread, while <code>PurrStation</code> encapsulates request-reply mechanics and siding-to-byte serialization for worker threads.</li>
+<li><strong>Hybrid L1 / Map Router:</strong> Channels are stored in a fast 16-element stack array (aligned with CPU cache lines) and automatically scale into a dynamic map when load increases, protected by hysteresis against memory thrashing.</li>
+<li><strong>Zero-Allocation Byte Pipeline:</strong> Integrated with <code>rkyv</code> and <code>bytes</code>. You can send baked sidings across channels and modify live trains (<code>attach_bytes</code>, <code>replace_bytes</code>, <code>reroute_at_bytes</code>) with lazy deserialization happening directly during memory splicing — zero intermediate heap allocations.</li>
+<li><strong>Contextual Events:</strong> <code>advance_train()</code> now returns <code>PurrTrainEvent&lt;T, U&gt;</code>, providing full <code>RouteBox</code> payloads (carriage + completed rule context) to tell you not just what changed, but why.</li>
+</ol>
+<p>The library is completely modular (all features disabled by default, including optional Bevy ECS and frame animator support) and fits both frame-budget game loops and high-throughput async backends.</p>
+<hr>
+<h3><a name="p-576467-h-3" class="anchor" href="https://users.rust-lang.org#p-576467-h-3" aria-label="Heading link"></a>Русский</h3>
+<p>Хочу поделиться своей библиотекой <strong>purrgress</strong> и её крупным обновлением <strong>v0.5.0</strong>.</p>
+<p>Изначально проект создавался с целью полностью уйти от динамической диспетчеризации (<code>dyn</code> / <code>Box</code>) и постоянных аллокаций в куче внутри горячего цикла. Вместо классических вложенных стейт-машин здесь используется Data-Oriented подход на плоских линейных «поездах»:</p>
+<ul>
+<li><strong>Запекание графов:</strong> Граф зависимостей описывается на старте через <code>PurrDesign</code> и запекается в <code>PurrRoute</code>. Все тяжелые проверки связей и циклических зависимостей отрабатывают один раз, а инициализация в рантайме превращается в быстрое O(1) копирование готового маршрута.</li>
+<li><strong>Запасные пути (<code>PurrSiding</code>):</strong> Изолированный буфер, где можно собрать цепочку, точечно поменять нужным вагонам таймеры или флаги без медленного <code>.find()</code>, и только потом выкатить на основной путь.</li>
+<li><strong>Курсорная очередь (<code>PurrTrain</code>):</strong> Движение поезда идет через сдвиг указателя по вектору. Пройденные стадии не сдвигают массив, поэтому переход на следующий шаг занимает ровно 0 наносекунд.</li>
+</ul>
+<h4><a name="p-576467-h-050-4" class="anchor" href="https://users.rust-lang.org#p-576467-h-050-4" aria-label="Heading link"></a>Что появилось в версии 0.5.0:</h4>
+<ol>
+<li><strong>Асинхронный диспетчер (<code>PurrDispatcher</code>):</strong> Центральный акторный обработчик на базе Tokio. Он крутит логику поезда пошагово (<code>dispatch()</code>) в отдельной таске без мьютексов и блокировок (<code>Arc</code>).</li>
+<li><strong>Клиентские подключения (<code>PurrLink</code> и <code>PurrStation</code>):</strong> <code>PurrLink</code> позволяет из любого потока мгновенно получать новые tx-линии через легкую фабрику, а <code>PurrStation</code> оборачивает отправку команд, чтение персональных ответов и запекание состава в байты.</li>
+<li><strong>Гибридный маршрутизатор:</strong> Двухуровневое хранилище каналов — быстрый массив на 16 элементов на стеке под размер кэш-линий L1 плюс динамическая мапа с защитой от скачков нагрузки (гистерезис).</li>
+<li><strong>Zero-Allocation пайплайн на байтах:</strong> Связка <code>rkyv</code> + <code>bytes</code> позволяет модифицировать поезд на лету (<code>attach_bytes</code>, <code>replace_bytes</code>, <code>reroute_at_bytes</code>). Десериализация происходит лениво прямо во время <code>splice()</code>, без промежуточных векторов в куче.</li>
+<li><strong>Контекстные события:</strong> Метод <code>advance_train()</code> теперь возвращает <code>PurrTrainEvent&lt;T, U&gt;</code> с полным <code>RouteBox</code> (вагон + контекст сработавшего правила), сообщая не только факт перехода, но и его причину.</li>
+</ol>
+<p>Все фичи по умолчанию выключены (включая модуль аниматора и интеграцию с Bevy ECS), поэтому библиотека одинаково хорошо подходит как для жесткого тайминга игрового кадра, так и для асинхронных распределенных сервисов.</p>
+<ul>
+<li><strong>GitHub:</strong> <a href="https://github.com/Honami333/purrgress" class="inline-onebox" rel="noopener nofollow ugc">GitHub - Honami333/Purrgress: An ultra-fast, ergonomic DOD stage manager and async sequencer combining zero-cost performance with total runtime dynamism. · GitHub</a></li>
+<li><strong><a href="http://Crates.io" rel="noopener nofollow ugc">Crates.io</a>:</strong> <a href="https://crates.io/crates/purrgress" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a></li>
+<li><strong>Telegram Channel:</strong> <a href="https://t.me/cat_garden_news" class="inline-onebox" rel="noopener nofollow ugc">Telegram: View @cat_garden_news</a></li>
+</ul>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/my-state-lib-purrgress/141860">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/my-state-lib-purrgress/141860</link>
+          <pubDate>Thu, 13 Aug 2026 19:32:23 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141860</guid>
+          <source url="https://users.rust-lang.org/t/my-state-lib-purrgress/141860.rss">My state lib PurrGress</source>
+        </item>
+        <item>
+          <title>Unsupported!() macro for compile errors when a code path is used</title>
+          <dc:creator><![CDATA[cehteh]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p><a href="https://crates.io/crates/unsupported" class="inline-onebox" rel="noopener nofollow ugc">crates.io: Rust Package Registry</a> (my entry to the worst crate name competition ;))</p>
+<p>It implements compile-time errors when unsupported code paths are actually taken.</p>
+<p>This helps to get rid of runtime panics from using todo!() or unimplemented!().</p>
+<p>It also allows a novel programing pattern allowing traits with optional methods that the user only needs to implement when they are actually used.</p>
+<p>It is a very small crate, I was honestly surprised such didn't already exist, still I believe it was worthwhile to publish as a crate.</p>
+            <p><small>5 posts - 3 participants</small></p>
+            <p><a href="https://users.rust-lang.org/t/unsupported-macro-for-compile-errors-when-a-code-path-is-used/141858">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/unsupported-macro-for-compile-errors-when-a-code-path-is-used/141858</link>
+          <pubDate>Thu, 13 Aug 2026 18:21:36 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141858</guid>
+          <source url="https://users.rust-lang.org/t/unsupported-macro-for-compile-errors-when-a-code-path-is-used/141858.rss">Unsupported!() macro for compile errors when a code path is used</source>
+        </item>
+        <item>
+          <title>My second crate :D : Karatepe, a localisation library</title>
+          <dc:creator><![CDATA[miro]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>while i was writing another project i got frustrated with fluent (i kept mistyping up the names of translations and/or arguments, which are just strings and constructing hash maps of arguments was just annoying),<br>
+so i decided to start a a "quick" side project, multiple attempts and months later i finally finished version 0.1.0 of  karatepe:</p>
+<p><a href="https://crates.io/crates/karatepe" class="onebox" target="_blank" rel="noopener nofollow ugc">https://crates.io/crates/karatepe</a></p>
+<p>(copied from the readme)<br>
+<code>karatepe</code> is a library for localising software.</p>
+<p>Unlike most other localisation libraries, <code>karatepe</code> is statically typed, a tree of files define which messages exist, and what arguments they take, and for each message a normal rust function, with the correct type and number of arguments, is generated at compile time, it is not possible to pass the wrong type to a translation or to forget an argument.</p>
+<p>Translations are loaded at runtime, errors are not fatal, if a message's translation has an error it is discarded, but all other messages are unaffected, currently parsing errors are not recoverable, so if a translation file cannot be parsed the entire file is discarded (but other files are unaffected).</p>
+            <p><small>2 posts - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/my-second-crate-d-karatepe-a-localisation-library/141826">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/my-second-crate-d-karatepe-a-localisation-library/141826</link>
+          <pubDate>Tue, 11 Aug 2026 19:39:55 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141826</guid>
+          <source url="https://users.rust-lang.org/t/my-second-crate-d-karatepe-a-localisation-library/141826.rss">My second crate :D : Karatepe, a localisation library</source>
+        </item>
+        <item>
+          <title>Sigid: a zero-dependency, no_std, three-layer unique ID generator</title>
+          <dc:creator><![CDATA[Marison]]></dc:creator>
+          <category>announcements</category>
+          <description><![CDATA[
+            <p>Hey! <img src="https://emoji.discourse-cdn.com/twitter/slight_smile.png?v=15" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+<p>I made Sigid — yet another crate for sortable unique IDs. I know the ecosystem already has ulid, uuid, snowflake-style crates, and so on. I just wanted to put together something that fit my own needs. Maybe it'll resonate with some of you too <img src="https://emoji.discourse-cdn.com/twitter/slight_smile.png?v=15" title=":slight_smile:" class="emoji" alt=":slight_smile:" loading="lazy" width="20" height="20"></p>
+<p>It has a dependency-free <code>no_std</code> core, support for custom alphabets, prefixes, and checksums, plus full worker-ID coordination for distributed setups — all without extra dependencies or heavyweight components.</p>
+<p>It's split into three crates, since not every project needs all of it.</p>
+<p><code>sigid-core</code> — no dependencies, <code>no_std</code>, just encodes/decodes/generates 128-bit IDs as 26-character Crockford Base32 strings (timestamp + worker ID + counter + random).</p>
+<p><code>sigid-flexible</code> — configurable length/alphabet/prefix/checksum on top of the core.</p>
+<p><code>sigid-enterprise</code> — worker-ID coordination, UUID/ULID interop, and a handy <code>inspect()</code> function for pulling metadata back out of an ID.</p>
+<p>The bit layout is basically Snowflake-style: 48-bit timestamp + 16-bit worker ID + 14-bit counter + 50-bit random, Base32-encoded, so it's typo-tolerant (the Crockford alphabet auto-corrects O/I/L).</p>
+<p>I won't claim it's better or worse than ulid/uuid or other systems — those are solid, well-established libraries. This one was built for my own specific needs, involving a fairly complex visual editor and a database.</p>
+<p>I'd genuinely appreciate any feedback, especially if something about the API design looks off — "why didn't you just use X?" is a useful comment too.</p>
+<p>Repo: <a href="https://github.com/dmitrymarison/Sigid" class="inline-onebox" rel="noopener nofollow ugc">GitHub - dmitrymarison/Sigid: Sigid - Configurable ID generator for Rust (Simple → Flexible → Enterprise) · GitHub</a><br>
+Crates: sigid-core / sigid-flexible / sigid-enterprise on <a href="http://crates.io" rel="noopener nofollow ugc">crates.io</a></p>
+<p>Thanks! Cheers!</p>
+            <p><small>1 post - 1 participant</small></p>
+            <p><a href="https://users.rust-lang.org/t/sigid-a-zero-dependency-no-std-three-layer-unique-id-generator/141825">Read full topic</a></p>
+          ]]></description>
+          <link>https://users.rust-lang.org/t/sigid-a-zero-dependency-no-std-three-layer-unique-id-generator/141825</link>
+          <pubDate>Tue, 11 Aug 2026 19:06:03 +0000</pubDate>
+          <discourse:topicPinned>No</discourse:topicPinned>
+          <discourse:topicClosed>No</discourse:topicClosed>
+          <discourse:topicArchived>No</discourse:topicArchived>
+          <guid isPermaLink="false">users.rust-lang.org-topic-141825</guid>
+          <source url="https://users.rust-lang.org/t/sigid-a-zero-dependency-no-std-three-layer-unique-id-generator/141825.rss">Sigid: a zero-dependency, no_std, three-layer unique ID generator</source>
+        </item>
+  </channel>
+</rss>

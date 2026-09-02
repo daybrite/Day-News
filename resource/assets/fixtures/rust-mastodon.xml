@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:webfeeds="http://webfeeds.org/rss/1.0" xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>Rust Language</title>
+    <description>Public posts from @rust@social.rust-lang.org</description>
+    <link>https://social.rust-lang.org/@rust</link>
+    <image>
+      <url>https://cdn.masto.host/socialrustlangorg/accounts/avatars/111/250/853/473/809/020/original/7d0836eda41c5d34.png</url>
+      <title>Rust Language</title>
+      <link>https://social.rust-lang.org/@rust</link>
+    </image>
+    <lastBuildDate>Wed, 26 Aug 2026 18:39:43 +0000</lastBuildDate>
+    <webfeeds:icon>https://cdn.masto.host/socialrustlangorg/accounts/avatars/111/250/853/473/809/020/original/7d0836eda41c5d34.png</webfeeds:icon>
+    <generator>Mastodon v4.7.1</generator>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/117163267394644056</guid>
+      <link>https://social.rust-lang.org/@rust/117163267394644056</link>
+      <pubDate>Wed, 26 Aug 2026 18:39:43 +0000</pubDate>
+      <description>&lt;p&gt;We are very happy to announce our first Maintainers in Residence and Maintainer Grant recipients!&lt;/p&gt;&lt;p&gt;Read all about the MiR program and the selected maintainers on our blog: &lt;a href="https://blog.rust-lang.org/2026/08/26/announcing-our-first-maintainers-in-residence/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/08/26/&lt;/span&gt;&lt;span class="invisible"&gt;announcing-our-first-maintainers-in-residence/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/117129113926278391</guid>
+      <link>https://social.rust-lang.org/@rust/117129113926278391</link>
+      <pubDate>Thu, 20 Aug 2026 17:54:02 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.98.0 has been released! 🌈 🦀&lt;/p&gt;&lt;p&gt;This release includes algebraic floating point methods, NumBuffer for integer formatting, substr_range/subslice_range, strip_circumfix, Atomic&amp;lt;T&amp;gt;::from_mut, and more. ✨&lt;/p&gt;&lt;p&gt;Check out the blog post for all the details: &lt;a href="https://blog.rust-lang.org/2026/08/20/Rust-1.98.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/08/20/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.98.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/117127366248165334</guid>
+      <link>https://social.rust-lang.org/@rust/117127366248165334</link>
+      <pubDate>Thu, 20 Aug 2026 10:29:35 +0000</pubDate>
+      <description>&lt;p&gt;⚠️ A few hours ago, a malicious crate was discovered on crates.​io which spread as a dependency of `arrayref` and some other crates, likely due to compromised credentials. The affected versions have been deleted.&lt;/p&gt;&lt;p&gt;For details and how to see if you are impacted, see: &lt;a href="https://blog.rust-lang.org/2026/08/20/supply-chain-attack-on-arrayref/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/08/20/&lt;/span&gt;&lt;span class="invisible"&gt;supply-chain-attack-on-arrayref/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116930214119235706</guid>
+      <link>https://social.rust-lang.org/@rust/116930214119235706</link>
+      <pubDate>Thu, 16 Jul 2026 14:51:12 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.97.1 has been released.&lt;/p&gt;&lt;p&gt;This release fixes a miscompilation in an LLVM optimization. This newly discovered issue has existed since 1.87.0, but was unlikely to lead to an actual miscompilation until a change in 1.97.0.&lt;/p&gt;&lt;p&gt;See the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/07/16/Rust-1.97.1/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/07/16/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.97.1/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116891142115221835</guid>
+      <link>https://social.rust-lang.org/@rust/116891142115221835</link>
+      <pubDate>Thu, 09 Jul 2026 17:14:40 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.97.0 has been released! 🌈 ✨ 🦀&lt;/p&gt;&lt;p&gt;Some of the highlights are new symbol mangling, a new Cargo setting for Rust warnings, linker output, and new integer methods: bit_width, {lowest,highest}_one, and isolate_{lowest,highest}_one.&lt;/p&gt;&lt;p&gt;Check out the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/07/09/Rust-1.97.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/07/09/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.97.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116891109628357655</guid>
+      <link>https://social.rust-lang.org/@rust/116891109628357655</link>
+      <pubDate>Thu, 09 Jul 2026 17:06:25 +0000</pubDate>
+      <description>&lt;p&gt;Check out our latest Maintainer Spotlight for an interview with Gen Li, team lead of the Rustup team:&lt;/p&gt;&lt;p&gt;&lt;a href="https://blog.rust-lang.org/inside-rust/2026/07/07/maintainer-spotlight-gen-li-rami3l/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/inside-rust&lt;/span&gt;&lt;span class="invisible"&gt;/2026/07/07/maintainer-spotlight-gen-li-rami3l/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;This is part of a series of blog posts highlighting our amazing maintainers. 💛&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116839054055488172</guid>
+      <link>https://social.rust-lang.org/@rust/116839054055488172</link>
+      <pubDate>Tue, 30 Jun 2026 12:28:00 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.96.1 has been released.&lt;/p&gt;&lt;p&gt;This point release includes a fix for a miscompilation in a MIR optimization, a fix for http timeouts in Cargo, and patches the recent vulnerabilities in libssh2 which is used as part of Cargo.&lt;/p&gt;&lt;p&gt;See the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/06/30/Rust-1.96.1/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/06/30/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.96.1/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116686682100804626</guid>
+      <link>https://social.rust-lang.org/@rust/116686682100804626</link>
+      <pubDate>Wed, 03 Jun 2026 14:37:48 +0000</pubDate>
+      <description>&lt;p&gt;Check out our latest blog post for an interview with Tiffany Pek Yuan, one of the maintainers of the Rust programming language:&lt;/p&gt;&lt;p&gt;&lt;a href="https://blog.rust-lang.org/inside-rust/2026/06/03/maintainer-spotlight-tiffany-pek-yuan-tiif/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/inside-rust&lt;/span&gt;&lt;span class="invisible"&gt;/2026/06/03/maintainer-spotlight-tiffany-pek-yuan-tiif/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;This is the first in a series of blog posts highlighting our amazing maintainers. 💛&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116681302069451501</guid>
+      <link>https://social.rust-lang.org/@rust/116681302069451501</link>
+      <pubDate>Tue, 02 Jun 2026 15:49:35 +0000</pubDate>
+      <description>&lt;p&gt;We&amp;#39;re happy to announce the launch of the Rust Foundation Maintainers Fund and our new Funding Team. Read all about it on our blog: &lt;a href="https://blog.rust-lang.org/2026/06/02/launching-the-rust-foundation-maintainers-fund/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/06/02/&lt;/span&gt;&lt;span class="invisible"&gt;launching-the-rust-foundation-maintainers-fund/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116653857036562277</guid>
+      <link>https://social.rust-lang.org/@rust/116653857036562277</link>
+      <pubDate>Thu, 28 May 2026 19:29:57 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.96.0 has been released! 🌈 🦀✨&lt;/p&gt;&lt;p&gt;This release includes assert_matches!(), new range types in core::range::*, and fixes for a medium and a low severity vulnerability in Cargo (that didn&amp;#39;t affect crates​.io users).&lt;/p&gt;&lt;p&gt;Check out the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/05/28/Rust-1.96.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/05/28/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.96.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116420628512150288</guid>
+      <link>https://social.rust-lang.org/@rust/116420628512150288</link>
+      <pubDate>Fri, 17 Apr 2026 14:56:52 +0000</pubDate>
+      <description>&lt;p&gt;Curious what&amp;#39;s new in Rust 1.95.0? Check out this video of Cameron, Pete, and Tyler discussing the new release: &lt;a href="https://www.youtube.com/watch?v=NZlmaIgkUQ8" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://www.&lt;/span&gt;&lt;span class=""&gt;youtube.com/watch?v=NZlmaIgkUQ8&lt;/span&gt;&lt;span class="invisible"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116415998674004111</guid>
+      <link>https://social.rust-lang.org/@rust/116415998674004111</link>
+      <pubDate>Thu, 16 Apr 2026 19:19:27 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.95.0 has been released! 🌈 🦀✨&lt;/p&gt;&lt;p&gt;This release includes cfg_select!{}, if-let guards in match, &lt;br /&gt;Vec::push_mut, VecDeque::push_{front,back}_mut, std::hint::cold_path, and more!&lt;/p&gt;&lt;p&gt;Check out the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/04/16/Rust-1.95.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/04/16/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.95.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116370165967851720</guid>
+      <link>https://social.rust-lang.org/@rust/116370165967851720</link>
+      <pubDate>Wed, 08 Apr 2026 17:03:35 +0000</pubDate>
+      <description>&lt;p&gt;⚠️ An active phishing attack is targeting crate owners by asking them to &amp;quot;confirm that your email address is still active&amp;quot;. These messages are not from crates.io, and should be ignored. (We will never ask you to confirm that your e-mail address is still active.) ⚠️&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116295937285265351</guid>
+      <link>https://social.rust-lang.org/@rust/116295937285265351</link>
+      <pubDate>Thu, 26 Mar 2026 14:26:15 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.94.1 has been released.&lt;/p&gt;&lt;p&gt;This point release fixes a few regressions that slipped into in Rust 1.94.0: an internal compiler error in Clippy, a small security issue in Cargo, and two issues in the standard library.&lt;/p&gt;&lt;p&gt;See the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/03/26/1.94.1-release/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/03/26/&lt;/span&gt;&lt;span class="invisible"&gt;1.94.1-release/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116216894415467115</guid>
+      <link>https://social.rust-lang.org/@rust/116216894415467115</link>
+      <pubDate>Thu, 12 Mar 2026 15:24:37 +0000</pubDate>
+      <description>&lt;p&gt;Rustup 1.29.0 has been released! 🦀&lt;/p&gt;&lt;p&gt;Rustup, the tool for installing and updating Rust, will now download files concurrently and unpack them in parallel, which makes updating Rust much faster. ✨&lt;/p&gt;&lt;p&gt;See the blog post for all the changes to rustup: &lt;a href="https://blog.rust-lang.org/2026/03/12/Rustup-1.29.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/03/12/&lt;/span&gt;&lt;span class="invisible"&gt;Rustup-1.29.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116178559722003801</guid>
+      <link>https://social.rust-lang.org/@rust/116178559722003801</link>
+      <pubDate>Thu, 05 Mar 2026 20:55:36 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.94.0 has been released! 🌈 🦀 ✨&lt;/p&gt;&lt;p&gt;A few highlights are array_windows() and element_offset() on slices, Peekable::next_if_map(), LazyCell::get and friends, and the new `include` key in config.toml to include other toml files!&lt;/p&gt;&lt;p&gt;Check out the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/03/05/Rust-1.94.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/03/05/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.94.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116161587093926891</guid>
+      <link>https://social.rust-lang.org/@rust/116161587093926891</link>
+      <pubDate>Mon, 02 Mar 2026 20:59:14 +0000</pubDate>
+      <description>&lt;p class="quote-inline"&gt;RE: &lt;a href="https://social.rust-lang.org/@rust/115565961664226194" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;social.rust-lang.org/@rust/115&lt;/span&gt;&lt;span class="invisible"&gt;565961664226194&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;The results of the 2025 State of Rust Survey are now available! 📊&lt;/p&gt;&lt;p&gt;&lt;a href="https://blog.rust-lang.org/2026/03/02/2025-State-Of-Rust-Survey-results/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/03/02/&lt;/span&gt;&lt;span class="invisible"&gt;2025-State-Of-Rust-Survey-results/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/116059730348415319</guid>
+      <link>https://social.rust-lang.org/@rust/116059730348415319</link>
+      <pubDate>Thu, 12 Feb 2026 21:15:44 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.93.1 has been released.&lt;/p&gt;&lt;p&gt;This point release fixes three regressions that slipped into in Rust 1.93.0: an internal compiler error affecting rustfmt, a false positive in a clippy lint, and an issue with the wasm32-wasip2 target.&lt;/p&gt;&lt;p&gt;See the blog post for details: &lt;a href="https://blog.rust-lang.org/2026/02/12/Rust-1.93.1/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/02/12/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.93.1/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/115940064514693413</guid>
+      <link>https://social.rust-lang.org/@rust/115940064514693413</link>
+      <pubDate>Thu, 22 Jan 2026 18:03:08 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.93.0 has been released! 🌈 🦀✨&lt;/p&gt;&lt;p&gt;This release includes a new musl version for the *-linux-musl targets, adds support for #​[cfg] inside asm!(), and adds [T]::as_array, VecDeque::{pop_front_if, pop_back_if}, Vec/String::into_raw_parts, fmt::form_fn, and more! ✨&lt;/p&gt;&lt;p&gt;Check out the blog post and release notes for all the details: &lt;a href="https://blog.rust-lang.org/2026/01/22/Rust-1.93.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2026/01/22/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.93.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <guid isPermaLink="true">https://social.rust-lang.org/@rust/115701661992410628</guid>
+      <link>https://social.rust-lang.org/@rust/115701661992410628</link>
+      <pubDate>Thu, 11 Dec 2025 15:34:14 +0000</pubDate>
+      <description>&lt;p&gt;Rust 1.92.0 has been released! 🌈 🦀&lt;/p&gt;&lt;p&gt;This version adds RwLockWriteGuard::downgrade(), adds Location::file_as_c_str(), improves diagnostic and validation for various attributes, no longer warns for unused Result&amp;lt;(), Infallible&amp;gt;, and more!&lt;/p&gt;&lt;p&gt;Check out the announcement: &lt;a href="https://blog.rust-lang.org/2025/12/11/Rust-1.92.0/" target="_blank" rel="nofollow noopener" translate="no"&gt;&lt;span class="invisible"&gt;https://&lt;/span&gt;&lt;span class="ellipsis"&gt;blog.rust-lang.org/2025/12/11/&lt;/span&gt;&lt;span class="invisible"&gt;Rust-1.92.0/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

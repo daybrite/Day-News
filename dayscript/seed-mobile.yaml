@@ -1,5 +1,6 @@
 # Subscribes to a handful of dependable feeds, for a device where importing a file is awkward.
-# Each is a different flavour (plain RSS, WordPress, Atom/YouTube, Discourse, Mastodon), so the
+# They are the live originals of the bundled fixtures (resource/assets/fixtures/README.md), and
+# each is a different flavour (WordPress, plain RSS 2.0, Discourse, Atom, Mastodon), so the
 # parser's breadth is visible on the device too.
 name: day-news-seed
 description: Subscribe to a few representative feeds and let them refresh.
@@ -7,22 +8,28 @@ flow:
   - wait_for: { id: nav, timeout_secs: 30 }
   - navigate: { route: subscriptions }
   - wait_for: { id: subscribe-url, timeout_secs: 20 }
-  - input: { id: subscribe-url, text: "https://andrewkelley.me/rss.xml" }
+  - input: { id: subscribe-url, text: "https://www.nasa.gov/feed/" }
   - tap: { id: subscribe-add }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://blog.cryptographyengineering.com/feed/" }
+  - input: { id: subscribe-url, text: "https://www.quantamagazine.org/feed/" }
   - tap: { id: subscribe-add }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://forums.swift.org/c/general-announce/24.rss" }
+  - input: { id: subscribe-url, text: "https://www.sciencedaily.com/rss/all.xml" }
   - tap: { id: subscribe-add }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVHFbqXqoYvEWM1Ddxl0QDg" }
+  - input: { id: subscribe-url, text: "https://www.merriam-webster.com/wotd/feed/rss2" }
   - tap: { id: subscribe-add }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://mas.to/@aabewhite.rss" }
+  - input: { id: subscribe-url, text: "https://users.rust-lang.org/c/announcements/6.rss" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - input: { id: subscribe-url, text: "https://blog.rust-lang.org/feed.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - input: { id: subscribe-url, text: "https://social.rust-lang.org/@rust.rss" }
   - tap: { id: subscribe-add }
   - pause: { secs: 4 }
-  - assert_text: { id: feeds-count, text: "5 feeds" }
+  - assert_text: { id: feeds-count, text: "7 feeds" }
   - navigate: { route: unread }
   - pause: { secs: 3 }
   - screenshot: seeded

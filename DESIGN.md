@@ -162,6 +162,11 @@ Each of these is a test, because each was a wrong assumption first:
   found, so prose that merely mentions `&amp;` is left alone.
 - **WordPress lists the feed itself first**, so "open website" needs a link that is not the feed's
   own URL.
+- **`&#149;` means a bullet.** Numeric references 128–159 name C1 control characters in
+  Unicode, but publishers write them for the Windows-1252 characters at those byte positions
+  (Merriam-Webster separates its pronunciations with `&#149;`), and browsers read them that way.
+  The XML layer resolves the reference before the parser sees it, so `daynews-feed` remaps the
+  raw controls in titles, summaries and bodies; a control left alone draws as a box on Android.
 
 ## Not yet built
 

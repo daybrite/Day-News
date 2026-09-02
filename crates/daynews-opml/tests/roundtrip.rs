@@ -5,6 +5,8 @@ use daynews_opml::{FeedRef, Opml, Outline, parse, write};
 const SUBSCRIPTIONS: &str = include_str!("data/mySubscriptions.opml");
 const CATEGORIES: &str = include_str!("data/categories.opml");
 const UNTITLED: &str = include_str!("data/untitled.opml");
+// The sample list dayscript/import.yaml hands to the file picker, authored here.
+const SAMPLE: &str = include_str!("data/daynews.opml");
 
 /// A real subscription list: every subscription must survive import, entities and all.
 #[test]
@@ -66,6 +68,41 @@ fn folders_become_paths() {
     );
 }
 
+/// The sample list an import seeds from: two folders plus one top-level subscription, so one
+/// file exercises both shapes — and its feeds are exactly the bundled fixtures, so the
+/// walkthrough's offline seed and the file-picker import land on the same subscriptions.
+#[test]
+fn sample_list_mixes_folders_and_top_level_feeds() {
+    let doc = parse(SAMPLE).expect("parse");
+    assert_eq!(doc.title.as_deref(), Some("Day News sample subscriptions"));
+    let found: Vec<_> = doc
+        .feeds()
+        .iter()
+        .map(|(path, f)| (path.join("/"), f.title.clone()))
+        .collect();
+    assert_eq!(
+        found,
+        vec![
+            ("Science".to_string(), "NASA".to_string()),
+            ("Science".to_string(), "Quanta Magazine".to_string()),
+            ("Science".to_string(), "ScienceDaily".to_string()),
+            ("Rust".to_string(), "Rust Blog".to_string()),
+            ("Rust".to_string(), "Rust Forum: Announcements".to_string()),
+            ("Rust".to_string(), "Rust Language".to_string()),
+            (
+                String::new(),
+                "Merriam-Webster's Word of the Day".to_string()
+            ),
+        ]
+    );
+    assert!(
+        doc.feeds()
+            .iter()
+            .all(|(_, f)| f.xml_url.starts_with("https://") && f.html_url.is_some()),
+        "every subscription names its feed and its site"
+    );
+}
+
 /// A subscription a reader has never fetched records no name at all — a real state, not a
 /// parse failure. The recorded title stays empty; the display fallback still names it.
 #[test]
@@ -86,8 +123,8 @@ fn untitled_subscriptions_fall_back_to_the_host() {
 }
 
 /// Export then re-import must preserve the subscription set exactly — for every shape of
-/// document, since the flat list, the folders and the untitled feeds each stress it
-/// differently.
+/// document, since the flat list, the folders, the untitled feeds and the mixed sample each
+/// stress it differently.
 #[test]
 fn round_trips_through_export() {
     let fields = |doc: &Opml| -> Vec<(Vec<String>, String, String, Option<String>)> {
@@ -107,6 +144,7 @@ fn round_trips_through_export() {
         ("mySubscriptions.opml", SUBSCRIPTIONS),
         ("categories.opml", CATEGORIES),
         ("untitled.opml", UNTITLED),
+        ("daynews.opml", SAMPLE),
     ] {
         let doc = parse(src).expect("parse");
         let out = write(&doc).expect("write");

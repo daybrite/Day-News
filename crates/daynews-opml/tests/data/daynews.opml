@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Day News sample subscriptions</title>
+  </head>
+  <body>
+    <outline text="Science">
+      <outline text="NASA" type="rss" xmlUrl="https://www.nasa.gov/feed/" htmlUrl="https://www.nasa.gov/"/>
+      <outline text="Quanta Magazine" type="rss" xmlUrl="https://www.quantamagazine.org/feed/" htmlUrl="https://www.quantamagazine.org/"/>
+      <outline text="ScienceDaily" type="rss" xmlUrl="https://www.sciencedaily.com/rss/all.xml" htmlUrl="https://www.sciencedaily.com/"/>
+    </outline>
+    <outline text="Rust">
+      <outline text="Rust Blog" type="rss" xmlUrl="https://blog.rust-lang.org/feed.xml" htmlUrl="https://blog.rust-lang.org/"/>
+      <outline text="Rust Forum: Announcements" type="rss" xmlUrl="https://users.rust-lang.org/c/announcements/6.rss" htmlUrl="https://users.rust-lang.org/c/announcements/6"/>
+      <outline text="Rust Language" type="rss" xmlUrl="https://social.rust-lang.org/@rust.rss" htmlUrl="https://social.rust-lang.org/@rust"/>
+    </outline>
+    <outline text="Merriam-Webster's Word of the Day" type="rss" xmlUrl="https://www.merriam-webster.com/wotd/feed/rss2" htmlUrl="https://www.merriam-webster.com/word-of-the-day"/>
+  </body>
+</opml>

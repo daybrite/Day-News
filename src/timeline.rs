@@ -18,15 +18,26 @@ const TITLE_FONT: Font = Font::Body;
 const SUMMARY_FONT: Font = Font::Footnote;
 const FOOTER_FONT: Font = Font::Caption;
 
-/// The list's uniform row pitch: a one-line title, up to two summary lines, and the footer,
+/// The list's uniform row pitch: a two-line title, up to two summary lines, and the footer,
 /// plus the row's vertical padding. Uniform because the native hosts size `Automatic` rows at
 /// a fixed default today (docs/list.md) — and a fixed pitch is the Mail/NetNewsWire idiom
-/// anyway. A title that wraps borrows the summary's space; content past the pitch clips.
+/// anyway. Content past the pitch clips on Android and draws over the next row on iOS, so the
+/// pitch has to hold the row's worst ordinary case.
+#[cfg(not(any(target_os = "ios", target_os = "android", target_env = "ohos")))]
 const ROW_H: f64 = 88.0;
+/// The phones' type ramp is larger (a 17pt body against the desktops' 13pt), so the same
+/// three-part row needs more height there: 2 × 22 title + 2 × 18 summary + 16 footer, the
+/// column's spacing and the row's padding.
+#[cfg(any(target_os = "ios", target_os = "android", target_env = "ohos"))]
+const ROW_H: f64 = 124.0;
 
 /// How much summary the row shows. Two footnote lines at the pane's width — trimmed here so
-/// an overlong summary doesn't push the footer past the fixed row pitch.
+/// an overlong summary doesn't push the footer past the fixed row pitch. Shorter on the phones,
+/// whose larger footnote fits fewer characters per line.
+#[cfg(not(any(target_os = "ios", target_os = "android", target_env = "ohos")))]
 const SUMMARY_CHARS: usize = 110;
+#[cfg(any(target_os = "ios", target_os = "android", target_env = "ohos"))]
+const SUMMARY_CHARS: usize = 90;
 
 /// One timeline row, bound to its slot.
 ///

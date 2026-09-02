@@ -177,7 +177,7 @@ fn normalize_entry(e: feed_rs::model::Entry, base_url: &str) -> ParsedItem {
     let content_html = e
         .content
         .as_ref()
-        .and_then(|c| c.body.clone())
+        .and_then(|c| c.body.as_deref().map(windows_1252_c1))
         .filter(|b| !b.trim().is_empty());
     let summary = e
         .summary
@@ -254,7 +254,7 @@ fn clean(s: &str) -> String {
     // Decode FIRST: feeds routinely escape a whole HTML body into a text field, so the tags
     // only become visible after decoding (`&lt;p&gt;` → `<p>`).
     let decoded = decode_entities(s);
-    let chars: Vec<char> = decoded.chars().collect();
+    let chars: Vec<char> = decoded.chars().map(c1_char).collect();
     let mut out = String::with_capacity(decoded.len());
     let mut i = 0;
     let mut last_space = true;
@@ -304,6 +304,33 @@ fn clean(s: &str) -> String {
     } else {
         out.to_string()
     }
+}
+
+/// The Windows-1252 character a publisher means by a C1 control (U+0080–U+009F). A feed that
+/// writes `&#149;` wants a bullet, not a control character: the number is the byte's position
+/// in Windows-1252, and browsers read numeric references in that range the same way (the HTML
+/// standard says so). The XML layer has already turned the reference into the raw control by
+/// the time text reaches this crate, so the remap is on characters, not entities. Left alone,
+/// the control draws as a box on Android and as nothing on Apple platforms. The five positions
+/// Windows-1252 leaves undefined stay as they are, as in browsers.
+fn c1_char(c: char) -> char {
+    const WINDOWS_1252: [char; 32] = [
+        '\u{20AC}', '\u{81}', '\u{201A}', '\u{0192}', '\u{201E}', '\u{2026}', '\u{2020}',
+        '\u{2021}', '\u{02C6}', '\u{2030}', '\u{0160}', '\u{2039}', '\u{0152}', '\u{8D}',
+        '\u{017D}', '\u{8F}', '\u{90}', '\u{2018}', '\u{2019}', '\u{201C}', '\u{201D}', '\u{2022}',
+        '\u{2013}', '\u{2014}', '\u{02DC}', '\u{2122}', '\u{0161}', '\u{203A}', '\u{0153}',
+        '\u{9D}', '\u{017E}', '\u{0178}',
+    ];
+    match c as u32 {
+        n @ 0x80..=0x9F => WINDOWS_1252[(n - 0x80) as usize],
+        _ => c,
+    }
+}
+
+/// [`c1_char`] over a whole body, which goes to the web view undecoded and so needs the same
+/// fix applied to its characters.
+fn windows_1252_c1(s: &str) -> String {
+    s.chars().map(c1_char).collect()
 }
 
 /// The named entities a reader actually meets in feed text, plus the numeric forms.
@@ -384,8 +411,9 @@ fn decode_entities(s: &str) -> String {
         let decoded = match ent {
             e if e.starts_with("#x") || e.starts_with("#X") => u32::from_str_radix(&e[2..], 16)
                 .ok()
-                .and_then(char::from_u32),
-            e if e.starts_with('#') => e[1..].parse().ok().and_then(char::from_u32),
+                .and_then(char::from_u32)
+                .map(c1_char),
+            e if e.starts_with('#') => e[1..].parse().ok().and_then(char::from_u32).map(c1_char),
             e => NAMED_ENTITIES
                 .iter()
                 .find(|(name, _)| *name == e)
