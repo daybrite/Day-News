@@ -21,12 +21,16 @@ flow:
   # desktops and a timeline field on a phone (docs/toolbars.md) — one behaviour, two homes.
   # "space" hits several of the seeded fixture feeds (NASA, Quanta, ScienceDaily), so the
   # results shot has rows from more than one subscription.
-  - toolbar: { item: day.search, text: "space", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - input: { id: search, text: "space", only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  # The search is the selector's `.searchable()` field, driven through the toolbar model wherever
+  # the toolkit has a window toolbar — the desktops, and since 2026-09 the phones too, whose bar
+  # rides the navigation bar (iOS) or docks under the page (Android). HarmonyOS has no toolbar,
+  # so the timeline keeps an inline field there.
+  - toolbar: { item: day.search, text: "space", skip_on: [harmony-arkui] }
+  - input: { id: search, text: "space", only_on: [harmony-arkui] }
   - pause: { secs: 1 }
   - screenshot: search-results
-  - toolbar: { item: day.search, text: "", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - input: { id: search, text: "", only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: day.search, text: "", skip_on: [harmony-arkui] }
+  - input: { id: search, text: "", only_on: [harmony-arkui] }
   - pause: { secs: 1 }
   - wait_for: { id: article-row-0, timeout_secs: 10 }
 
@@ -91,8 +95,10 @@ flow:
   # Mark-all-read empties the UNREAD timeline specifically.
   - navigate: { route: unread }
   - pause: { secs: 1 }
-  - toolbar: { item: mark-all-read, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: mark-all-read, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  # Mark All as Read is a toolbar item wherever there is a toolbar (the phones included now),
+  # and an inline button only on HarmonyOS.
+  - toolbar: { item: mark-all-read, skip_on: [harmony-arkui] }
+  - tap: { id: mark-all-read, only_on: [harmony-arkui] }
   - pause: { secs: 1 }
   - assert_visible: { id: timeline-empty }
   - screenshot: all-read
