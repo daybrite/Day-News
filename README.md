@@ -5,7 +5,7 @@ A feed reader in three panes on a desktop and three taps on a phone, built with
 iPhone, Android, Mac, Windows, Linux, HarmonyOS, and the web.
 
 <p align="center">
-  <img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/timeline.png" width="760" alt="Subscriptions, timeline, and article side by side on macOS">
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/timeline.png" width="760" alt="Subscriptions, timeline, and article side by side on macOS"></kbd>
 </p>
 
 ## Run it in one command
@@ -27,10 +27,10 @@ Subscriptions on the left, the timeline in the middle, the article on the right,
 three panes become three taps, each one a native push.
 
 <p align="center">
-  <img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/sidebar.png" width="200" alt="Subscriptions on iPhone">
-  <img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/timeline.png" width="200" alt="The timeline on iPhone">
-  <img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/article.png" width="200" alt="An article on iPhone">
-  <img src="https://daybrite.github.io/Day-News/gallery/android-mdc/pixel-5/en/search-results.png" width="200" alt="Search results on Android">
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/subscriptions.png" width="200" alt="Subscriptions on iPhone"></kbd>
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/timeline.png" width="200" alt="The timeline on iPhone"></kbd>
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/article.png" width="200" alt="An article on iPhone"></kbd>
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/android-mdc/pixel-5/en/search-results.png" width="200" alt="Search results on Android"></kbd>
 </p>
 
 - RSS, Atom, RDF, and JSON Feed.
@@ -52,21 +52,21 @@ publishes the results to the [gallery](https://daybrite.dev/gallery/Day-News/).
 
 | Windows · XAML | Linux · GTK | Linux · Qt |
 |:---:|:---:|:---:|
-| <img src="https://daybrite.github.io/Day-News/gallery/windows-xaml/en/timeline.png" width="300" alt="Timeline on Windows"> | <img src="https://daybrite.github.io/Day-News/gallery/linux-gtk/en/timeline.png" width="300" alt="Timeline on GTK"> | <img src="https://daybrite.github.io/Day-News/gallery/linux-qt/en/timeline.png" width="300" alt="Timeline on Qt"> |
+| <kbd><img src="https://daybrite.github.io/Day-News/gallery/windows-xaml/en/article.png" width="300" alt="All Articles on Windows"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/linux-gtk/en/timeline.png" width="300" alt="Timeline on GTK"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/linux-qt/en/timeline.png" width="300" alt="Timeline on Qt"></kbd> |
 
-| Web · DOM | Android · Material | HarmonyOS · ArkUI |
-|:---:|:---:|:---:|
-| <img src="https://daybrite.github.io/Day-News/gallery/web-dom/en/article.png" width="300" alt="An article in the browser"> | <img src="https://daybrite.github.io/Day-News/gallery/android-mdc/pixel-5/en/article.png" width="150" alt="An article on Android"> | <img src="https://daybrite.github.io/Day-News/gallery/harmony-arkui/en/article.png" width="150" alt="An article on HarmonyOS"> |
+| Web · DOM | Android · Material |
+|:---:|:---:|
+| <kbd><img src="https://daybrite.github.io/Day-News/gallery/web-dom/en/article.png" width="300" alt="An article in the browser"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/android-mdc/pixel-5/en/article.png" width="150" alt="An article on Android"></kbd> |
 
 Managing subscriptions, the timeline scoped to a tag, and the sidebar tucked away:
 
 <p align="center">
-  <img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/subscriptions.png" width="360" alt="Subscriptions management on macOS">
-  <img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/tag-scope.png" width="360" alt="The timeline scoped to a tag on macOS">
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/subscriptions.png" width="360" alt="Subscriptions management on macOS"></kbd>
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/tag-scope.png" width="360" alt="The timeline scoped to a tag on macOS"></kbd>
 </p>
 <p align="center">
-  <img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/sidebar-hidden.png" width="360" alt="The sidebar hidden on macOS">
-  <img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/settings.png" width="360" alt="Settings on macOS">
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/sidebar-hidden.png" width="360" alt="The sidebar hidden on macOS"></kbd>
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/macos-appkit/en/settings.png" width="360" alt="Settings on macOS"></kbd>
 </p>
 
 ## Build from a clone

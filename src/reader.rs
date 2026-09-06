@@ -127,6 +127,10 @@ fn escape(s: &str) -> String {
 }
 
 /// The reader pane. Empty state until an article is open.
+///
+/// The article's commands are declared HERE (docs/toolbars.md): next-unread, star and mark-read
+/// all act on what this pane is showing, so they ride its chrome and leave when it does. The
+/// window's bar cannot see the open article, which is why they used to need mirror signals.
 pub fn reader_pane() -> impl Piece {
     let st = daynews_core::scene();
     let url = Signal::new(String::new());
@@ -168,4 +172,11 @@ pub fn reader_pane() -> impl Piece {
     ))
     .background(move || palette().bg)
     .grow()
+    // The commands follow the OPEN ARTICLE: a new one re-derives the list with its own starred
+    // and read state, and no article at all contributes nothing — so the bar carries them only
+    // while there is something to act on (https://daybrite.dev/docs/toolbars).
+    .toolbar(move || match st.article.get() {
+        Some(a) => crate::toolbar::article_items(a),
+        None => Vec::new(),
+    })
 }

@@ -110,8 +110,6 @@ fn build_shell() -> impl Piece {
 
 fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     let st = daynews_core::state();
-    // Per window, so File ▸ New Window gets its own bar (docs/toolbars.md).
-    toolbar::install();
     let section: Signal<Option<String>> = Signal::new(Some(OPENING_SECTION.into()));
     // Apply the opening scope by hand: `watch` fires on CHANGE, so without this the sidebar
     // highlights Today while the timeline still shows whatever scope the store opened with.
@@ -131,6 +129,10 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     selector(section)
         .style(SelectorStyle::Sidebar)
         .title(res::str::app_title())
+        // Refresh and Mark All as Read act on the SCOPE this list has chosen, so they ride this
+        // host's own chrome (docs/toolbars.md) — the sidebar column on a desktop, the root
+        // list's bar when it collapses. The article's own commands are on the reader.
+        .toolbar(toolbar::feed_items())
         // Search moved off the toolbar when day replaced `toolbar_search` with `.searchable()`:
         // the selector owns the field now, and the toolkit puts it in the window toolbar on
         // desktop and inline above the list on a phone. The signal is still the shared one the

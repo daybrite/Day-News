@@ -1,39 +1,39 @@
-//! The window toolbar (docs/toolbars.md), modeled on NetNewsWire's: refresh and mark-all-read
-//! at the leading edge, next-unread and the star toggle after them, and search pinned to the
-//! trailing edge.
+//! The window's toolbar items and the search signal they share (docs/toolbars.md).
 //!
-//! Installed per window, so File ▸ New Window gets its own bar. Where the toolkit has no
-//! toolbar — every phone — nothing installs and the timeline keeps its own search field
-//! instead (see `timeline::timeline_pane`).
+//! Modeled on NetNewsWire's. The commands split three ways by what they act on, and each is
+//! declared where that thing is: refresh and mark-all-read on the FEED LIST (`lib.rs`'s
+//! selector), next-unread and the star and read toggles on the ARTICLE (`reader.rs`), and search
+//! on the surface it filters.
+//!
+//! What used to be here as well was the bookkeeping that a window-wide bar needed: two mirror
+//! signals and two `watch`es copying the open article's starred and read state into them, so the
+//! bar could read what it could not see. The reader has the article in hand, so none of it is
+//! needed any more.
 
 use crate::res;
 use day::prelude::*;
 
 /// What this window's toolbar shows — PER WINDOW (docs/state.md), like everything else about
 /// what a window is looking at. The search text is shared with that window's timeline field on
-/// a phone; the star and read toggles mirror ITS open article.
+/// a phone.
 ///
 /// Owned by the window's scope through `Ambient::scoped`, which is what the old `Signal::global`
-/// was standing in for: the toolbar outlives any page scope, so a page-owned signal would be
+/// was standing in for: the field outlives any page scope, so a page-owned signal would be
 /// disposed under it the first time the reader navigated.
 #[derive(Clone, Copy)]
 pub struct Bar {
     pub search: Signal<String>,
-    starred: Signal<bool>,
-    read: Signal<bool>,
 }
 
 impl Ambient for Bar {
     fn create() -> Self {
         Bar {
             search: Signal::new(String::new()),
-            starred: Signal::new(false),
-            read: Signal::new(false),
         }
     }
 }
 
-/// This window's bar — ambient while a piece builds, the focused window's from a handler.
+/// This window's bar state — ambient while a piece builds, the focused window's from a handler.
 fn bar() -> Bar {
     Bar::try_ambient()
         .or_else(Bar::focused)
@@ -44,94 +44,46 @@ pub fn search() -> Signal<String> {
     bar().search
 }
 
-fn starred() -> Signal<bool> {
-    bar().starred
-}
-
-fn read() -> Signal<bool> {
-    bar().read
-}
-
-/// Does this toolkit put commands in a bar? Where it does not, the reader's commands have to
-/// live in the content instead — there is no drawn stand-in.
-///
-/// `!= Unsupported`, not `== Native` (docs/toolbars.md): web-dom answers `Emulated` — a strip
-/// the shim docks above the app root, with working buttons, toggles and menus — and gating on
-/// `Native` hid the web build's toolbar entirely, pushing Refresh and Mark All as Read into
-/// the timeline as if a browser were a phone.
+/// Does this toolkit put commands in a bar of its own? Where it does not, the reader's commands
+/// still appear — a contribution always lands on some chrome — but the timeline carries the
+/// search field itself rather than handing it to a window toolbar.
 pub fn available() -> bool {
     capability(Cap::Toolbar) != Support::Unsupported
 }
 
-/// Install the window's toolbar. Called once per window, from that window's builder.
-pub fn install() {
-    if !available() {
-        return;
-    }
+/// The FEED LIST's commands: they act on the scope the sidebar has chosen, which is what the
+/// user is looking at while the list is in front of them.
+pub fn feed_items() -> Vec<ToolbarEntry> {
     let st = daynews_core::state();
-    let sc = daynews_core::scene();
-    let search = search();
-    let starred = starred();
-    let read = read();
+    vec![
+        toolbar_button("refresh", res::str::refresh_action())
+            .icon(Symbol::Refresh)
+            .action(daynews_core::refresh_all),
+        toolbar_button("mark-all-read", res::str::mark_all_read())
+            .icon(Symbol::Check)
+            .action(|| daynews_core::mark_scope_read(true))
+            .enabled_when(move || st.total_unread.get() > 0),
+    ]
+}
 
-    // Typing filters through the full-text index; the store quotes the text so punctuation is
-    // searched for rather than parsed as query syntax.
-    watch(move || search.get(), |q, _| daynews_core::set_search(q));
-    // The star toggle shows the OPEN article's state, so it has to follow the selection as
-    // well as the reader's own clicks.
-    watch(
-        move || sc.article.get().map(|a| a.is_starred).unwrap_or(false),
-        move |on, _| starred.set(*on),
-    );
-    // The read toggle likewise follows the open article — a swipe or menu toggle elsewhere
-    // repaints this button without it doing anything.
-    watch(
-        move || sc.article.get().map(|a| a.is_read).unwrap_or(false),
-        move |on, _| read.set(*on),
-    );
-
-    // Reactive so the labels follow a runtime language change; the values that change often
-    // (the search text, the star state, what is enabled) ride their own bindings instead, so
-    // none of them rebuilds the bar.
-    toolbar_reactive(move || {
-        vec![
-            // First, before anything else — where every desktop expects the sidebar control
-            // (docs/toolbars.md). The behavior is the toolkit's own: it drives the window's
-            // `selector(Sidebar)` collapse, so no action and no icon here.
-            toolbar_sidebar_toggle("toggle-sidebar", res::str::toggle_sidebar()),
-            toolbar_button("refresh", res::str::refresh_action())
-                .icon(Symbol::Refresh)
-                .action(daynews_core::refresh_all),
-            toolbar_button("mark-all-read", res::str::mark_all_read())
-                .icon(Symbol::Check)
-                .action(|| daynews_core::mark_scope_read(true))
-                .enabled_when(move || st.total_unread.get() > 0),
-            toolbar_separator(),
-            toolbar_button("next-unread", res::str::menu_next_unread())
-                .icon(Symbol::Down)
-                .action(|| {
-                    daynews_core::open_next_unread();
-                })
-                .enabled_when(move || st.total_unread.get() > 0),
-            toolbar_toggle("star", res::str::menu_star(), starred)
-                .icon(Symbol::Star)
-                .enabled_when(move || sc.selected.get().is_some())
-                // The signal is already set when this runs, so it is the new state.
-                .action(move || {
-                    if let Some(id) = sc.selected.get_untracked() {
-                        daynews_core::set_starred(id, starred.get_untracked());
-                    }
-                }),
-            toolbar_toggle("read", res::str::toggle_read(), read)
-                .icon(Symbol::CircleFilled)
-                .enabled_when(move || sc.selected.get().is_some())
-                // Same shape as the star: the signal already holds the new state.
-                .action(move || {
-                    if let Some(id) = sc.selected.get_untracked() {
-                        daynews_core::set_read(id, read.get_untracked());
-                    }
-                }),
-            toolbar_flexible_space(),
-        ]
-    });
+/// The OPEN ARTICLE's commands. Declared on the reader, so they arrive with the article and
+/// leave with it — and each one reads the article it was built for rather than a mirror of it.
+pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> {
+    let st = daynews_core::state();
+    let (id, starred, read) = (article.id, article.is_starred, article.is_read);
+    vec![
+        toolbar_button("next-unread", res::str::menu_next_unread())
+            .icon(Symbol::Down)
+            .enabled_when(move || st.total_unread.get() > 0)
+            .action(|| {
+                daynews_core::open_next_unread();
+            }),
+        toolbar_toggle("star", res::str::menu_star(), Signal::new(starred))
+            .icon(Symbol::Star)
+            .action(move || daynews_core::set_starred(id, !starred)),
+        toolbar_toggle("read", res::str::toggle_read(), Signal::new(read))
+            .icon(Symbol::CircleFilled)
+            .placement(ToolbarPlacement::Primary)
+            .action(move || daynews_core::set_read(id, !read)),
+    ]
 }
