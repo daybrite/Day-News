@@ -243,9 +243,9 @@ fn fallback_id(e: &feed_rs::model::Entry, base_url: &str) -> String {
 }
 
 fn now_secs() -> i64 {
-    // day-part-timezone rather than `SystemTime::now()`, which aborts on wasm32 — on web this
-    // is the page's `Date.now()`.
-    (day_part_timezone::now_epoch_ms() / 1000) as i64
+    // `daynews-time` rather than `SystemTime::now()`, which aborts on wasm32 — on web this is
+    // the page's `Date.now()`.
+    daynews_time::now_unix()
 }
 
 /// Collapse whitespace and strip tags from a text field. Feeds put HTML in `<title>` more often

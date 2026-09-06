@@ -15,9 +15,9 @@ feed-rs = "2.3"
 # Fetching. The `day` HTTP part fronts each platform's native stack, so proxies, VPN routing
 # and MDM trust work the way the OS expects (docs/http.md).
 day-part-http = { git = "https://github.com/daybrite/day.git" }
-# The identity fallback stamps items that carry no date of their own; day-part-timezone's
-# clock works everywhere the app runs, where SystemTime aborts on wasm32.
-day-part-timezone = { git = "https://github.com/daybrite/day.git" }
+# The identity fallback stamps items that carry no date of their own; this workspace's clock
+# works everywhere the app runs, where `SystemTime::now()` aborts on wasm32.
+daynews-time = { path = "../daynews-time" }
 
 # feed-rs generates v4 uuids for id-less items; on wasm, uuid must be told its randomness
 # source or it refuses to compile. `rng-getrandom` routes it through getrandom, whose `custom`

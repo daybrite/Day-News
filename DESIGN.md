@@ -24,9 +24,10 @@ The libraries live under `crates/`; the UI crate is the repository root.
 | crate | owns | depends on |
 |---|---|---|
 | `crates/daynews-opml` | OPML parse + serialize, nested folders | quick-xml |
-| `crates/daynews-feed` | fetching and parsing RSS/RDF/Atom/JSON Feed, normalized | feed-rs, day-part-http, day-part-timezone |
-| `crates/daynews-db` | the store: models, relations, FTS5, queries | day-persistence, day-model, day-macros, day-part-timezone |
-| `crates/daynews-core` | the view-model: signals, refresh orchestration, OPML import/export | the three above, day-core |
+| `crates/daynews-time` | the wall clock and the reader's UTC offset, asked of the host | libc (unix), day-dom (web) |
+| `crates/daynews-feed` | fetching and parsing RSS/RDF/Atom/JSON Feed, normalized | feed-rs, day-part-http, `daynews-time` |
+| `crates/daynews-db` | the store: models, relations, FTS5, queries | day-persistence, day-model, day-macros, `daynews-time` |
+| `crates/daynews-core` | the view-model: signals, refresh orchestration, OPML import/export | `daynews-db`, `daynews-feed`, `daynews-opml`, day-core |
 | `day-news` | the UI | `daynews-core`, day, day-piece-webview |
 
 ### Dependency choices
@@ -40,10 +41,14 @@ Three non-obvious ones, since the house rule is to justify every dependency:
   in `normalize`.
 - **quick-xml.** OPML is XML; hand-rolling means hand-rolling entity decoding and attribute
   quoting. It reads *and* writes, so one dependency covers import and export.
-- **day-part-timezone, for the clock.** "Today" is a claim about the reader's calendar, so the
-  cut-off is local midnight — which needs the machine's UTC offset and its DST rules. It also
-  supplies the one wall clock that works everywhere the app runs: `SystemTime::now()` aborts on
-  `wasm32`, where the page's own clock answers instead.
+- **No time-zone database at all**, which is why `crates/daynews-time` exists. "Today" is a claim
+  about the reader's calendar, so the cut-off is local midnight — which needs the machine's UTC
+  offset and its DST rules — and the app also needs a wall clock everywhere it runs, since
+  `SystemTime::now()` aborts on `wasm32`. Both come from the host, which already has the rules
+  installed and keeps them current: POSIX `localtime_r` (macOS, Linux, iOS, Android, OpenHarmony),
+  Win32's `SystemTimeToTzSpecificLocalTime`, and the browser's `Intl` behind day-dom's `tzoffset`
+  page fact on web. That is ~150 lines and one `libc` edge, against ~200 KB of bundled IANA data
+  that would need re-releasing every time a government moves a clock.
 
 SQLite itself is no longer a direct dependency: day-persistence bundles the engine (compiled
 from C source, which is what lets Android link — the NDK sysroot ships no `-lsqlite3`) and

@@ -184,26 +184,10 @@ pub enum Scope {
 }
 
 /// The instant local midnight happened, as unix seconds. Local rather than UTC because "Today"
-/// is a claim about the reader's calendar, not the server's. day-part-timezone answers on
-/// every target — bundled tzdb offsets, the browser's zone on web — where chrono's `Local`
-/// aborts on wasm.
+/// is a claim about the reader's calendar, not the server's — `daynews-time` asks the host for
+/// the offset in force, DST and all, on every target this app runs on.
 pub fn start_of_today() -> i64 {
-    let now_s = now_unix();
-    let off =
-        i64::from(day_part_timezone::local_offset_seconds(day_part_timezone::now()).unwrap_or(0));
-    let midnight = (now_s + off).div_euclid(86_400) * 86_400 - off;
-    // A DST change between local midnight and now shifts the boundary by the offsets'
-    // difference; re-derive once with the offset that was in force AT that instant.
-    if midnight >= 0 {
-        let at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(midnight as u64);
-        let off2 = day_part_timezone::local_offset_seconds(at)
-            .map(i64::from)
-            .unwrap_or(off);
-        if off2 != off {
-            return (now_s + off2).div_euclid(86_400) * 86_400 - off2;
-        }
-    }
-    midnight
+    daynews_time::start_of_day(now_unix())
 }
 
 /// The scope's predicate alone (no search, no sort) — what count badges share with the
@@ -627,8 +611,8 @@ fn now() -> i64 {
     now_unix()
 }
 
-/// The wall clock as unix seconds, everywhere the app runs. day-part-timezone rather than
+/// The wall clock as unix seconds, everywhere the app runs. `daynews-time` rather than
 /// `SystemTime::now()`, which aborts on wasm32 — on web this is the page's `Date.now()`.
 pub fn now_unix() -> i64 {
-    (day_part_timezone::now_epoch_ms() / 1000) as i64
+    daynews_time::now_unix()
 }

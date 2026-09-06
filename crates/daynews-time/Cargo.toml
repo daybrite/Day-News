@@ -1,0 +1,23 @@
+[package]
+name = "daynews-time"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+# No time-zone database of its own, on purpose. Every machine this app runs on already carries
+# one — /usr/share/zoneinfo behind POSIX `localtime_r`, the registry behind Win32's converters,
+# the browser's `Intl` on web — and asking the host is a few lines of FFI where bundling a second
+# copy of the IANA rules is ~200 KB of dependency that also has to be kept current.
+
+# `localtime_r` and `struct tm`. libc is already in this app's graph (it is under nearly every
+# crate that touches the OS), carries no transitive dependencies, and declaring `struct tm` by
+# hand instead would put a per-platform layout guess in app code.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+# The browser owns the clock and the zone rules on web: `SystemTime::now()` traps on
+# wasm32-unknown-unknown, and there is no zoneinfo to read. day-dom is the page bridge the web
+# build already links (the `dom` backend IS day-dom), so this costs nothing there and nothing at
+# all anywhere else.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+day-dom = { git = "https://github.com/daybrite/day.git" }
