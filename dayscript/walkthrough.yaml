@@ -135,10 +135,10 @@ flow:
   - screenshot: settings
 
   # The toolbar's sidebar toggle hides the pane and brings it back.
-  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: day.sidebar-toggle, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
   - screenshot: sidebar-hidden
-  - toolbar: { item: toggle-sidebar, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: day.sidebar-toggle, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
 
   # Subscriptions page: feed list and the OPML controls.
