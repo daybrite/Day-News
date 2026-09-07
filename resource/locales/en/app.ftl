@@ -11,7 +11,6 @@ subscribe_heading = Add a subscription
 subscribe_placeholder = Feed or site URL
 subscribe_action = Subscribe
 refresh_action = Refresh
-toggle_sidebar = Toggle Sidebar
 toggle_read = Toggle Read/Unread
 refresh_progress = Refreshing { $done } of { $total }…
 mark_all_read = Mark All as Read
