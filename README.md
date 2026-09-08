@@ -30,7 +30,7 @@ three panes become three taps, each one a native push.
   <kbd><img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/subscriptions.png" width="200" alt="Subscriptions on iPhone"></kbd>
   <kbd><img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/timeline.png" width="200" alt="The timeline on iPhone"></kbd>
   <kbd><img src="https://daybrite.github.io/Day-News/gallery/ios-uikit/iphone/en/article.png" width="200" alt="An article on iPhone"></kbd>
-  <kbd><img src="https://daybrite.github.io/Day-News/gallery/android-mdc/pixel-5/en/search-results.png" width="200" alt="Search results on Android"></kbd>
+  <kbd><img src="https://daybrite.github.io/Day-News/gallery/android-mdc/phone/en/search-results.png" width="200" alt="Search results on Android"></kbd>
 </p>
 
 - RSS, Atom, RDF, and JSON Feed.
@@ -56,7 +56,7 @@ publishes the results to the [gallery](https://daybrite.dev/gallery/Day-News/).
 
 | Web · DOM | Android · Material |
 |:---:|:---:|
-| <kbd><img src="https://daybrite.github.io/Day-News/gallery/web-dom/en/article.png" width="300" alt="An article in the browser"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/android-mdc/pixel-5/en/article.png" width="150" alt="An article on Android"></kbd> |
+| <kbd><img src="https://daybrite.github.io/Day-News/gallery/web-dom/en/article.png" width="300" alt="An article in the browser"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/android-mdc/phone/en/article.png" width="150" alt="An article on Android"></kbd> |
 
 Managing subscriptions, the timeline scoped to a tag, and the sidebar tucked away:
 
