@@ -2,7 +2,7 @@
 //!
 //! Modeled on NetNewsWire's. The commands split three ways by what they act on, and each is
 //! declared where that thing is: refresh and mark-all-read on the FEED LIST (`lib.rs`'s
-//! selector), next-unread and the star and read toggles on the ARTICLE (`reader.rs`), and search
+//! nav), next-unread and the star and read toggles on the ARTICLE (`reader.rs`), and search
 //! on the surface it filters.
 //!
 //! What used to be here as well was the bookkeeping that a window-wide bar needed: two mirror

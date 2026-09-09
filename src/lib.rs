@@ -126,15 +126,15 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         },
     );
 
-    selector(section)
-        .style(SelectorStyle::Sidebar)
+    nav(section)
+        .style(NavStyle::Sidebar)
         .title(res::str::app_title())
         // Refresh and Mark All as Read act on the SCOPE this list has chosen, so they ride this
         // host's own chrome (docs/toolbars.md) — the sidebar column on a desktop, the root
         // list's bar when it collapses. The article's own commands are on the reader.
         .toolbar(toolbar::feed_items())
         // Search moved off the toolbar when day replaced `toolbar_search` with `.searchable()`:
-        // the selector owns the field now, and the toolkit puts it in the window toolbar on
+        // the nav owns the field now, and the toolkit puts it in the window toolbar on
         // desktop and inline above the list on a phone. The signal is still the shared one the
         // timeline filters on.
         .searchable(toolbar::search())
@@ -233,7 +233,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         .id("nav")
 }
 
-/// The reader as a destination. The timeline is no longer in here — it is the selector's
+/// The reader as a destination. The timeline is no longer in here — it is the nav's
 /// content-list pane, its own column beside this on the desktops and the pushed middle layer
 /// on a phone (docs/navigation.md).
 #[cfg(not(target_os = "android"))]
@@ -241,7 +241,7 @@ fn reader_dest() -> impl Piece {
     reader::reader_pane().grow()
 }
 
-/// Android composes the list-then-reader push flow in the selector, so the reader page carries
+/// Android composes the list-then-reader push flow in the nav, so the reader page carries
 /// its own way back (`reader_open` := false); iOS gets the system back chevron from the native
 /// stack and macOS shows the reader beside the list, so neither wants the extra row.
 #[cfg(target_os = "android")]

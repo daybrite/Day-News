@@ -36,7 +36,7 @@ pub fn install() {
                             navigate(ROUTE_SUBSCRIPTIONS);
                             crate::subscriptions::begin_new_folder();
                         }),
-                    // No platform has a native "new window" selector, so this lowers to the
+                    // No platform has a native "new window" nav, so this lowers to the
                     // builder registered with `register_new_window` (see `root`).
                     menu_role(MenuRole::NewWindow),
                     menu_separator(),
@@ -144,8 +144,8 @@ fn open_in_browser() {
 }
 
 /// Move both the sidebar selection and the timeline filter. `navigate` alone would move the
-/// selector; the scope watch in `root` picks it up, but setting it here too means the menu works
-/// even before the selector has mounted.
+/// nav; the scope watch in `root` picks it up, but setting it here too means the menu works
+/// even before the nav has mounted.
 fn go(route: &str, scope: Scope) {
     navigate(route);
     daynews_core::select_scope(scope);

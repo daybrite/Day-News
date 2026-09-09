@@ -138,7 +138,7 @@ that comparison changed:
 The sidebar opens on four smart feeds — Today, All Unread, Starred, All Articles — above one row
 per subscription and one per tag. Unread counts are real badges (`.badge(…)`), right-aligned and
 de-emphasized by each toolkit, and the three blocks sit under their own `.section(…)` headers;
-both were gaps in Day's `selector` when this app started and were built in the framework rather
+both were gaps in Day's `nav` when this app started and were built in the framework rather
 than faked in the row label.
 
 `watch` fires on CHANGE, so the shell applies the opening scope itself (`OPENING_SECTION`).

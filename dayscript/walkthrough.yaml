@@ -21,7 +21,7 @@ flow:
   # desktops and a timeline field on a phone (docs/toolbars.md) — one behaviour, two homes.
   # "space" hits several of the seeded fixture feeds (NASA, Quanta, ScienceDaily), so the
   # results shot has rows from more than one subscription.
-  # The search is the selector's `.searchable()` field, driven through the toolbar model wherever
+  # The search is the nav host's `.searchable()` field, driven through the toolbar model wherever
   # the toolkit has a window toolbar — the desktops, and since 2026-09 the phones too, whose bar
   # rides the navigation bar (iOS) or docks under the page (Android). HarmonyOS has no toolbar,
   # so the timeline keeps an inline field there.
