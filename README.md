@@ -40,7 +40,8 @@ three panes become three taps, each one a native push.
 - Star what you want to keep and mark what you have read. A refresh never undoes either.
 - Import and export OPML with folders intact, so moving in or out is a single file.
 - The timeline is a native recycling list with the platform's own swipe actions and keyboard
-  navigation, and the article pane is the system web view over a document generated per article.
+  navigation, and the article pane is the system web view over a document generated per article —
+  or, where the platform ships no web engine, the same article composed from pieces.
 
 The app talks directly to the sites you subscribe to. There is no account and no sync service in
 the middle.
@@ -114,7 +115,8 @@ day patch --local /path/to/day
   desktops get three columns and a phone pushes through them.
 - `src/timeline.rs` is the article list, a native recycling [`list`](https://daybrite.dev/docs/internal/list)
   with platform selection and edge swipe actions.
-- `src/reader.rs` is the article pane, a native web view over a generated document.
+- `src/reader.rs` is the article pane: a native web view over a generated document, and the same
+  article composed from pieces on a backend with no web engine (macos-gtk).
 - `src/subscriptions.rs`, `src/settings.rs`, `src/menus.rs`, and `src/toolbar.rs` cover feed
   management with OPML import and export, retention, the app menus, and the window toolbar.
 - `crates/` holds `daynews-opml`, `daynews-feed`, `daynews-db`, and `daynews-core`: OPML, feed

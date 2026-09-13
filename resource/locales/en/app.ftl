@@ -6,6 +6,7 @@ nav_subscriptions = Subscriptions
 timeline_empty = No articles
 timeline_empty_unread = All caught up
 reader_empty = Select an article
+reader_no_content = This article has no content. Open it in your browser to read it.
 search_placeholder = Search articles
 subscribe_heading = Add a subscription
 subscribe_placeholder = Feed or site URL

@@ -126,6 +126,73 @@ fn escape(s: &str) -> String {
     out
 }
 
+/// The open article, rendered the way this backend can.
+///
+/// Where there is a web engine the generated document goes to the web view. macos-gtk has no
+/// WebKitGTK build, so the piece reports `Unsupported` there and would realize day's placeholder
+/// leaf (docs/webview.md) — an empty pane. This composes the same article from pieces instead, so
+/// the reader reads everywhere.
+fn reader_body(url: Signal<String>, go: Trigger) -> AnyPiece {
+    if day_piece_webview::support() == Support::Unsupported {
+        article_text().any()
+    } else {
+        web_view(url).go(go).id("reader-web").grow().any()
+    }
+}
+
+/// The article as pieces: the masthead order the document uses — source, headline, date — and
+/// then its text, with the feed's markup reduced to paragraphs.
+fn article_text() -> impl Piece {
+    let st = daynews_core::scene();
+    let body = move || {
+        let Some(a) = st.article.get() else {
+            return String::new();
+        };
+        let html = a
+            .content_html
+            .as_deref()
+            .or(a.summary.as_deref())
+            .unwrap_or_default();
+        let text = crate::format::paragraphs(html).join("\n\n");
+        if text.is_empty() {
+            crate::res::str::reader_no_content().format()
+        } else {
+            text
+        }
+    };
+    scroll(
+        column((
+            label(move || st.article.get().map(|a| a.feed_title).unwrap_or_default())
+                .font(Font::Footnote)
+                .color(move || palette().accent),
+            label(move || {
+                st.article
+                    .get()
+                    .and_then(|a| a.title)
+                    .unwrap_or_else(|| crate::res::str::untitled().format())
+            })
+            .font(Font::Title2)
+            .bold()
+            .color(move || palette().text),
+            label(move || {
+                st.article
+                    .get()
+                    .map(|a| full_date(a.published_at))
+                    .unwrap_or_default()
+            })
+            .font(Font::Caption)
+            .color(move || palette().text_muted),
+            label(body).color(move || palette().text),
+        ))
+        .spacing(10.0)
+        .align(HAlign::Leading)
+        .padding(24.0)
+        .grow_w(),
+    )
+    .id("reader-text")
+    .grow()
+}
+
 /// The reader pane. Empty state until an article is open.
 ///
 /// The article's commands are declared HERE (docs/toolbars.md): next-unread, star and mark-read
@@ -167,7 +234,7 @@ pub fn reader_pane() -> impl Piece {
         ),
         when(
             move || st.article.get().is_some(),
-            move || web_view(url).go(go).id("reader-web").grow(),
+            move || reader_body(url, go),
         ),
     ))
     .background(move || palette().bg)

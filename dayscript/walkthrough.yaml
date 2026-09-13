@@ -39,7 +39,10 @@ flow:
   # the platform table emits for a click or an arrow step.
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - assert_visible: { id: reader-web }
+  # macos-gtk has no WebKitGTK build, so the reader composes the article from pieces there rather
+  # than realizing day's placeholder leaf (docs/webview.md) — the same reader, drawn differently.
+  - assert_visible: { id: reader-web, skip_on: [macos-gtk] }
+  - assert_visible: { id: reader-text, only_on: [macos-gtk] }
   # ...and that it RENDERED: `assert_visible` only proves the native view exists — an
   # error page or a blank document would pass it (and did, when Android's WebView refused
   # file:// URLs). The reader document stamps its title with id="reader-title"; asking the
