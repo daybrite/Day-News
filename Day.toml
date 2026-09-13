@@ -11,7 +11,7 @@ id = "dev.daybrite.news"
 # default is the id\'s last segment, which is not what this app published.
 scheme = "daynews"
 title = "Day News"
-build = 1
+build = 3
 targets = ["macos-appkit", "macos-gtk", "macos-qt", "windows-xaml", "ios-uikit", "android-mdc", "web-dom", "harmony-arkui"]
 
 [window]
