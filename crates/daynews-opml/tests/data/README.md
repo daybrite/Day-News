@@ -8,7 +8,7 @@ meant they compiled nowhere else.
 
 | File | What it covers |
 |---|---|
-| `daynews.opml` | The sample subscription list `dayscript/import.yaml` hands to the file picker: the seven feeds bundled as parser fixtures (`resource/assets/fixtures/README.md` records each source), grouped into two folders with one subscription left at the top level, so an import exercises both shapes at once |
+| `daynews.opml` | The sample subscription list `dayscript/import.yaml` hands to the file picker: the live originals of the seven captured parser fixtures (`crates/daynews-feed/tests/data/README.md` records each source), grouped into two folders with one subscription left at the top level, so an import exercises both shapes at once |
 
 ## Vendored from Miniflux
 

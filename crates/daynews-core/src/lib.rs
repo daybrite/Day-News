@@ -727,6 +727,35 @@ pub fn rename_feed(feed: u64, title: &str) {
     with_db(|d| d.rename_feed(feed, title));
 }
 
+/// Refresh one subscription — a feed row's Refresh and Feed ▸ Refresh Feed. A full refresh
+/// already under way fetches this feed too, so asking again while it runs does nothing.
+pub fn refresh_feed(feed: u64) {
+    let st = state();
+    if st.refresh_progress.get_untracked().is_some() {
+        return;
+    }
+    let Some((title, url)) = st
+        .feeds
+        .get_untracked()
+        .iter()
+        .find(|f| f.id == feed)
+        .map(|f| (f.title.clone(), f.feed_url.clone()))
+    else {
+        return;
+    };
+    st.refresh_progress.set(Some((0, 1)));
+    day_core::task(async move {
+        let ok = refresh_one(feed, url).await;
+        let st = state();
+        st.refresh_progress.set(None);
+        st.status.set(if ok {
+            format!("Refreshed {title}")
+        } else {
+            format!("Could not refresh {title}")
+        });
+    });
+}
+
 // ---- refreshing -----------------------------------------------------------------------------
 
 /// Refresh every subscription, one at a time, publishing progress as it goes.
@@ -769,27 +798,53 @@ pub fn refresh_all() {
 /// Fetch and store one feed. Returns whether it succeeded.
 /// A feed's bytes, parsed: over HTTP normally, or from the app bundle for `asset:` URLs —
 /// the deterministic, network-free source the walkthrough seeds from on every platform
-/// (dayscript/seed-fixtures.yaml subscribes to the parser fixtures bundled under
-/// `resource/assets/fixtures/`). A missing asset reports as a 404 rather than a new error
+/// (dayscript/seed-demo.yaml subscribes to the demo feeds bundled under
+/// `resource/assets/demo/`). A missing asset reports as a 404 rather than a new error
 /// arm — the subscription then shows the same failed-refresh state a dead feed does.
 async fn fetch_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed::FeedError> {
     if let Some(name) = url.strip_prefix("asset:") {
-        // wasm has no filesystem for the resource opener to read; the web dist serves the
-        // same bundle over HTTP instead (`resource/assets/` staged under `assets/data/`,
-        // day-cli web.rs), so the asset rides the ordinary fetch path as a same-origin URL.
-        #[cfg(target_arch = "wasm32")]
-        {
-            // Fetch by the RELATIVE dist URL, parse against the absolute `asset:` base —
-            // the parser's URL resolution rejects a relative base outright.
-            return daynews_feed::fetch_with_base(&format!("assets/data/{name}"), url).await;
+        let locale = day_l10n::locale().get_untracked();
+        for candidate in asset_candidates(name, &locale) {
+            // wasm has no filesystem for the resource opener to read; the web dist serves the
+            // same bundle over HTTP instead (`resource/assets/` staged under `assets/data/`,
+            // day-cli web.rs), so the asset rides the ordinary fetch path as a same-origin URL.
+            // Fetch by the RELATIVE dist URL, parse against the absolute `asset:` base — the
+            // parser's URL resolution rejects a relative base outright.
+            #[cfg(target_arch = "wasm32")]
+            match daynews_feed::fetch_with_base(&format!("assets/data/{candidate}"), url).await {
+                Err(daynews_feed::FeedError::Status(404)) => continue,
+                other => return other,
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            if let Some(res) = day_core::resource(day_core::AssetName::dynamic(candidate)) {
+                return daynews_feed::parse(res.as_slice(), url);
+            }
         }
-        #[cfg(not(target_arch = "wasm32"))]
-        return match day_core::resource(day_core::AssetName::dynamic(name.to_string())) {
-            Some(res) => daynews_feed::parse(res.as_slice(), url),
-            None => Err(daynews_feed::FeedError::Status(404)),
-        };
+        return Err(daynews_feed::FeedError::Status(404));
     }
     daynews_feed::fetch(url).await
+}
+
+/// The bundle paths an `asset:` name may live at, most specific first.
+///
+/// The demo feeds are written once per language (resource/assets/demo/README.md) and subscribed
+/// to WITHOUT one, as `demo/night-sky.xml`, so a subscription reads the set for the language the
+/// app is running in: the exact locale, then its language alone, then English. Any other name is
+/// one file, taken as written.
+fn asset_candidates(name: &str, locale: &str) -> Vec<String> {
+    let Some(file) = name.strip_prefix("demo/") else {
+        return vec![name.to_string()];
+    };
+    let tag = locale.split("-u-").next().unwrap_or(locale);
+    let lang = tag.split('-').next().unwrap_or(tag);
+    let mut paths: Vec<String> = Vec::new();
+    for dir in [tag, lang, "en"] {
+        let path = format!("demo/{dir}/{file}");
+        if !dir.is_empty() && !paths.contains(&path) {
+            paths.push(path);
+        }
+    }
+    paths
 }
 
 async fn refresh_one(id: u64, url: String) -> bool {
@@ -915,6 +970,11 @@ pub fn normalize_feed_url(input: &str) -> String {
 /// A provisional name for a brand-new subscription, replaced by the feed's own title on first
 /// refresh — the same placeholder NetNewsWire shows.
 fn fallback_title(url: &str) -> String {
+    // A bundled feed has no host: name it after its file, not the `asset:demo` prefix.
+    if let Some(name) = url.strip_prefix("asset:") {
+        let file = name.rsplit('/').next().unwrap_or(name);
+        return file.split('.').next().unwrap_or(file).to_string();
+    }
     let rest = url.split_once("://").map(|(_, r)| r).unwrap_or(url);
     let host = rest.split(['/', '?', '#']).next().unwrap_or(rest);
     host.strip_prefix("www.").unwrap_or(host).to_string()
@@ -980,4 +1040,58 @@ fn android_files_dir() -> Option<PathBuf> {
 /// call site below reads the same.
 fn store_with<R>(f: impl FnOnce(&Store) -> R) -> R {
     f(&store())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::asset_candidates;
+
+    #[test]
+    fn demo_feeds_resolve_through_the_locale_then_english() {
+        assert_eq!(
+            asset_candidates("demo/night-sky.xml", "zh-CN"),
+            [
+                "demo/zh-CN/night-sky.xml",
+                "demo/zh/night-sky.xml",
+                "demo/en/night-sky.xml"
+            ]
+        );
+        assert_eq!(
+            asset_candidates("demo/atlas.xml", "fr"),
+            ["demo/fr/atlas.xml", "demo/en/atlas.xml"]
+        );
+        assert_eq!(
+            asset_candidates("demo/atlas.xml", "en"),
+            ["demo/en/atlas.xml"]
+        );
+        // A Unicode extension picks a collation, not a language.
+        assert_eq!(
+            asset_candidates("demo/atlas.xml", "zh-u-co-stroke"),
+            ["demo/zh/atlas.xml", "demo/en/atlas.xml"]
+        );
+        assert_eq!(
+            asset_candidates("demo/atlas.xml", ""),
+            ["demo/en/atlas.xml"]
+        );
+    }
+
+    #[test]
+    fn a_new_subscription_is_named_after_its_host_or_bundled_file() {
+        assert_eq!(
+            super::fallback_title("https://www.nasa.gov/feed/"),
+            "nasa.gov"
+        );
+        assert_eq!(
+            super::fallback_title("asset:demo/night-sky.xml"),
+            "night-sky"
+        );
+    }
+
+    #[test]
+    fn other_assets_are_read_as_named() {
+        assert_eq!(
+            asset_candidates("feeds/custom.xml", "fr"),
+            ["feeds/custom.xml"]
+        );
+    }
 }

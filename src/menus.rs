@@ -1,7 +1,9 @@
-//! The desktop menu bar: File and Go, modeled on NetNewsWire's.
+//! The desktop menu bar (File, Go, Feed and Article, modeled on NetNewsWire's) and the sidebar
+//! feed rows' context menu.
 //!
-//! Installed only where the backend has a menu bar (macOS, GTK, Qt, XAML); on a phone the
-//! capability is absent and `app_menu` is a no-op, so the same call is safe everywhere.
+//! The menu bar is installed only where the backend has one (macOS, GTK, Qt, XAML); on a phone
+//! the capability is absent and `app_menu` is a no-op, so the same call is safe everywhere. The
+//! row menus show wherever the backend has per-row menus (docs/menus.md).
 
 use crate::res;
 use day::prelude::*;
@@ -74,6 +76,23 @@ pub fn install() {
                     menu_item(res::str::nav_starred().format())
                         .key("3")
                         .action(|| go(ROUTE_STARRED, Scope::Starred)),
+                ],
+            ),
+            // The feed the sidebar has selected: the same three commands its row's context menu
+            // offers. With no feed selected they do nothing, like the Article commands with no
+            // open article.
+            sub_menu(
+                res::str::menu_feed().format(),
+                vec![
+                    menu_item(res::str::menu_refresh_feed().format())
+                        .shortcut(Shortcut::new("r").shift())
+                        .action(|| with_selected_feed(daynews_core::refresh_feed)),
+                    menu_item(res::str::mark_all_read().format()).action(|| {
+                        with_selected_feed(|feed| daynews_core::mark_feed_read(feed, true))
+                    }),
+                    menu_separator(),
+                    menu_item(res::str::unsubscribe().format())
+                        .action(|| with_selected_feed(daynews_core::unsubscribe)),
                 ],
             ),
             sub_menu(
@@ -149,4 +168,26 @@ fn open_in_browser() {
 fn go(route: &str, scope: Scope) {
     navigate(route);
     daynews_core::select_scope(scope);
+}
+
+/// Run `f` on the feed the sidebar has selected. A smart feed, a tag or a page selected instead
+/// leaves no feed to act on, and the command does nothing.
+fn with_selected_feed(f: impl FnOnce(u64)) {
+    if let Scope::Feed(feed) = daynews_core::scene().scope.get_untracked() {
+        f(feed);
+    }
+}
+
+/// A sidebar feed row's context menu: the Feed menu's three commands, aimed at the row that was
+/// right-clicked or long-pressed rather than at the selection (docs/menus.md).
+pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
+    vec![
+        menu_item(res::str::refresh_action().format())
+            .action(move || daynews_core::refresh_feed(feed)),
+        menu_item(res::str::mark_all_read().format())
+            .enabled(unread > 0)
+            .action(move || daynews_core::mark_feed_read(feed, true)),
+        menu_separator(),
+        menu_item(res::str::unsubscribe().format()).action(move || daynews_core::unsubscribe(feed)),
+    ]
 }

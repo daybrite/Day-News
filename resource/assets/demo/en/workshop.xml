@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel rdf:about="https://github.com/daybrite/Day-News/tree/main/resource/assets/demo">
+    <title>Workshop</title>
+    <link>https://github.com/daybrite/Day-News/tree/main/resource/assets/demo</link>
+    <description>How everyday things work, and who worked them out. A Day News demo feed.</description>
+    <dc:language>en</dc:language>
+    <items>
+      <rdf:Seq>
+        <rdf:li rdf:resource="https://en.wikipedia.org/wiki/Zipper"/>
+        <rdf:li rdf:resource="https://en.wikipedia.org/wiki/Pendulum_clock"/>
+        <rdf:li rdf:resource="https://en.wikipedia.org/wiki/Bicycle_and_motorcycle_dynamics"/>
+        <rdf:li rdf:resource="https://en.wikipedia.org/wiki/Movable_type"/>
+        <rdf:li rdf:resource="https://en.wikipedia.org/wiki/Fresnel_lens"/>
+        <rdf:li rdf:resource="https://en.wikipedia.org/wiki/Cai_Lun"/>
+      </rdf:Seq>
+    </items>
+  </channel>
+  <item rdf:about="https://en.wikipedia.org/wiki/Zipper">
+    <title>How a zipper works</title>
+    <link>https://en.wikipedia.org/wiki/Zipper</link>
+    <description>A zipper's slider uses small wedges to push two rows of teeth together, or pry them apart, one tooth at a time.</description>
+    <content:encoded><![CDATA[<p>A zipper is two rows of interlocking teeth and a slider. Inside the slider, a Y-shaped channel does all the work. Pulled one way, it guides the two rows together at a shallow angle so each tooth hooks behind the ones opposite. Pulled the other way, a small wedge pries them apart.</p>
+<p>The modern design is largely the work of Gideon Sundback, a Swedish-American engineer who patented his "Separable Fastener" in 1917. The name came later, when the B.F. Goodrich Company used the fasteners on rubber boots in the 1920s and called them zippers.</p>
+<p>The teeth can be metal, molded plastic or a continuous coil of nylon, but the principle is the one Sundback worked out more than a century ago.</p>]]></content:encoded>
+    <dc:creator>Workshop desk</dc:creator>
+    <dc:date>2026-09-10T09:10:00Z</dc:date>
+  </item>
+  <item rdf:about="https://en.wikipedia.org/wiki/Pendulum_clock">
+    <title>The pendulum clock's steady beat</title>
+    <link>https://en.wikipedia.org/wiki/Pendulum_clock</link>
+    <description>A pendulum takes almost the same time for each swing, whether it moves far or only a little, which made it the first truly precise timekeeper.</description>
+    <content:encoded><![CDATA[<p>According to a well-known story, Galileo Galilei noticed while watching a swinging lamp that a pendulum takes nearly the same time for each swing, whether it moves through a wide arc or a small one. For small swings, the time depends mainly on the pendulum's length.</p>
+<p>In 1656 the Dutch scientist Christiaan Huygens used that property to build the first pendulum clock. It was far more accurate than the clocks of its day, cutting their errors from around 15 minutes a day to about 15 seconds.</p>
+<p>A pendulum just under one meter long takes one second for each swing, which is why so many tall clocks tick once a second.</p>]]></content:encoded>
+    <dc:creator>Workshop desk</dc:creator>
+    <dc:date>2026-09-07T10:20:00Z</dc:date>
+  </item>
+  <item rdf:about="https://en.wikipedia.org/wiki/Bicycle_and_motorcycle_dynamics">
+    <title>What keeps a moving bicycle upright</title>
+    <link>https://en.wikipedia.org/wiki/Bicycle_and_motorcycle_dynamics</link>
+    <description>A rolling bicycle steers itself back under its rider, and the full explanation turned out to be subtler than anyone expected.</description>
+    <content:encoded><![CDATA[<p>A bicycle standing still falls over, but a moving one is hard to tip. When a rolling bike starts to lean, its front wheel turns toward the lean, bringing the wheels back under the center of mass. Riders make the same corrections without thinking.</p>
+<p>For a long time the effect was credited to two things: the spinning wheels acting as gyroscopes, and the "trail" of the front wheel, which touches the ground slightly behind the line of the steering axis.</p>
+<p>Both help, but neither is essential. In 2011 a team of engineers built an experimental bicycle that canceled out both effects and still balanced itself, showing that the way mass is spread through the frame and the steering matters too.</p>]]></content:encoded>
+    <dc:creator>Workshop desk</dc:creator>
+    <dc:date>2026-09-04T09:40:00Z</dc:date>
+  </item>
+  <item rdf:about="https://en.wikipedia.org/wiki/Movable_type">
+    <title>Movable type, invented more than once</title>
+    <link>https://en.wikipedia.org/wiki/Movable_type</link>
+    <description>Printing with reusable individual characters appeared in China, and then Korea, centuries before Gutenberg's press in Europe.</description>
+    <content:encoded><![CDATA[<p>Around 1040, during China's Song dynasty, an artisan named Bi Sheng made movable type from baked clay, according to the scholar Shen Kuo, who described the method. Each character was a separate piece that could be arranged, printed and used again.</p>
+<p>In Korea, printers later cast type in metal. The oldest surviving book printed with movable metal type, the <em>Jikji</em>, was produced in 1377.</p>
+<p>In Europe, Johannes Gutenberg developed his own system in Mainz around 1450, combining metal type with an oil-based ink and a press adapted from those used to make wine. Alphabets need far fewer characters than Chinese writing, and printing spread quickly across the continent.</p>]]></content:encoded>
+    <dc:creator>Workshop desk</dc:creator>
+    <dc:date>2026-09-01T10:35:00Z</dc:date>
+  </item>
+  <item rdf:about="https://en.wikipedia.org/wiki/Fresnel_lens">
+    <title>The lens that lets a lighthouse reach the horizon</title>
+    <link>https://en.wikipedia.org/wiki/Fresnel_lens</link>
+    <description>Augustin-Jean Fresnel's lens bends light with rings of glass instead of one heavy curve, sending a beam far out to sea.</description>
+    <content:encoded><![CDATA[<p>Early lighthouses struggled to send their light far. A conventional lens big enough to gather a lamp's light would have been enormously thick and heavy, and much of the light was lost.</p>
+<p>In 1822 the French physicist Augustin-Jean Fresnel proposed a solution: break the curved surface of a lens into a series of concentric rings, keeping the curves but cutting away the bulk of glass behind them. Prisms around the outside caught light that would otherwise escape.</p>
+<p>The first Fresnel lens was installed in 1823 in the Cordouan Lighthouse, at the mouth of the Gironde estuary in France. The design spread around the world, and the same idea now appears in car headlights, stage lights and flat plastic magnifiers.</p>]]></content:encoded>
+    <dc:creator>Workshop desk</dc:creator>
+    <dc:date>2026-08-29T09:25:00Z</dc:date>
+  </item>
+  <item rdf:about="https://en.wikipedia.org/wiki/Cai_Lun">
+    <title>Paper, from the Han dynasty</title>
+    <link>https://en.wikipedia.org/wiki/Cai_Lun</link>
+    <description>Chinese tradition credits a court official named Cai Lun with making paper from bark, hemp, rags and old fishing nets around 105 CE.</description>
+    <content:encoded><![CDATA[<p>According to Chinese historical records, in 105 CE a court official of the Eastern Han dynasty named Cai Lun presented the emperor with a new writing material made from tree bark, hemp, old rags and fishing nets.</p>
+<p>Archaeologists have since found fragments of paper in China that are older still, so Cai Lun probably improved and standardized a process rather than inventing it outright. His method, though, made paper cheap and practical.</p>
+<p>Papermaking spread along trade routes to the Islamic world by the 8th century and reached Europe a few hundred years later.</p>]]></content:encoded>
+    <dc:creator>Workshop desk</dc:creator>
+    <dc:date>2026-08-26T09:55:00Z</dc:date>
+  </item>
+</rdf:RDF>

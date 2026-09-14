@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Field Notes</title>
+    <link>https://github.com/daybrite/Day-News/tree/main/resource/assets/demo</link>
+    <description>Short dispatches on the animals and plants around us. A Day News demo feed.</description>
+    <language>en</language>
+    <lastBuildDate>Sat, 12 Sep 2026 09:15:00 +0000</lastBuildDate>
+    <item>
+      <title>How monarch butterflies find their way to Mexico</title>
+      <link>https://en.wikipedia.org/wiki/Monarch_butterfly_migration</link>
+      <guid isPermaLink="false">day-news-demo:field-notes:monarch-migration</guid>
+      <dc:creator>Field Notes desk</dc:creator>
+      <pubDate>Sat, 12 Sep 2026 09:15:00 +0000</pubDate>
+      <description>Every autumn, monarchs from eastern North America fly as far as 4,800 kilometers to a few mountain forests in central Mexico, steering by the Sun.</description>
+      <content:encoded><![CDATA[<p>Every autumn, monarch butterflies from southern Canada and the eastern United States set off on one of the longest insect migrations on Earth. Some travel as far as 4,800 kilometers (about 3,000 miles) to spend the winter in the oyamel fir forests of central Mexico, where millions of them cluster together on the branches.</p>
+<p>The butterflies that make the trip are not the ones that left those forests in spring. Summer monarchs live only a few weeks, and several generations pass between one migration and the next. The autumn generation is different: it puts off breeding and can live for eight months or more, long enough to fly south, wait out the winter, and start the journey back.</p>
+<h3>A compass that keeps time</h3>
+<p>Monarchs navigate with a sun compass. Because the Sun moves across the sky during the day, the butterflies correct their heading with a circadian clock, and experiments have found that part of that clock sits in their antennae. On overcast days they appear to use Earth's magnetic field as a backup.</p>
+<p>No butterfly in the migration has made the trip before, yet each one arrives at the same small patch of mountains its great-grandparents left months earlier.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>What a honeybee's dance tells the hive</title>
+      <link>https://en.wikipedia.org/wiki/Waggle_dance</link>
+      <guid isPermaLink="false">day-news-demo:field-notes:waggle-dance</guid>
+      <dc:creator>Field Notes desk</dc:creator>
+      <pubDate>Wed, 09 Sep 2026 08:25:00 +0000</pubDate>
+      <description>A forager that finds a good patch of flowers comes home and dances, turning direction and distance into a figure eight the other bees can read.</description>
+      <content:encoded><![CDATA[<p>When a honeybee forager finds a rich patch of flowers, she returns to the hive and performs a waggle dance on the vertical face of the honeycomb. The dance traces a figure eight: a straight "waggle run," during which she vibrates her body, followed by a loop back to the start.</p>
+<p>The angle of the waggle run encodes direction. A run straight up the comb means "fly toward the Sun." A run angled 40 degrees to the right of vertical means "fly 40 degrees to the right of the Sun." The length of the run encodes distance, with longer waggles pointing to flowers farther away.</p>
+<p>The Austrian biologist Karl von Frisch decoded the dance, work that earned him a share of the 1973 Nobel Prize in Physiology or Medicine.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Three hearts and blue blood: inside the octopus</title>
+      <link>https://en.wikipedia.org/wiki/Octopus</link>
+      <guid isPermaLink="false">day-news-demo:field-notes:octopus-hearts</guid>
+      <dc:creator>Field Notes desk</dc:creator>
+      <pubDate>Sun, 06 Sep 2026 08:45:00 +0000</pubDate>
+      <description>Two hearts serve the gills, a third serves the body, and a copper-based protein turns the blood blue.</description>
+      <content:encoded><![CDATA[<p>An octopus has three hearts. Two branchial hearts push blood through the gills, where it picks up oxygen, and a third, systemic heart sends it on around the body.</p>
+<p>Its blood is blue. Instead of iron-based hemoglobin, octopuses carry oxygen with hemocyanin, a protein built around copper that works well in cold, oxygen-poor water.</p>
+<p>The systemic heart stops beating while an octopus swims, which may be one reason these animals prefer to crawl. Much of their nervous system lives outside the brain, too: about two-thirds of an octopus's neurons are in its arms.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Reading the tide pools: why the sea rises twice a day</title>
+      <link>https://en.wikipedia.org/wiki/Tide</link>
+      <guid isPermaLink="false">day-news-demo:field-notes:tides</guid>
+      <dc:creator>Field Notes desk</dc:creator>
+      <pubDate>Thu, 03 Sep 2026 08:15:00 +0000</pubDate>
+      <description>Most coasts see two high tides roughly every 24 hours and 50 minutes, pulled along by the Moon and nudged by the Sun.</description>
+      <content:encoded><![CDATA[<p>On most coastlines the sea rises and falls twice in a little more than a day. The Moon's gravity draws the ocean into two bulges, one on the side of Earth facing the Moon and one on the far side, and Earth turns beneath them.</p>
+<p>Because the Moon also moves along its orbit, a given point on Earth takes about 24 hours and 50 minutes to line up with it again. That is why high tide arrives roughly 50 minutes later each day.</p>
+<p>The Sun adds its own, smaller pull. Around new moon and full moon, when the Sun and Moon line up, their effects combine into especially large spring tides. At the quarter moons they partly cancel, giving gentler neap tides.</p>
+<p>Low water during a spring tide is the best time to explore tide pools, when anemones, sea stars and crabs are left within reach.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Trees that were growing when the Great Pyramid was built</title>
+      <link>https://en.wikipedia.org/wiki/Pinus_longaeva</link>
+      <guid isPermaLink="false">day-news-demo:field-notes:bristlecone-pines</guid>
+      <dc:creator>Field Notes desk</dc:creator>
+      <pubDate>Mon, 31 Aug 2026 08:20:00 +0000</pubDate>
+      <description>Great Basin bristlecone pines in the mountains of California and Nevada can live for more than 4,800 years.</description>
+      <content:encoded><![CDATA[<p>High in the White Mountains of eastern California, on dry, windswept slopes, grow some of the oldest known living trees. Great Basin bristlecone pines can live for thousands of years, and one tree, nicknamed Methuselah, has been dated by its growth rings to more than 4,800 years old.</p>
+<p>That means it was already growing when the Great Pyramid of Giza was built.</p>
+<p>Harsh conditions help explain the long lives. Bristlecones grow extremely slowly in cold, dry, rocky soil, producing dense, resinous wood that resists insects, fungi and rot. Much of an old tree can die back while a narrow strip of living bark keeps a few branches alive.</p>
+<p>The exact location of Methuselah is kept secret to protect it.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>The Arctic tern's pole-to-pole commute</title>
+      <link>https://en.wikipedia.org/wiki/Arctic_tern</link>
+      <guid isPermaLink="false">day-news-demo:field-notes:arctic-tern</guid>
+      <dc:creator>Field Notes desk</dc:creator>
+      <pubDate>Fri, 28 Aug 2026 08:35:00 +0000</pubDate>
+      <description>Tracking tags show these small seabirds fly around 70,000 kilometers a year between Arctic breeding grounds and Antarctic waters.</description>
+      <content:encoded><![CDATA[<p>The Arctic tern weighs about 100 grams, yet it makes the longest known migration of any animal. Terns breed around the Arctic during the northern summer, then fly to the seas around Antarctica for the southern summer.</p>
+<p>When researchers fitted terns from Greenland and Iceland with tiny tracking devices, they found round trips averaging about 70,900 kilometers. Rather than flying straight, the birds follow looping routes that make use of prevailing winds.</p>
+<p>Spending two polar summers a year in near-constant daylight, an Arctic tern probably sees more of the Sun than any other creature. Over a life that can last more than 30 years, the distance it flies adds up to about three trips to the Moon and back.</p>]]></content:encoded>
+    </item>
+  </channel>
+</rss>

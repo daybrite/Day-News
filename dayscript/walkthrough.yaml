@@ -3,7 +3,7 @@
 #     day launch -p macos-appkit --script dayscript/walkthrough.yaml
 #
 # CONTRACT: expects the store to already hold subscriptions with articles (run
-# dayscript/import.yaml first). Written to be RE-RUNNABLE: it reads from "All Articles", which
+# dayscript/seed-demo.yaml first, as CI does). Written to be RE-RUNNABLE: it reads from "All Articles", which
 # is unaffected by the read state a previous run left behind, and only asserts emptiness in the
 # unread scope where it has just marked everything read itself.
 name: day-news-walkthrough
@@ -19,14 +19,16 @@ flow:
 
   # Search filters through the full-text index, then clears. It is a toolbar item on the
   # desktops and a timeline field on a phone (docs/toolbars.md) — one behaviour, two homes.
-  # "space" hits several of the seeded fixture feeds (NASA, Quanta, ScienceDaily), so the
-  # results shot has rows from more than one subscription.
+  # "moon" hits several of the seeded demo feeds (Field Notes, Night Sky, Word of the Day,
+  # Almanac), so the results shot has rows from more than one subscription. The English set is
+  # the only one so far; a second language needs a localized term here (`key:`), which
+  # resource/assets/demo/README.md describes.
   # The search is the nav host's `.searchable()` field, driven through the toolbar model wherever
   # the toolkit has a window toolbar — the desktops, and since 2026-09 the phones too, whose bar
   # rides the navigation bar (iOS) or docks under the page (Android). HarmonyOS has no toolbar,
   # so the timeline keeps an inline field there.
-  - toolbar: { item: day.search, text: "space", skip_on: [harmony-arkui] }
-  - input: { id: search, text: "space", only_on: [harmony-arkui] }
+  - toolbar: { item: day.search, text: "moon", skip_on: [harmony-arkui] }
+  - input: { id: search, text: "moon", only_on: [harmony-arkui] }
   - pause: { secs: 1 }
   - screenshot: search-results
   - toolbar: { item: day.search, text: "", skip_on: [harmony-arkui] }
@@ -74,8 +76,9 @@ flow:
   # offer held — the row was just opened, so it must say Mark as Unread.
   # Android first steps back out of the reader: its composed push swaps the timeline OUT of
   # the tree while the reader shows (iOS and HarmonyOS keep both in their native stacks; the
-  # desktops keep the panes side by side).
-  - tap: { id: article-back, only_on: [android-mdc] }
+  # desktops keep the panes side by side). `nav_back` is the app bar's arrow and the system
+  # back, the same route out a finger takes.
+  - nav_back: { native: true, only_on: [android-mdc] }
   - pause: { secs: 1, only_on: [android-mdc] }
   - swipe_row: { id: timeline, row: 0, key: mark_unread }
   - pause: { secs: 1 }
@@ -143,6 +146,28 @@ flow:
   - screenshot: sidebar-hidden
   - toolbar: { item: day.sidebar-toggle, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
+
+  # Feed ▸ Refresh Feed, Mark All as Read and Unsubscribe act on the feed the sidebar has
+  # selected: the same three daynews-core calls every feed row's context menu makes. `menu:`
+  # drives the app menu, which the phones do not have, so they skip this block. Kitchen Science
+  # refreshes from the bundle, so no network is involved. Its route id is the URL's deterministic
+  # hash (daynews_db::feed_id("asset:demo/kitchen-science.xml")).
+  - navigate: { route: "feed:9105033381806695217", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: article-row-0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - menu: { key: menu_refresh_feed, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - menu: { key: mark_all_read, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - menu: { key: unsubscribe, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: subscriptions, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: feeds-count, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 6 }, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  # Subscribe again, so the screenshots below and the next run see all seven feeds.
+  - input: { id: subscribe-url, text: "asset:demo/kitchen-science.xml", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: subscribe-add, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 2, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 7 }, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
   # Subscriptions page: feed list and the OPML controls.
   - navigate: { route: subscriptions }

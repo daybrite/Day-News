@@ -193,13 +193,13 @@ fn scope_title() -> String {
 pub fn timeline_pane() -> impl Piece {
     let st = daynews_core::state();
     let sc = daynews_core::scene();
-    // Search lives in the window toolbar where there is one; a phone has none, so the timeline
-    // carries the field itself there. Both write the same signal.
+    // Search lives in the window toolbar where there is one (the nav's `.searchable` field);
+    // without a toolbar the timeline carries the field itself. Both write the same signal, and
+    // the query follows it either way — watching only the inline field left the toolbar's
+    // search typing into a box that filtered nothing.
     let search = crate::toolbar::search();
     let in_toolbar = crate::toolbar::available();
-    if !in_toolbar {
-        watch(move || search.get(), |q, _| daynews_core::set_search(q));
-    }
+    watch(move || search.get(), |q, _| daynews_core::set_search(q));
 
     column((
         // Heading — the scope's name over its unread count, with the two actions a reader

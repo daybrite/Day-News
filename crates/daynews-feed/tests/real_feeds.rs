@@ -9,43 +9,42 @@ struct Fixture {
     name: &'static str,
 }
 
-// One copy, under resource/assets/: the same files are the BUNDLED seed feeds the CI
-// walkthrough subscribes to via `asset:` URLs (dayscript/seed-fixtures.yaml), so the parser
-// tests and every platform's offline walkthrough read identical bytes. The README beside them
-// records where each came from.
+// Kept beside the tests, not in the app: the README in tests/data records where each came from.
+// The app's screenshots and walkthrough read the demo feeds under resource/assets/demo/ instead
+// (tests/demo_feeds.rs), so publishers' articles never ship inside the bundle.
 const FIXTURES: &[Fixture] = &[
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/merriam-webster.xml"),
+        bytes: include_bytes!("data/merriam-webster.xml"),
         url: "https://www.merriam-webster.com/wotd/feed/rss2",
         name: "plain RSS 2.0",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/sciencedaily.xml"),
+        bytes: include_bytes!("data/sciencedaily.xml"),
         url: "https://www.sciencedaily.com/rss/all.xml",
         name: "plain RSS 2.0, summaries only",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/nasa.xml"),
+        bytes: include_bytes!("data/nasa.xml"),
         url: "https://www.nasa.gov/feed/",
         name: "WordPress RSS + content:encoded",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/quanta.xml"),
+        bytes: include_bytes!("data/quanta.xml"),
         url: "https://www.quantamagazine.org/feed/",
         name: "WordPress RSS + media thumbnails",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/rust-forum.xml"),
+        bytes: include_bytes!("data/rust-forum.xml"),
         url: "https://users.rust-lang.org/c/announcements/6.rss",
         name: "Discourse RSS",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/rust-blog.xml"),
+        bytes: include_bytes!("data/rust-blog.xml"),
         url: "https://blog.rust-lang.org/feed.xml",
         name: "Atom",
     },
     Fixture {
-        bytes: include_bytes!("../../../resource/assets/fixtures/rust-mastodon.xml"),
+        bytes: include_bytes!("data/rust-mastodon.xml"),
         url: "https://social.rust-lang.org/@rust.rss",
         name: "Mastodon RSS",
     },
@@ -268,4 +267,42 @@ fn double_escaped_text_resolves_to_one_ampersand() {
       <guid>a</guid></item></channel></rss>"#;
     let feed = parse(xml, "https://e.example/f").expect("parse");
     assert_eq!(feed.items[0].title.as_deref(), Some("Tips & tricks"));
+}
+
+/// RSS 2.0 lets `description` carry HTML, and plenty of feeds put the whole article there with no
+/// `content:encoded`. That HTML is the article body: flattened to text, the reader ran every
+/// paragraph together. A plain-text description stays a summary, and `content:encoded` still wins.
+#[test]
+fn an_html_description_is_the_body_when_nothing_richer_exists() {
+    let xml = br#"<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
+      <link>https://e.example/</link>
+      <item><title>Escaped</title><link>https://e.example/a</link><guid>a</guid>
+      <description>&lt;p&gt;One.&lt;/p&gt;&lt;p&gt;Two &amp;amp; three.&lt;/p&gt;</description></item>
+      <item><title>CDATA</title><link>https://e.example/b</link><guid>b</guid>
+      <description><![CDATA[<p>Four.</p><p>Five.</p>]]></description></item>
+      <item><title>Plain</title><link>https://e.example/c</link><guid>c</guid>
+      <description>Six is less than 2 &lt; 7 in no way.</description></item>
+      <item><title>Both</title><link>https://e.example/d</link><guid>d</guid>
+      <description>&lt;p&gt;Teaser.&lt;/p&gt;</description>
+      <content:encoded xmlns:content="http://purl.org/rss/1.0/modules/content/">&lt;p&gt;Full.&lt;/p&gt;</content:encoded>
+      </item></channel></rss>"#;
+    let feed = parse(xml, "https://e.example/f").expect("parse");
+    let [escaped, cdata, plain, both] = &feed.items[..] else {
+        panic!("four items, got {}", feed.items.len());
+    };
+    assert_eq!(
+        escaped.content_html.as_deref(),
+        Some("<p>One.</p><p>Two &amp; three.</p>")
+    );
+    assert_eq!(escaped.summary.as_deref(), Some("One. Two & three."));
+    assert_eq!(
+        cdata.content_html.as_deref(),
+        Some("<p>Four.</p><p>Five.</p>")
+    );
+    assert_eq!(
+        plain.content_html, None,
+        "prose with a bare < is not markup"
+    );
+    assert_eq!(both.content_html.as_deref(), Some("<p>Full.</p>"));
+    assert_eq!(both.summary.as_deref(), Some("Teaser."));
 }

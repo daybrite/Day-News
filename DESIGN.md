@@ -147,11 +147,18 @@ opened with — invisible on a store whose newest unread articles are all from t
 on a stale one.
 
 Desktop gets a File menu (New Feed, New Folder, New Window, Refresh, Import/Export Subscriptions,
-Close Window) and a Go menu (Next Unread ⌘/, then the three smart feeds). These are one
-`app_menu_reactive` model, so all four desktop toolkits get the same bar from the same code and
-`dayscript/menus.yaml` drives them by Fluent key on every one. Next Unread walks the visible
-timeline forward and wraps, then falls back to any unread article, so it keeps working when the
-current scope is exhausted.
+Close Window), a Go menu (Next Unread ⌘/, then the three smart feeds), a Feed menu (Refresh Feed
+⇧⌘R, Mark All as Read, Unsubscribe) and an Article menu. These are one `app_menu_reactive` model,
+so all four desktop toolkits get the same bar from the same code, and dayscript drives them by
+Fluent key on every one. Next Unread walks the visible timeline forward and wraps, then falls back
+to any unread article, so it keeps working when the current scope is exhausted.
+
+The Feed menu acts on the feed the sidebar has selected, and does nothing when a smart feed, a tag
+or a page is selected, the same rule the Article menu follows with no open article. Each feed row
+also carries a context menu with the same three commands (`item(…).context_menu(…)`), aimed at the
+row that was right-clicked or long-pressed. Both call the same daynews-core functions, so the
+walkthrough's Feed-menu steps cover the row menu's actions too; `menu:` steps reach only the app
+menu, so the row menu itself is checked by hand.
 
 ## What real feeds taught us
 
@@ -167,6 +174,10 @@ Each of these is a test, because each was a wrong assumption first:
   found, so prose that merely mentions `&amp;` is left alone.
 - **WordPress lists the feed itself first**, so "open website" needs a link that is not the feed's
   own URL.
+- **The whole article can live in `description`.** RSS 2.0 allows HTML there, and many feeds send
+  no `content:encoded`, so an HTML description with nothing richer beside it becomes the article
+  body; flattened to text, the reader ran every paragraph together. A plain-text description stays
+  a summary.
 - **`&#149;` means a bullet.** Numeric references 128–159 name C1 control characters in
   Unicode, but publishers write them for the Windows-1252 characters at those byte positions
   (Merriam-Webster separates its pronunciations with `&#149;`), and browsers read them that way.

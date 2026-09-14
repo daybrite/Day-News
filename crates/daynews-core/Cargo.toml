@@ -15,6 +15,9 @@ day-reactive = { git = "https://github.com/daybrite/day.git" }
 day-core = { git = "https://github.com/daybrite/day.git" }
 day-model = { git = "https://github.com/daybrite/day.git" }
 day-persistence = { git = "https://github.com/daybrite/day.git" }
+# The bundled demo feeds are written per language: `fetch_feed` reads the set for the locale the
+# app resolved (resource/assets/demo/README.md).
+day-l10n = { git = "https://github.com/daybrite/day.git" }
 
 # Android resolves its writable files dir through the JNI bridge (see `store_dir`).
 [target.'cfg(target_os = "android")'.dependencies]

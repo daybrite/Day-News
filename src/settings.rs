@@ -33,6 +33,9 @@ pub fn settings_page() -> impl Piece {
             .position(|d| *d == retention_days())
             .unwrap_or(1),
     );
+    // This page's own note. The app-wide status line reports subscription work ("Subscribed to
+    // …"), and shown here it sat under the retention setting as if the two were related.
+    let note = Signal::new(String::new());
     // Applying is the watch, not the picker: the picker writes the index, the watch persists
     // it and prunes right away so the choice visibly acts.
     watch(
@@ -42,9 +45,7 @@ pub fn settings_page() -> impl Piece {
             day::prefs::set(RETENTION_KEY, &days.to_string());
             let pruned = daynews_core::prune(days);
             if pruned > 0 {
-                daynews_core::state()
-                    .status
-                    .set(crate::res::str::retention_pruned(pruned as f64).format());
+                note.set(crate::res::str::retention_pruned(pruned as f64).format());
             }
         },
     );
@@ -61,7 +62,7 @@ pub fn settings_page() -> impl Piece {
             label(crate::res::str::settings_retention_note())
                 .font(Font::Footnote)
                 .color(move || palette().text_muted),
-            label(move || daynews_core::state().status.get())
+            label(move || note.get())
                 .font(Font::Footnote)
                 .color(move || palette().text_muted)
                 .id("settings-status"),

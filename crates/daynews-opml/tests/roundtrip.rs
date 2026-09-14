@@ -69,8 +69,8 @@ fn folders_become_paths() {
 }
 
 /// The sample list an import seeds from: two folders plus one top-level subscription, so one
-/// file exercises both shapes — and its feeds are exactly the bundled fixtures, so the
-/// walkthrough's offline seed and the file-picker import land on the same subscriptions.
+/// file exercises both shapes — and its feeds are the live originals of the parser's captured
+/// fixtures (crates/daynews-feed/tests/data).
 #[test]
 fn sample_list_mixes_folders_and_top_level_feeds() {
     let doc = parse(SAMPLE).expect("parse");

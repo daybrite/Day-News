@@ -1,0 +1,48 @@
+# Seeds the store from the BUNDLED demo feeds — the deterministic, network-free articles the
+# walkthrough's contract needs (its steps read "All Articles" and drive the read/star/tag flows,
+# so the store must already hold subscriptions with articles).
+#
+# The seven feeds live under resource/assets/demo/<locale>/ and ship inside the app; the README
+# there describes each one. An `asset:demo/…` URL names a feed WITHOUT its language: the app reads
+# the set for the locale it is running in, falling back to English (daynews-core `fetch_feed`),
+# so a run under `--locale` shows that language's articles wherever the app has a set for it. No
+# live feed and no network, so it runs identically on every platform and on a fresh CI runner.
+#
+# Between them the feeds cover RSS 2.0 with full bodies, summary-only RSS, escaped and CDATA HTML
+# descriptions, Atom, RSS 1.0 (RDF) and a JSON Feed microblog whose posts carry no titles, so the
+# timeline's derived-title path stays covered.
+#
+# CONTRACT: expects a store with no other subscriptions (the count is the whole sidebar) — CI
+# runners start empty. Re-running adds nothing: feed ids are a hash of the URL.
+name: day-news-seed-demo
+description: Subscribe to the bundled demo feeds — the offline seed for the walkthrough.
+flow:
+  - wait_for: { id: nav, timeout_secs: 30 }
+  - navigate: { route: subscriptions }
+  - wait_for: { id: subscribe-url, timeout_secs: 20 }
+  - input: { id: subscribe-url, text: "asset:demo/field-notes.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:demo/night-sky.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:demo/kitchen-science.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:demo/atlas.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:demo/word-of-the-day.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:demo/workshop.xml" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 1 }
+  - input: { id: subscribe-url, text: "asset:demo/almanac.json" }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  # By Fluent key, so the count reads correctly in whatever locale the run uses.
+  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 7 } }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0, timeout_secs: 20 }
+  - screenshot: seeded-demo

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Word of the Day</title>
+    <link>https://github.com/daybrite/Day-News/tree/main/resource/assets/demo</link>
+    <description>One word, what it means, and where it came from. A Day News demo feed.</description>
+    <language>en</language>
+    <lastBuildDate>Thu, 10 Sep 2026 16:45:00 +0000</lastBuildDate>
+    <item>
+      <title>halcyon</title>
+      <link>https://en.wiktionary.org/wiki/halcyon</link>
+      <guid isPermaLink="false">day-news-demo:word-of-the-day:halcyon</guid>
+      <pubDate>Thu, 10 Sep 2026 16:45:00 +0000</pubDate>
+      <description><![CDATA[<p><strong>halcyon</strong> · adjective</p>
+<p>Calm and peaceful; happy and carefree, especially when remembered from the past.</p>
+<p><em>“They looked back on the halcyon days of their first summer by the lake.”</em></p>
+<p>The word comes from the Greek <em>alkyōn</em>, a kingfisher. In ancient legend the bird nested on the sea around the winter solstice and calmed the waves while it did.</p>]]></description>
+    </item>
+    <item>
+      <title>petrichor</title>
+      <link>https://en.wiktionary.org/wiki/petrichor</link>
+      <guid isPermaLink="false">day-news-demo:word-of-the-day:petrichor</guid>
+      <pubDate>Mon, 07 Sep 2026 16:40:00 +0000</pubDate>
+      <description><![CDATA[<p><strong>petrichor</strong> · noun</p>
+<p>The pleasant, earthy smell that rises when rain falls on dry ground.</p>
+<p><em>“After the storm, the whole garden smelled of petrichor.”</em></p>
+<p>Coined in 1964 by the Australian scientists Isabel Joy Bear and Richard Thomas, from the Greek <em>petra</em>, “stone,” and <em>ichor</em>, the fluid said to flow in the veins of the gods.</p>]]></description>
+    </item>
+    <item>
+      <title>serendipity</title>
+      <link>https://en.wiktionary.org/wiki/serendipity</link>
+      <guid isPermaLink="false">day-news-demo:word-of-the-day:serendipity</guid>
+      <pubDate>Fri, 04 Sep 2026 16:30:00 +0000</pubDate>
+      <description><![CDATA[<p><strong>serendipity</strong> · noun</p>
+<p>The luck of finding something good or useful without looking for it.</p>
+<p><em>“By pure serendipity, the bookshop they ducked into out of the rain had the atlas they wanted.”</em></p>
+<p>Coined by the English writer Horace Walpole in 1754, after a Persian fairy tale, <em>The Three Princes of Serendip</em>, whose heroes kept making discoveries by accident.</p>]]></description>
+    </item>
+    <item>
+      <title>gossamer</title>
+      <link>https://en.wiktionary.org/wiki/gossamer</link>
+      <guid isPermaLink="false">day-news-demo:word-of-the-day:gossamer</guid>
+      <pubDate>Tue, 01 Sep 2026 16:20:00 +0000</pubDate>
+      <description><![CDATA[<p><strong>gossamer</strong> · noun, adjective</p>
+<p>Fine, filmy cobwebs that drift through the air in calm weather; anything very light, thin and delicate.</p>
+<p><em>“Morning light caught the gossamer strung between the fence posts.”</em></p>
+<p>Probably from Middle English <em>gossomer</em>, “goose summer,” the mild weather late in the year when such webs are often seen.</p>]]></description>
+    </item>
+    <item>
+      <title>lunation</title>
+      <link>https://en.wiktionary.org/wiki/lunation</link>
+      <guid isPermaLink="false">day-news-demo:word-of-the-day:lunation</guid>
+      <pubDate>Sat, 29 Aug 2026 16:10:00 +0000</pubDate>
+      <description><![CDATA[<p><strong>lunation</strong> · noun</p>
+<p>The time from one new moon to the next, about 29.5 days; a lunar month.</p>
+<p><em>“The village market is held once every lunation.”</em></p>
+<p>From Medieval Latin <em>lunatio</em>, from Latin <em>luna</em>, “moon.”</p>]]></description>
+    </item>
+    <item>
+      <title>meander</title>
+      <link>https://en.wiktionary.org/wiki/meander</link>
+      <guid isPermaLink="false">day-news-demo:word-of-the-day:meander</guid>
+      <pubDate>Wed, 26 Aug 2026 16:05:00 +0000</pubDate>
+      <description><![CDATA[<p><strong>meander</strong> · verb</p>
+<p>To follow a winding course; to wander without hurry or aim.</p>
+<p><em>“The path meanders through the meadow down to the river.”</em></p>
+<p>From the Maeander, the ancient name of a river in western Turkey, now the Büyük Menderes, famous for its looping bends.</p>]]></description>
+    </item>
+  </channel>
+</rss>

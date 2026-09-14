@@ -2,7 +2,8 @@
 #
 # The OPML is a REPOSITORY fixture (`${project}` is expanded by the CLI to the checkout's
 # path), so this runs on any machine and on CI — test resources must never live outside the
-# repo. It lists the live originals of the bundled fixture feeds, in folders, and is the same
+# repo. It lists the live originals of the parser's captured fixture feeds
+# (crates/daynews-feed/tests/data), in folders, and is the same
 # file the daynews-opml unit tests parse; crates/daynews-opml/tests/data/README.md describes it.
 #
 # CONTRACT: expects a store that does not already hold these 7 subscriptions — the count

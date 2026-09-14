@@ -59,8 +59,9 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 /// The article's text as paragraphs, for the reader on a backend with no web engine to render
 /// its HTML (macos-gtk — see `reader::article_text`). Block-level tags break paragraphs, inline
 /// markup drops out, `script`/`style` bodies are skipped, and the entities feed HTML actually
-/// uses are decoded.
-pub fn paragraphs(html: &str) -> Vec<String> {
+/// uses are decoded. Text inside `h1`–`h6` comes back marked as a heading, so the reader can
+/// set it apart instead of showing it as one more paragraph.
+pub fn blocks(html: &str) -> Vec<Block> {
     const BLOCKS: [&str; 14] = [
         "p",
         "div",
@@ -77,10 +78,10 @@ pub fn paragraphs(html: &str) -> Vec<String> {
         "pre",
         "figcaption",
     ];
-    fn flush(cur: &mut String, out: &mut Vec<String>) {
+    fn flush(cur: &mut String, heading: bool, out: &mut Vec<Block>) {
         let text = decode_entities(cur.trim());
         if !text.is_empty() {
-            out.push(text);
+            out.push(Block { text, heading });
         }
         cur.clear();
     }
@@ -89,6 +90,8 @@ pub fn paragraphs(html: &str) -> Vec<String> {
     let mut cur = String::new();
     let mut tag = String::new();
     let mut in_tag = false;
+    // Whether the text being gathered sits inside an `h1`–`h6`.
+    let mut heading = false;
     // `script`/`style` text is markup's, not the reader's.
     let mut skipping = 0usize;
     for c in html.chars() {
@@ -114,7 +117,11 @@ pub fn paragraphs(html: &str) -> Vec<String> {
                             skipping + 1
                         }
                     }
-                    n if BLOCKS.contains(&n) => flush(&mut cur, &mut out),
+                    n if BLOCKS.contains(&n) => {
+                        flush(&mut cur, heading, &mut out);
+                        // `h1`–`h6` are the only two-letter `h` names in BLOCKS.
+                        heading = !closing && n.len() == 2 && n.starts_with('h');
+                    }
                     _ => {}
                 }
             }
@@ -128,8 +135,16 @@ pub fn paragraphs(html: &str) -> Vec<String> {
             c => cur.push(c),
         }
     }
-    flush(&mut cur, &mut out);
+    flush(&mut cur, heading, &mut out);
     out
+}
+
+/// One block of an article's text, as [`blocks`] splits it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Block {
+    pub text: String,
+    /// Set for text inside `h1`–`h6`.
+    pub heading: bool,
 }
 
 /// The entities feed HTML actually uses, named and numeric. Anything else stays as written —
@@ -217,39 +232,62 @@ pub fn snippet(s: &str, max: usize) -> String {
 mod tests {
     use super::*;
 
+    /// The blocks' text alone, for the cases that are not about headings.
+    fn texts(html: &str) -> Vec<String> {
+        blocks(html).into_iter().map(|b| b.text).collect()
+    }
+
     #[test]
-    fn paragraphs_break_on_block_tags_and_drop_inline_markup() {
+    fn blocks_break_on_block_tags_and_drop_inline_markup() {
         let html = "<p>First <b>bold</b> line.</p><p>Second line.</p>";
-        assert_eq!(paragraphs(html), ["First bold line.", "Second line."]);
+        assert_eq!(texts(html), ["First bold line.", "Second line."]);
     }
 
     #[test]
-    fn paragraphs_skip_script_and_style_bodies() {
+    fn blocks_skip_script_and_style_bodies() {
         let html = "<style>p { color: red }</style><p>Visible.</p><script>var x = 1;</script>";
-        assert_eq!(paragraphs(html), ["Visible."]);
+        assert_eq!(texts(html), ["Visible."]);
     }
 
     #[test]
-    fn paragraphs_decode_the_entities_feeds_use() {
+    fn blocks_decode_the_entities_feeds_use() {
         // `&frac34;` is not in the table, and text around an unknown entity must survive it.
         let html = "<p>Tom &amp; Jerry &mdash; &#8220;quoted&#8221; &#x2019;s &frac34;</p>";
         assert_eq!(
-            paragraphs(html),
+            texts(html),
             ["Tom & Jerry \u{2014} \u{201c}quoted\u{201d} \u{2019}s &frac34;"]
         );
     }
 
     #[test]
-    fn paragraphs_collapse_whitespace_and_drop_empty_blocks() {
+    fn blocks_collapse_whitespace_and_drop_empty_blocks() {
         let html = "<div>\n  spaced   out\n</div><p></p><p>  </p><li>Item</li>";
-        assert_eq!(paragraphs(html), ["spaced out", "Item"]);
+        assert_eq!(texts(html), ["spaced out", "Item"]);
     }
 
     #[test]
-    fn paragraphs_of_bare_text_is_one_block() {
-        assert_eq!(paragraphs("Just text"), ["Just text"]);
-        assert!(paragraphs("   ").is_empty());
-        assert!(paragraphs("").is_empty());
+    fn bare_text_is_one_block() {
+        assert_eq!(texts("Just text"), ["Just text"]);
+        assert!(blocks("   ").is_empty());
+        assert!(blocks("").is_empty());
+    }
+
+    #[test]
+    fn heading_text_is_marked_and_what_follows_is_not() {
+        let html = "<p>Intro.</p><h3>A <em>compass</em> that keeps time</h3><p>Body.</p><hr>After";
+        let heading = |text: &str, heading| Block {
+            text: text.into(),
+            heading,
+        };
+        assert_eq!(
+            blocks(html),
+            [
+                heading("Intro.", false),
+                heading("A compass that keeps time", true),
+                heading("Body.", false),
+                heading("After", false),
+            ]
+        );
     }
 
     #[test]

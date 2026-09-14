@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title>Night Sky</title>
+  <subtitle>What to look for overhead, and why it looks that way. A Day News demo feed.</subtitle>
+  <link rel="alternate" href="https://github.com/daybrite/Day-News/tree/main/resource/assets/demo"/>
+  <id>day-news-demo:night-sky</id>
+  <updated>2026-09-12T07:40:00Z</updated>
+  <author><name>Night Sky desk</name></author>
+  <entry>
+    <title>Why we only ever see one side of the Moon</title>
+    <link rel="alternate" href="https://en.wikipedia.org/wiki/Tidal_locking"/>
+    <id>day-news-demo:night-sky:tidal-locking</id>
+    <published>2026-09-12T07:40:00Z</published>
+    <updated>2026-09-12T07:40:00Z</updated>
+    <author><name>Night Sky desk</name></author>
+    <summary>The Moon turns once on its axis in the same time it takes to orbit Earth, so the same face always points our way.</summary>
+    <content type="html"><![CDATA[<p>From anywhere on Earth, the Moon shows the same familiar pattern of dark plains and bright highlands. That is no coincidence. The Moon rotates once on its axis in about 27.3 days, exactly the time it takes to complete one orbit, so the same hemisphere always faces us.</p>
+<p>Astronomers call this tidal locking. Billions of years ago the young Moon spun faster, but Earth's gravity raised bulges in its rock, and the drag on those bulges slowed its rotation until it matched the orbit.</p>
+<p>We can still see a little way around the edges. Because the Moon's orbit is slightly elliptical and tilted, it appears to rock gently over the month, an effect called libration. Over time, observers on Earth can see about 59 percent of the lunar surface.</p>
+<p>The far side is not permanently dark, though. It gets just as much sunlight as the near side. We simply never see it from here.</p>]]></content>
+  </entry>
+  <entry>
+    <title>Sunlight is eight minutes old</title>
+    <link rel="alternate" href="https://en.wikipedia.org/wiki/Astronomical_unit"/>
+    <id>day-news-demo:night-sky:light-travel-time</id>
+    <published>2026-09-09T20:15:00Z</published>
+    <updated>2026-09-09T20:15:00Z</updated>
+    <author><name>Night Sky desk</name></author>
+    <summary>At the speed of light, the trip from the Sun to Earth takes about 8 minutes and 20 seconds.</summary>
+    <content type="html"><![CDATA[<p>Light travels at almost 300,000 kilometers per second, but space is large. Earth orbits at an average distance of about 149.6 million kilometers from the Sun, a distance astronomers use as a unit of its own: the astronomical unit.</p>
+<p>Crossing that gap takes sunlight about 8 minutes and 20 seconds. When you watch the Sun set, the light reaching your eyes left its surface more than eight minutes earlier.</p>
+<p>Moonlight is much fresher. Reflected sunlight needs only about 1.3 seconds to cross the 384,000 kilometers between the Moon and Earth. Light from Neptune, on the other hand, is around four hours old when it arrives.</p>]]></content>
+  </entry>
+  <entry>
+    <title>What makes a Harvest Moon</title>
+    <link rel="alternate" href="https://en.wikipedia.org/wiki/Harvest_moon"/>
+    <id>day-news-demo:night-sky:harvest-moon</id>
+    <published>2026-09-06T21:05:00Z</published>
+    <updated>2026-09-06T21:05:00Z</updated>
+    <author><name>Night Sky desk</name></author>
+    <summary>The full moon nearest the September equinox rises soon after sunset several evenings in a row, giving extra light at dusk.</summary>
+    <content type="html"><![CDATA[<p>The Harvest Moon is the full moon that falls closest to the September equinox. It looks like any other full moon, but it behaves a little differently.</p>
+<p>On average, the Moon rises about 50 minutes later each day. Around the September equinox, its path meets the eastern horizon at a shallow angle in the evening, so for several nights near full moon it rises only a little later than the night before, often only about half an hour at mid-northern latitudes.</p>
+<p>Before electric light, those bright evenings, with the Moon up soon after sunset, let farmers keep bringing in crops after dark. That is where the name comes from.</p>
+<p>A full moon near the horizon can also look huge and orange. The color comes from moonlight passing through more of the atmosphere. The size is an illusion: a photograph shows the Moon no larger than usual.</p>]]></content>
+  </entry>
+  <entry>
+    <title>Finding the North Star</title>
+    <link rel="alternate" href="https://en.wikipedia.org/wiki/Polaris"/>
+    <id>day-news-demo:night-sky:north-star</id>
+    <published>2026-09-03T20:50:00Z</published>
+    <updated>2026-09-03T20:50:00Z</updated>
+    <author><name>Night Sky desk</name></author>
+    <summary>Follow the two stars at the end of the Big Dipper's bowl and you arrive at Polaris, the star that barely moves.</summary>
+    <content type="html"><![CDATA[<p>Polaris, the North Star, sits almost directly above Earth's North Pole, so while the rest of the night sky wheels around it, it stays nearly fixed. For centuries it has helped travelers find north.</p>
+<p>To find it, look for the Big Dipper. The two stars that form the outer edge of its bowl, Dubhe and Merak, are known as the Pointers. Draw a line from Merak through Dubhe and extend it about five times their separation, and you reach Polaris, at the end of the Little Dipper's handle.</p>
+<p>Despite its fame, Polaris is not the brightest star in the sky; dozens of stars outshine it. But it has a useful property: its height above the horizon roughly equals your latitude. From the equator it sits on the horizon, and from the North Pole it is straight overhead.</p>
+<p>It will not keep the job forever. Earth's axis slowly wobbles, and in about 12,000 years the bright star Vega will lie close to the pole instead.</p>]]></content>
+  </entry>
+  <entry>
+    <title>Where meteor showers come from</title>
+    <link rel="alternate" href="https://en.wikipedia.org/wiki/Meteor_shower"/>
+    <id>day-news-demo:night-sky:meteor-showers</id>
+    <published>2026-08-31T21:10:00Z</published>
+    <updated>2026-08-31T21:10:00Z</updated>
+    <author><name>Night Sky desk</name></author>
+    <summary>Shooting stars arrive on a schedule because Earth crosses the same trails of comet dust every year.</summary>
+    <content type="html"><![CDATA[<p>A meteor, or shooting star, is a speck of rock or dust, often smaller than a grain of sand, burning up as it enters Earth's atmosphere at tens of kilometers per second.</p>
+<p>Most meteor showers happen when Earth passes through a trail of debris shed by a comet. Because Earth crosses each trail at the same point in its orbit, showers return on about the same dates every year.</p>
+<p>The Perseids, which peak around August 12 and 13, come from Comet Swift–Tuttle. The Geminids of mid-December are unusual: their source, 3200 Phaethon, looks more like an asteroid than a comet.</p>
+<p>Viewing is usually best after midnight, away from city lights, with no bright Moon in the sky. Give your eyes 20 minutes to adjust to the dark, and watch a broad patch of sky rather than a single point.</p>]]></content>
+  </entry>
+  <entry>
+    <title>Saturn's rings are made of ice</title>
+    <link rel="alternate" href="https://en.wikipedia.org/wiki/Rings_of_Saturn"/>
+    <id>day-news-demo:night-sky:saturn-rings</id>
+    <published>2026-08-28T21:40:00Z</published>
+    <updated>2026-08-28T21:40:00Z</updated>
+    <author><name>Night Sky desk</name></author>
+    <summary>The rings stretch across hundreds of thousands of kilometers, yet in most places they are only about ten meters thick.</summary>
+    <content type="html"><![CDATA[<p>Saturn's rings are made mostly of chunks of water ice, from grains as fine as dust to boulders the size of a house. Sunlight reflecting off all that ice is what makes them so bright.</p>
+<p>They are also astonishingly thin. The main rings span hundreds of thousands of kilometers but are typically only about ten meters thick. Shrunk to the width of a football field, they would be far thinner than a sheet of paper.</p>
+<p>Galileo saw something odd on either side of Saturn through his early telescope in 1610, but he could not make out its shape. In the 1650s Christiaan Huygens, with a better telescope, proposed that the planet was surrounded by a thin, flat ring.</p>
+<p>Twice during each of Saturn's 29-year orbits, Earth passes through the plane of the rings. For a short time we see them edge-on, and they almost vanish from view.</p>]]></content>
+  </entry>
+</feed>

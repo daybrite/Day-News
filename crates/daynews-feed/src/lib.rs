@@ -174,11 +174,20 @@ fn normalize_entry(e: feed_rs::model::Entry, base_url: &str) -> ParsedItem {
 
     // Body preference mirrors what readers show: the full `content` when present, otherwise the
     // summary. Keeping both lets the list show a snippet while the reader shows the article.
+    // RSS 2.0 lets `description` carry HTML, and many feeds put the whole article there with no
+    // `content:encoded`; that HTML is the body, because flattened to text the reader ran every
+    // paragraph together.
     let content_html = e
         .content
         .as_ref()
         .and_then(|c| c.body.as_deref().map(windows_1252_c1))
-        .filter(|b| !b.trim().is_empty());
+        .filter(|b| !b.trim().is_empty())
+        .or_else(|| {
+            e.summary
+                .as_ref()
+                .filter(|t| t.content_type.as_str() == "text/html" && has_markup(&t.content))
+                .map(|t| windows_1252_c1(&t.content))
+        });
     let summary = e
         .summary
         .as_ref()
@@ -331,6 +340,19 @@ fn c1_char(c: char) -> char {
 /// fix applied to its characters.
 fn windows_1252_c1(s: &str) -> String {
     s.chars().map(c1_char).collect()
+}
+
+/// Whether decoded text holds real markup: a `<` that opens a tag name or a closing tag, the same
+/// test [`clean`] strips by, so prose like "2 < 7" does not count.
+fn has_markup(s: &str) -> bool {
+    s.char_indices().any(|(i, c)| {
+        c == '<'
+            && s[i + 1..]
+                .chars()
+                .next()
+                .is_some_and(|n| n.is_ascii_alphabetic() || n == '/')
+            && s[i..].contains('>')
+    })
 }
 
 /// The named entities a reader actually meets in feed text, plus the numeric forms.

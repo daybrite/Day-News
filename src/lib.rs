@@ -200,6 +200,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
                     .icon(res::images::sidebar_feed)
                     .icon_tint(Color::hex(0x30B0C7))
                     .badge(count(f.unread))
+                    .context_menu(menus::feed_context_menu(f.id, f.unread))
             },
         )
         // User tags, with their article counts — selecting one scopes the timeline to it.
@@ -235,28 +236,10 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
 
 /// The reader as a destination. The timeline is no longer in here — it is the nav's
 /// content-list pane, its own column beside this on the desktops and the pushed middle layer
-/// on a phone (docs/navigation.md).
-#[cfg(not(target_os = "android"))]
+/// on a phone (docs/navigation.md). Every phone's own back returns from it to the list: the
+/// iOS chevron, and on Android the app bar's arrow and the system back, which close the
+/// reader through the nav's `detail_visible` binding. (Android once added a Back button row
+/// here as well, which put two back controls on one screen.)
 fn reader_dest() -> impl Piece {
     reader::reader_pane().grow()
-}
-
-/// Android composes the list-then-reader push flow in the nav, so the reader page carries
-/// its own way back (`reader_open` := false); iOS gets the system back chevron from the native
-/// stack and macOS shows the reader beside the list, so neither wants the extra row.
-#[cfg(target_os = "android")]
-fn reader_dest() -> impl Piece {
-    column((
-        row((
-            button(res::str::back())
-                .action(|| daynews_core::scene().reader_open.set(false))
-                .id("article-back"),
-            spacer(),
-        ))
-        .padding(Insets::symmetric(10.0, 6.0))
-        .grow_w(),
-        divider(),
-        reader::reader_pane().grow(),
-    ))
-    .grow()
 }

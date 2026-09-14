@@ -141,23 +141,42 @@ fn reader_body(url: Signal<String>, go: Trigger) -> AnyPiece {
 }
 
 /// The article as pieces: the masthead order the document uses — source, headline, date — and
-/// then its text, with the feed's markup reduced to paragraphs.
+/// then its text, with the feed's markup reduced to headings and paragraphs.
 fn article_text() -> impl Piece {
     let st = daynews_core::scene();
+    // One label per block, keyed by article and position, so a new article rebuilds the column
+    // and a heading keeps its weight instead of reading as one more paragraph.
     let body = move || {
         let Some(a) = st.article.get() else {
-            return String::new();
+            return Vec::new();
         };
         let html = a
             .content_html
             .as_deref()
             .or(a.summary.as_deref())
             .unwrap_or_default();
-        let text = crate::format::paragraphs(html).join("\n\n");
-        if text.is_empty() {
-            crate::res::str::reader_no_content().format()
+        let mut blocks = crate::format::blocks(html);
+        if blocks.is_empty() {
+            blocks.push(crate::format::Block {
+                text: crate::res::str::reader_no_content().format(),
+                heading: false,
+            });
+        }
+        blocks
+            .into_iter()
+            .enumerate()
+            .map(|(i, b)| (format!("{}-{i}", a.id), b))
+            .collect::<Vec<_>>()
+    };
+    let block = |b: crate::format::Block| {
+        if b.heading {
+            label(b.text)
+                .font(Font::Title3)
+                .weight(FontWeight::Bold)
+                .color(move || palette().text)
+                .any()
         } else {
-            text
+            label(b.text).color(move || palette().text).any()
         }
     };
     scroll(
@@ -182,7 +201,12 @@ fn article_text() -> impl Piece {
             })
             .font(Font::Caption)
             .color(move || palette().text_muted),
-            label(body).color(move || palette().text),
+            each(
+                items(body, |(key, _): &(String, crate::format::Block)| {
+                    key.clone()
+                }),
+                move |slot| block(slot.get().1),
+            ),
         ))
         .spacing(10.0)
         .align(HAlign::Leading)

@@ -35,8 +35,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 day = { git = "https://github.com/daybrite/day.git", features = ["persistence"] }
-# The article reader renders feed HTML in a native web view (docs/webview.md).
-day-piece-webview = { git = "https://github.com/daybrite/day.git" }
+day-piece-webview = { git = "https://github.com/daybrite/day-piece-webview.git" }
 daynews-core = { path = "crates/daynews-core" }
 daynews-db = { path = "crates/daynews-db" }
 daynews-opml = { path = "crates/daynews-opml" }

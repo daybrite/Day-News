@@ -93,8 +93,9 @@ cargo build --no-default-features --features appkit    # or gtk / qt / uikit / m
 A fresh install has no subscriptions. Seed some, then drive the whole reader loop:
 
 ```sh
+day launch -p macos-appkit --script dayscript/seed-demo.yaml    # the bundled demo feeds, offline
 day launch -p macos-appkit --script dayscript/import.yaml       # a sample OPML, through the file picker
-day launch -p android-mdc  --script dayscript/seed-mobile.yaml  # a few feeds, by URL
+day launch -p android-mdc  --script dayscript/seed-mobile.yaml  # a few live feeds, by URL
 day launch -p macos-appkit --script dayscript/walkthrough.yaml  # the full loop, with screenshots
 ```
 
@@ -122,10 +123,13 @@ day patch --local /path/to/day
 - `crates/` holds `daynews-opml`, `daynews-feed`, `daynews-db`, and `daynews-core`: OPML, feed
   parsing, the store, and the view model, all headless.
 - `resource/locales/en/app.ftl` carries every user-facing string.
+- `resource/assets/demo/` holds the articles the screenshots show: seven feeds written for the
+  app, one set per language, read offline from inside the app.
 - `platform/` holds the thin native host projects the mobile targets build through.
 
-Test fixtures live in the repository; `crates/daynews-opml/tests/data` records where the vendored
-OPML samples came from. `day lint` checks routes, element ids, and locale coverage, and
-`DESIGN.md` is the architecture.
+Test fixtures live in the repository; `crates/daynews-feed/tests/data` and
+`crates/daynews-opml/tests/data` record where the captured feeds and the vendored OPML samples came
+from. `day lint` checks routes, element ids, and locale coverage, and `DESIGN.md` is the
+architecture.
 
 Day News is open source under the Apache-2.0 license.

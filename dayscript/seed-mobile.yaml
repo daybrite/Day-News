@@ -1,7 +1,8 @@
-# Subscribes to a handful of dependable feeds, for a device where importing a file is awkward.
-# They are the live originals of the bundled fixtures (resource/assets/fixtures/README.md), and
-# each is a different flavour (WordPress, plain RSS 2.0, Discourse, Atom, Mastodon), so the
-# parser's breadth is visible on the device too.
+# Subscribes to a handful of dependable live feeds, for a device where importing a file is
+# awkward. They are the originals of the parser's captured fixtures
+# (crates/daynews-feed/tests/data/README.md), and each is a different flavour (WordPress, plain
+# RSS 2.0, Discourse, Atom, Mastodon), so the parser's breadth is visible on the device too. For
+# the offline demo articles the screenshots use, run dayscript/seed-demo.yaml instead.
 name: day-news-seed
 description: Subscribe to a few representative feeds and let them refresh.
 flow:
