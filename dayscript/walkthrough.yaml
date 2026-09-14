@@ -74,10 +74,11 @@ flow:
   # menu flips below are desktop-only, so on a phone the swipe's single flip is what
   # guarantees the unread row the mark-all-read step needs. `key:` pins WHICH button the
   # offer held — the row was just opened, so it must say Mark as Unread.
-  # Android first steps back out of the reader: its composed push swaps the timeline OUT of
-  # the tree while the reader shows (iOS and HarmonyOS keep both in their native stacks; the
-  # desktops keep the panes side by side). `nav_back` is the app bar's arrow and the system
-  # back, the same route out a finger takes.
+  # Android first steps back out of the reader. On a phone its composed push swaps the
+  # timeline OUT of the tree while the reader shows (iOS and HarmonyOS keep both in their
+  # native stacks; the desktops keep the panes side by side). On a tablet the reader sits
+  # beside the timeline, and the same back closes it without leaving the section. `nav_back`
+  # is the app bar's arrow and the system back, the same route out a finger takes.
   - nav_back: { native: true, only_on: [android-mdc] }
   - pause: { secs: 1, only_on: [android-mdc] }
   - swipe_row: { id: timeline, row: 0, key: mark_unread }
