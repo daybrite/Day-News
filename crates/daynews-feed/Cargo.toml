@@ -7,7 +7,7 @@ license = "Apache-2.0"
 [dependencies]
 # Real-world syndication is four formats (RSS 2.0, RSS 1.0/RDF, Atom, JSON Feed) plus a long
 # tail of namespaced extensions and at least three date encodings, several of them written
-# wrong by popular publishers. Hand-rolling that is a bug farm — the 145-feed sample here spans
+# wrong by popular publishers. Hand-rolling that is a bug farm; the 145-feed sample here spans
 # YouTube (Atom), Reddit, Mastodon, Discourse, Blogspot, Medium and GitHub, all of which
 # disagree. feed-rs normalizes them; we adapt its model to ours and own the policy decisions
 # (which field wins, how ids are derived) in `normalize`.
@@ -21,6 +21,6 @@ daynews-time = { path = "../daynews-time" }
 
 # feed-rs generates v4 uuids for id-less items; on wasm, uuid must be told its randomness
 # source or it refuses to compile. `rng-getrandom` routes it through getrandom, whose `custom`
-# backend `day build` selects for every web app — day-dom answers it with browser entropy.
+# backend `day build` selects for every web app; day-dom answers it with browser entropy.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 uuid = { version = "1", default-features = false, features = ["rng-getrandom"] }

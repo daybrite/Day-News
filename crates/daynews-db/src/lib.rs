@@ -1,15 +1,15 @@
 //! The local article store, on day-persistence's lazy engine.
 //!
 //! The schema is relational and declared: folders own feeds (ordered, cascade), feeds own
-//! articles (cascade), an article's BODY is its own row (so the timeline's window-faulting
+//! articles (cascade), an article's body is its own row (so the timeline's window-faulting
 //! never loads bodies), tags cross articles through a join table, and search runs through
-//! generated FTS5 shadows over titles/authors/summaries and over bodies — one fetch reads
+//! generated FTS5 shadows over titles/authors/summaries and over bodies; one fetch reads
 //! both via a relation-crossing match. Nothing loads at open; the UI binds live queries and
 //! the engine answers them.
 //!
-//! Identity is DETERMINISTIC: a feed's id is a hash of its URL, an article's a hash of
+//! Identity is deterministic: a feed's id is a hash of its URL, an article's a hash of
 //! (feed URL, guid), a folder's/tag's a hash of its name. Subscribing twice, re-importing an
-//! OPML, or refetching a feed therefore cannot create duplicates — the id already exists —
+//! OPML, or refetching a feed therefore cannot create duplicates (the id already exists),
 //! and read state survives every refresh because an existing article is never touched.
 
 use day_macros::Model;
@@ -22,7 +22,7 @@ use day_reactive::Binding;
 pub use day_persistence::Value;
 
 // Every fts(…) below declares `tokenize = "unicode61 remove_diacritics 2"`: diacritics-
-// insensitive search, so `ecole` finds `École` — what a reader's search field means. (An
+// insensitive search, so `ecole` finds `École`, which is what a reader's search field means. (An
 // attribute takes only literals, so the string repeats rather than naming a const.)
 
 // ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ pub struct Folder {
     pub name: String,
     /// Sidebar order among folders (fractional keying, like every ordered surface).
     pub position: f64,
-    /// Deleting a folder unsubscribes its feeds — and their articles, bodies and tag
+    /// Deleting a folder unsubscribes its feeds, and their articles, bodies and tag
     /// memberships go with them: one delete, the whole subtree, one undo unit.
     #[model(relation(target = Feed, inverse = "folder", delete = "cascade", ordered = "position"))]
     pub feeds: Many<Feed>,
@@ -97,12 +97,12 @@ pub struct Article {
     /// The body rides in its own row so a timeline window faults metadata only.
     #[model(relation(target = ArticleBody, inverse = "article", delete = "cascade"))]
     pub body: Many<ArticleBody>,
-    /// User labels — a many-to-many; membership rows cascade with either side.
+    /// User labels, a many-to-many; membership rows cascade with either side.
     #[model(relation(target = Tag, join = "article_tags"))]
     pub tags: Many<Tag>,
 }
 
-/// An article's HTML body — one row per article, keyed by the SAME id, faulted only when the
+/// An article's HTML body: one row per article, keyed by the same id, faulted only when the
 /// reader opens it, and searched through its own FTS shadow.
 #[derive(Model, Clone, Default, PartialEq, Debug)]
 #[model(
@@ -132,7 +132,7 @@ pub struct Tag {
 // ---------------------------------------------------------------------------
 
 /// FNV-1a over the parts, masked into the integer-key space (the top bit is day-model's
-/// interned-handle floor) and steered off 0. Deterministic identity is the dedup story:
+/// interned-handle floor) and steered off 0. Deterministic identity is the dedup mechanism:
 /// the same URL or (feed, guid) always names the same row.
 fn ident(parts: &[&str]) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
@@ -168,14 +168,14 @@ pub fn tag_id(name: &str) -> u64 {
 // Scopes and fetches
 // ---------------------------------------------------------------------------
 
-/// What the timeline is showing — the sidebar selection, in NetNewsWire's terms.
+/// What the timeline is showing: the sidebar selection, in NetNewsWire's terms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scope {
     /// Every article from every feed.
     All,
-    /// Unread only, across all feeds — NetNewsWire's "All Unread".
+    /// Unread only, across all feeds: NetNewsWire's "All Unread".
     Unread,
-    /// Published since local midnight, read or not — NetNewsWire's "Today".
+    /// Published since local midnight, read or not: NetNewsWire's "Today".
     Today,
     Starred,
     Feed(u64),
@@ -184,14 +184,14 @@ pub enum Scope {
 }
 
 /// The instant local midnight happened, as unix seconds. Local rather than UTC because "Today"
-/// is a claim about the reader's calendar, not the server's — `daynews-time` asks the host for
+/// is a claim about the reader's calendar, not the server's; `daynews-time` asks the host for
 /// the offset in force, DST and all, on every target this app runs on.
 pub fn start_of_today() -> i64 {
     daynews_time::start_of_day(now_unix())
 }
 
-/// The scope's predicate alone (no search, no sort) — what count badges share with the
-/// timeline.
+/// The scope's predicate alone (without search or sort), which is what count badges share with
+/// the timeline.
 pub fn scope_pred(scope: Scope) -> Pred {
     match scope {
         Scope::All => Pred::Always,
@@ -204,7 +204,7 @@ pub fn scope_pred(scope: Scope) -> Pred {
     }
 }
 
-/// The timeline's fetch: the scope, the search text (through BOTH full-text shadows — titles
+/// The timeline's fetch: the scope, the search text (through both full-text shadows, titles
 /// and bodies), newest first, windowed.
 pub fn timeline_fetch(scope: Scope, search: &str, limit: usize) -> Fetch {
     let mut f = Fetch::new()
@@ -275,10 +275,10 @@ pub struct Db {
 /// balloon the cache: each chunk faults, writes, and flushes before the next.
 const BULK_CHUNK: usize = 2_000;
 
-/// Statement logging in debug builds: every SQL the engine executes for this store —
-/// migrations, autosave flushes, cascades, live queries — through the engine's own trace
-/// (docs/persistence.md), at `trace!` because it is a per-statement firehose (docs/logging.md).
-/// `DAY_LOG=trace` shows it; anything less hides it, which is the point of a level. The
+/// Statement logging in debug builds: every SQL the engine executes for this store (migrations,
+/// autosave flushes, cascades, live queries) through the engine's trace (docs/persistence.md),
+/// at `trace!` because it is a per-statement firehose (docs/logging.md).
+/// `DAY_LOG=trace` shows it; anything less hides it, which is what a level is for. The
 /// `cfg!(debug_assertions)` guard stays: a release build should not pay to format SQL it will
 /// then discard.
 fn traced(driver: Sqlite) -> Sqlite {
@@ -313,7 +313,7 @@ impl Db {
 
     // ---- feeds & folders ------------------------------------------------------------------
 
-    /// Subscribe, or answer the existing subscription — the id is the URL's hash, so
+    /// Subscribe, or answer the existing subscription: the id is the URL's hash, so
     /// subscribing twice cannot duplicate (and OPML re-imports are naturally idempotent).
     pub fn add_feed(&self, feed_url: &str, title: &str, folder: Option<u64>) -> u64 {
         let id = feed_id(feed_url);
@@ -332,7 +332,7 @@ impl Db {
         id
     }
 
-    /// Create a folder (idempotent by name — the id IS the name's hash).
+    /// Create a folder (idempotent by name: the id is the name's hash).
     pub fn add_folder(&self, name: &str) -> u64 {
         let id = folder_id(name);
         if self.container.get::<Folder>(id).is_none() {
@@ -360,7 +360,7 @@ impl Db {
         id
     }
 
-    /// One past the current largest `position` — new rows land last.
+    /// One past the current largest `position`, so new rows land last.
     fn next_position<M: day_persistence::Model>(&self, col: day_persistence::Col<f64>) -> f64 {
         let last = self
             .container
@@ -398,7 +398,7 @@ impl Db {
         let Some(feed) = self.container.get::<Feed>(id) else {
             return;
         };
-        // Only overwrite the title when the feed actually supplied one, so a subscription
+        // Only overwrite the title when the feed supplied one, so a subscription
         // named by hand (or by its URL) is not blanked by a feed with an empty <title>.
         if let Some(t) = title.filter(|t| !t.trim().is_empty()) {
             feed.title().write(t.to_string());
@@ -424,20 +424,20 @@ impl Db {
         }
     }
 
-    /// Unsubscribe. Articles, bodies and tag memberships go with the feed — the cascade —
+    /// Unsubscribe. Articles, bodies and tag memberships go with the feed (the cascade),
     /// and with an undo stack installed the whole subtree comes back as one unit.
     pub fn delete_feed(&self, id: u64) {
         let _ = self.container.delete::<Feed>(id);
     }
 
-    /// Delete a folder AND its feeds (their articles cascade too) — the deep cascade.
+    /// Delete a folder and its feeds (their articles cascade too): the deep cascade.
     pub fn delete_folder(&self, id: u64) {
         let _ = self.container.delete::<Folder>(id);
     }
 
     // ---- articles -------------------------------------------------------------------------
 
-    /// Store a refresh's items for one feed. Returns how many were NEW — an item already
+    /// Store a refresh's items for one feed. Returns how many were new; an item already
     /// present is left completely alone, which is what preserves read state (ids are the
     /// (feed, guid) hash, so existence is one id-set query, no faulting).
     pub fn upsert_articles(&self, feed: u64, feed_url: &str, items: &[IncomingArticle]) -> usize {
@@ -486,7 +486,7 @@ impl Db {
         added
     }
 
-    /// One article's body, faulted on open — `None` when the item shipped none.
+    /// One article's body, faulted on open; `None` when the item shipped none.
     pub fn body(&self, article: u64) -> Option<String> {
         self.container
             .get::<ArticleBody>(article)
@@ -505,7 +505,7 @@ impl Db {
         }
     }
 
-    /// Tag or untag one article — a join-row link, one INSERT or DELETE.
+    /// Tag or untag one article: a join-row link, one INSERT or DELETE.
     pub fn set_tagged(&self, article: u64, tag: u64, on: bool) {
         let Some(a) = self.container.get::<Article>(article) else {
             return;
@@ -517,7 +517,7 @@ impl Db {
         }
     }
 
-    /// Mark everything in `scope` read (or unread) — "Mark All as Read". Chunked, so the
+    /// Mark everything in `scope` read (or unread): "Mark All as Read". Chunked, so the
     /// working set stays bounded however many rows the scope holds.
     pub fn set_read_all(&self, scope: Scope, read: bool) -> usize {
         let want = !read;
@@ -527,7 +527,7 @@ impl Db {
         self.bulk_write(fetch, |a| a.is_read().write(read))
     }
 
-    /// Delete read, unstarred, untagged articles older than `days` — the retention pass.
+    /// Delete read, unstarred, untagged articles older than `days`: the retention pass.
     /// Starred and tagged articles are the user's; they stay whatever their age.
     pub fn prune_older_than(&self, days: u32) -> usize {
         let cutoff = now() - i64::from(days) * 86_400;
@@ -590,7 +590,7 @@ impl Db {
             .live()
     }
 
-    /// A live badge for a scope — `SELECT COUNT(*)`, no ids.
+    /// A live badge for a scope: `SELECT COUNT(*)`, no ids.
     pub fn count(&self, scope: Scope) -> CountQuery<Article> {
         self.container
             .query::<Article>()
@@ -598,7 +598,7 @@ impl Db {
             .live_count()
     }
 
-    /// A live UNREAD badge for a scope.
+    /// A live unread badge for a scope.
     pub fn unread_count(&self, scope: Scope) -> CountQuery<Article> {
         self.container
             .query::<Article>()
@@ -612,7 +612,7 @@ fn now() -> i64 {
 }
 
 /// The wall clock as unix seconds, everywhere the app runs. `daynews-time` rather than
-/// `SystemTime::now()`, which aborts on wasm32 — on web this is the page's `Date.now()`.
+/// `SystemTime::now()`, which aborts on wasm32; on web this is the page's `Date.now()`.
 pub fn now_unix() -> i64 {
     daynews_time::now_unix()
 }

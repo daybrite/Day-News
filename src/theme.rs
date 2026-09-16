@@ -11,7 +11,7 @@ pub struct Palette {
     pub rule: Color,
     pub unread_dot: Color,
     pub error: Color,
-    /// The star affordances — the row's glyph and the leading swipe action's fill. Warm, so
+    /// The star affordances: the row's glyph and the leading swipe action's fill. Warm, so
     /// starring reads apart from the blue read/unread actions.
     pub star: Color,
 }
@@ -40,7 +40,7 @@ const DARK: Palette = Palette {
     star: Color::hex(0xF0A62E),
 };
 
-/// TRACKED read of the platform appearance, so color closures recolor live when the system
+/// Tracked read of the platform appearance, so color closures recolor live when the system
 /// theme flips.
 pub fn palette() -> &'static Palette {
     if day::dark_mode() { &DARK } else { &LIGHT }

@@ -6,7 +6,7 @@
 //! - **Now.** `SystemTime::now()` traps on `wasm32-unknown-unknown` rather than failing, so the
 //!   web build asks the page for `Date.now()`.
 //! - **The local UTC offset at an instant, DST included.** "Today" is a claim about the reader's
-//!   calendar, so the timeline's cut-off is local midnight rather than UTC midnight — and turning
+//!   calendar, so the timeline's cut-off is local midnight rather than UTC midnight, and turning
 //!   an instant into a local one needs the reader's zone rules.
 //!
 //! Those rules come from the host, never from a database shipped in the binary: POSIX
@@ -38,16 +38,16 @@ pub fn now_unix() -> i64 {
     (now_epoch_ms() / 1000) as i64
 }
 
-/// The reader's offset from UTC at `at_unix`, in seconds EAST of UTC (New York in January is
-/// `-18_000`), with the zone's daylight-saving rules applied at that instant — the offset in
-/// force *then*, not the one in force now.
+/// The reader's offset from UTC at `at_unix`, in seconds east of UTC (New York in January is
+/// `-18_000`), with the zone's daylight-saving rules applied at that instant: the offset in
+/// force then, not the one in force now.
 ///
 /// `None` when the host cannot answer: a machine with no zone configured, or a web page served by
 /// a shim older than the offset key. Treat it as UTC.
 #[cfg(all(unix, not(target_arch = "wasm32")))]
 pub fn local_offset_seconds(at_unix: i64) -> Option<i32> {
-    // `localtime_r` resolves the instant against the platform's own time-zone database — the same
-    // one `date` and every other program on the machine reads — and reports the offset it used in
+    // `localtime_r` resolves the instant against the platform's time-zone database (the same
+    // one `date` and every other program on the machine reads) and reports the offset it used in
     // `tm_gmtoff`. macOS, Linux, iOS, Android and OpenHarmony all carry that field.
     let t = at_unix as libc::time_t;
     let mut tm: libc::tm = unsafe { std::mem::zeroed() };
@@ -142,9 +142,9 @@ pub fn local_offset_seconds(at_unix: i64) -> Option<i32> {
 
 /// The instant local midnight last happened, as unix seconds.
 ///
-/// The offset is taken twice on purpose: once for now, to land on the right calendar day, and
+/// The offset is taken twice: once for now, to land on the right calendar day, and
 /// once for the midnight that day arithmetic produced. On the two days a year a zone changes its
-/// offset, those differ — and the boundary the reader means is the one that was in force AT
+/// offset, those differ, and the boundary the reader means is the one that was in force at
 /// midnight, not the one in force at breakfast.
 pub fn start_of_day(now_unix: i64) -> i64 {
     let off = local_offset_seconds(now_unix).map_or(0, i64::from);
@@ -192,7 +192,7 @@ mod tests {
             "start {start} is more than a day before now {now}"
         );
         // Local midnight is an exact multiple of a day once the offset in force there is added
-        // back — the property the DST re-derivation exists to keep true.
+        // back, the property the DST re-derivation exists to keep true.
         let off = i64::from(local_offset_seconds(start).unwrap_or(0));
         assert_eq!(
             (start + off) % 86_400,
@@ -205,7 +205,7 @@ mod tests {
     fn start_of_day_holds_across_a_dst_transition() {
         // 2026-03-08 07:00Z is one hour after the US spring-forward. Whatever zone the machine
         // running this is in, the answer has to be a day boundary in that zone and no more than
-        // 25 hours back — the case that broke when the offset was read only once.
+        // 25 hours back, the case that broke when the offset was read only once.
         let after_spring_forward = 1_772_953_200;
         let start = start_of_day(after_spring_forward);
         assert!(start <= after_spring_forward);

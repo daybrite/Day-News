@@ -50,8 +50,8 @@ fn document(a: &StoredArticle) -> String {
         })
         .unwrap_or_else(|| escape(&a.feed_title));
 
-    // Deliberately a self-contained document with no external assets: the reader must render
-    // the same offline, and pulling remote CSS would leak the reader's activity to third parties.
+    // A self-contained document with no external assets: the reader must render the same
+    // offline, and pulling remote CSS would leak the reader's activity to third parties.
     format!(
         r#"<!doctype html>
 <html><head><meta charset="utf-8">
@@ -130,7 +130,7 @@ fn escape(s: &str) -> String {
 ///
 /// Where there is a web engine the generated document goes to the web view. macos-gtk has no
 /// WebKitGTK build, so the piece reports `Unsupported` there and would realize day's placeholder
-/// leaf (docs/webview.md) — an empty pane. This composes the same article from pieces instead, so
+/// leaf (docs/webview.md), an empty pane. This composes the same article from pieces instead, so
 /// the reader reads everywhere.
 fn reader_body(url: Signal<String>, go: Trigger) -> AnyPiece {
     if day_piece_webview::support() == Support::Unsupported {
@@ -140,7 +140,7 @@ fn reader_body(url: Signal<String>, go: Trigger) -> AnyPiece {
     }
 }
 
-/// The article as pieces: the masthead order the document uses — source, headline, date — and
+/// The article as pieces: the masthead order the document uses (source, headline, date) and
 /// then its text, with the feed's markup reduced to headings and paragraphs.
 fn article_text() -> impl Piece {
     let st = daynews_core::scene();
@@ -219,13 +219,13 @@ fn article_text() -> impl Piece {
 
 /// The reader pane. Empty state until an article is open.
 ///
-/// The article's commands are declared HERE (docs/toolbars.md): next-unread, star and mark-read
+/// The article's commands are declared here (docs/toolbars.md): next-unread, star and mark-read
 /// all act on what this pane is showing, so they ride its chrome and leave when it does. The
 /// window's bar cannot see the open article, which is why they used to need mirror signals.
 pub fn reader_pane() -> impl Piece {
     let st = daynews_core::scene();
     let url = Signal::new(String::new());
-    // The web view's bound URL is imperative BY DESIGN: it loads on creation and thereafter only
+    // The web view's bound URL is imperative: it loads on creation and thereafter only
     // when a `go` trigger fires (navigation writes the signal back, so auto-loading on every
     // change would loop). Writing the URL alone left the pane showing the first article forever.
     let go = Trigger::new();
@@ -263,8 +263,8 @@ pub fn reader_pane() -> impl Piece {
     ))
     .background(move || palette().bg)
     .grow()
-    // The commands follow the OPEN ARTICLE: a new one re-derives the list with its own starred
-    // and read state, and no article at all contributes nothing — so the bar carries them only
+    // The commands follow the open article: a new one re-derives the list with its own starred
+    // and read state, and no article at all contributes nothing, so the bar carries them only
     // while there is something to act on (https://daybrite.dev/docs/toolbars).
     .toolbar(move || match st.article.get() {
         Some(a) => crate::toolbar::article_items(a),

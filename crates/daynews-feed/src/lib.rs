@@ -1,8 +1,8 @@
 //! Fetching and parsing syndication feeds, normalized to the shape the store keeps.
 //!
 //! [`parse`] is pure and offline-testable; [`fetch`] adds the network on top of it. Policy that
-//! the app depends on — which field becomes the title, how an article's stable identity is
-//! derived, which body wins — lives here rather than being spread through the UI.
+//! the app depends on (which field becomes the title, how an article's stable identity is
+//! derived, which body wins) lives here rather than being spread through the UI.
 
 pub use day_part_http::HttpError;
 
@@ -23,7 +23,7 @@ pub struct ParsedItem {
     pub title: Option<String>,
     pub url: Option<String>,
     pub author: Option<String>,
-    /// Unix seconds. `None` when the feed omits a date (some do) — the store falls back to
+    /// Unix seconds. `None` when the feed omits a date (some do); the store falls back to
     /// first-seen time so ordering stays stable.
     pub published: Option<i64>,
     pub summary: Option<String>,
@@ -33,7 +33,7 @@ pub struct ParsedItem {
 
 impl ParsedItem {
     /// A name that is never empty. Microblog feeds (Mastodon, and anything else posting short
-    /// updates) ship items with NO `<title>` at all — only a body — so readers show the start of
+    /// updates) ship items with no `<title>` at all, only a body, so readers show the start of
     /// the content instead. Falls back further to the link, then the id.
     pub fn display_title(&self) -> String {
         if let Some(t) = self
@@ -112,8 +112,8 @@ pub async fn fetch(url: &str) -> Result<ParsedFeed, FeedError> {
     fetch_with_base(url, url).await
 }
 
-/// [`fetch`] with the parse base split from the fetch target — for a caller whose fetch URL
-/// is not a usable base (the web build fetches bundled `asset:` feeds as RELATIVE same-origin
+/// [`fetch`] with the parse base split from the fetch target, for a caller whose fetch URL
+/// is not a usable base (the web build fetches bundled `asset:` feeds as relative same-origin
 /// URLs, and URL resolution inside the parser needs an absolute base).
 pub async fn fetch_with_base(fetch_url: &str, base_url: &str) -> Result<ParsedFeed, FeedError> {
     let req = day_part_http::Request::get(fetch_url)
@@ -252,7 +252,7 @@ fn fallback_id(e: &feed_rs::model::Entry, base_url: &str) -> String {
 }
 
 fn now_secs() -> i64 {
-    // `daynews-time` rather than `SystemTime::now()`, which aborts on wasm32 — on web this is
+    // `daynews-time` rather than `SystemTime::now()`, which aborts on wasm32; on web this is
     // the page's `Date.now()`.
     daynews_time::now_unix()
 }
@@ -260,14 +260,14 @@ fn now_secs() -> i64 {
 /// Collapse whitespace and strip tags from a text field. Feeds put HTML in `<title>` more often
 /// than they should, and a title with markup in it looks broken in a list.
 fn clean(s: &str) -> String {
-    // Decode FIRST: feeds routinely escape a whole HTML body into a text field, so the tags
+    // Decode first: feeds routinely escape a whole HTML body into a text field, so the tags
     // only become visible after decoding (`&lt;p&gt;` → `<p>`).
     let decoded = decode_entities(s);
     let chars: Vec<char> = decoded.chars().map(c1_char).collect();
     let mut out = String::with_capacity(decoded.len());
     let mut i = 0;
     let mut last_space = true;
-    // Whether the field turned out to hold escaped HTML — see the second decode below.
+    // Whether the field turned out to hold escaped HTML; see the second decode below.
     let mut stripped_a_tag = false;
     while i < chars.len() {
         let c = chars[i];
@@ -304,9 +304,9 @@ fn clean(s: &str) -> String {
         i += 1;
     }
     let out = out.trim();
-    // Escaped HTML is escaped TWICE: once for the markup itself, and again for the entities
+    // Escaped HTML is escaped twice: once for the markup itself, and again for the entities
     // inside it, so a publisher's `&` arrives as `&amp;amp;`. Finding tags after the first
-    // decode proves this field was escaped HTML, which is what makes a second pass safe — text
+    // decode proves this field was escaped HTML, which is what makes a second pass safe; text
     // that merely mentions "&amp;" has no tags and is left exactly as written.
     if stripped_a_tag {
         decode_entities(out)
@@ -355,10 +355,10 @@ fn has_markup(s: &str) -> bool {
     })
 }
 
-/// The named entities a reader actually meets in feed text, plus the numeric forms.
+/// The named entities a reader meets in feed text, plus the numeric forms.
 ///
 /// Publishers escape typographic punctuation constantly (`&rsquo;`, `&ldquo;`, `&mdash;`), and
-/// summaries are shown as PLAIN TEXT in the timeline — nothing downstream will decode them, so
+/// summaries are shown as plain text in the timeline; nothing downstream will decode them, so
 /// an undecoded entity is visible to the user as literal `&rsquo;`. Bodies are different: they
 /// go to a web view, which decodes the full HTML set itself.
 const NAMED_ENTITIES: &[(&str, char)] = &[

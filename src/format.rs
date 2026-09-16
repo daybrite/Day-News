@@ -1,6 +1,6 @@
 //! Small display helpers: relative dates and text snippets, the way a reader shows them.
 
-/// "3m", "5h", "Tue", "12 Mar" — NetNewsWire's compact timeline stamp: recent items get a
+/// "3m", "5h", "Tue", "12 Mar": NetNewsWire's compact timeline stamp. Recent items get a
 /// relative age, older ones a date, so a glance tells you how fresh the list is.
 pub fn relative_time(unix_secs: i64) -> String {
     // `daynews_db::now_unix` rather than SystemTime, which panics on wasm32.
@@ -57,9 +57,9 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 }
 
 /// The article's text as paragraphs, for the reader on a backend with no web engine to render
-/// its HTML (macos-gtk — see `reader::article_text`). Block-level tags break paragraphs, inline
-/// markup drops out, `script`/`style` bodies are skipped, and the entities feed HTML actually
-/// uses are decoded. Text inside `h1`–`h6` comes back marked as a heading, so the reader can
+/// its HTML (macos-gtk; see `reader::article_text`). Block-level tags break paragraphs, inline
+/// markup drops out, `script`/`style` bodies are skipped, and the entities feed HTML uses are
+/// decoded. Text inside `h1`–`h6` comes back marked as a heading, so the reader can
 /// set it apart instead of showing it as one more paragraph.
 pub fn blocks(html: &str) -> Vec<Block> {
     const BLOCKS: [&str; 14] = [
@@ -147,7 +147,7 @@ pub struct Block {
     pub heading: bool,
 }
 
-/// The entities feed HTML actually uses, named and numeric. Anything else stays as written —
+/// The entities feed HTML uses, named and numeric. Anything else stays as written:
 /// showing `&frac34;` beats swallowing the text around it.
 fn decode_entities(s: &str) -> String {
     if !s.contains('&') {

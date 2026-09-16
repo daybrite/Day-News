@@ -1,11 +1,11 @@
-# Day News walkthrough — the reader loop end to end against the imported subscriptions.
+# Day News walkthrough: the reader loop end to end against the imported subscriptions.
 #
 #     day launch -p macos-appkit --script dayscript/walkthrough.yaml
 #
 # CONTRACT: expects the store to already hold subscriptions with articles (run
-# dayscript/seed-demo.yaml first, as CI does). Written to be RE-RUNNABLE: it reads from "All Articles", which
-# is unaffected by the read state a previous run left behind, and only asserts emptiness in the
-# unread scope where it has just marked everything read itself.
+# dayscript/seed-demo.yaml first, as CI does). Written to be re-runnable: it reads from
+# "All Articles", which is unaffected by the read state a previous run left behind, and only
+# asserts emptiness in the unread scope where it has just marked everything read itself.
 name: day-news-walkthrough
 description: Sidebar, timeline, reader, search, and read/unread marking.
 flow:
@@ -18,13 +18,13 @@ flow:
   - screenshot: timeline
 
   # Search filters through the full-text index, then clears. It is a toolbar item on the
-  # desktops and a timeline field on a phone (docs/toolbars.md) — one behaviour, two homes.
+  # desktops and a timeline field on a phone (docs/toolbars.md): one behavior, two homes.
   # "moon" hits several of the seeded demo feeds (Field Notes, Night Sky, Word of the Day,
   # Almanac), so the results shot has rows from more than one subscription. The English set is
   # the only one so far; a second language needs a localized term here (`key:`), which
   # resource/assets/demo/README.md describes.
   # The search is the nav host's `.searchable()` field, driven through the toolbar model wherever
-  # the toolkit has a window toolbar — the desktops, and since 2026-09 the phones too, whose bar
+  # the toolkit has a window toolbar: the desktops, and since 2026-09 the phones too, whose bar
   # rides the navigation bar (iOS) or docks under the page (Android). HarmonyOS has no toolbar,
   # so the timeline keeps an inline field there.
   - toolbar: { item: day.search, text: "moon", skip_on: [harmony-arkui] }
@@ -36,20 +36,20 @@ flow:
   - pause: { secs: 1 }
   - wait_for: { id: article-row-0, timeout_secs: 10 }
 
-  # Opening an article: the native list reports the selection, and selection opens — the
+  # Opening an article: the native list reports the selection, and selection opens; the
   # reader renders it in the web view (and marks it read). `select:` feeds the same event
   # the platform table emits for a click or an arrow step.
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
   # macos-gtk has no WebKitGTK build, so the reader composes the article from pieces there rather
-  # than realizing day's placeholder leaf (docs/webview.md) — the same reader, drawn differently.
+  # than realizing day's placeholder leaf (docs/webview.md): the same reader, drawn differently.
   - assert_visible: { id: reader-web, skip_on: [macos-gtk] }
   - assert_visible: { id: reader-text, only_on: [macos-gtk] }
-  # ...and that it RENDERED: `assert_visible` only proves the native view exists — an
+  # ...and that it rendered: `assert_visible` only proves the native view exists; an
   # error page or a blank document would pass it (and did, when Android's WebView refused
   # file:// URLs). The reader document stamps its title with id="reader-title"; asking the
   # live page for it proves real content, on the backends whose eval arm exists
-  # (docs/webview-eval.md — gtk has no arm, web-dom's iframe can never have one).
+  # (docs/webview-eval.md; gtk has no arm, web-dom's iframe can never have one).
   - web_eval:
       id: reader-web
       script: "document.getElementById('reader-title') ? 'reader-ok' : 'no-title'"
@@ -58,7 +58,7 @@ flow:
   - screenshot: article
 
   # Selection walks and the reader follows (docs/list.md): the native table owns the arrow
-  # keys; this drives the same selection seam programmatically. Desktop-only to keep the
+  # keys; this drives the same selection event programmatically. Desktop-only to keep the
   # phones' push-navigation flow linear.
   - select: { id: timeline, index: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
@@ -66,16 +66,16 @@ flow:
   - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
 
-  # Read/unread toggling: the row's TRAILING SWIPE ACTION, the toolbar toggle, and the
+  # Read/unread toggling: the row's trailing swipe action, the toolbar toggle, and the
   # Article menu item all flip the same flag. Three toggles net one flip, leaving row 0
-  # unread — which the mark-all-read step below depends on (it fails disabled over an
-  # all-read store). The swipe drives the seam on EVERY platform (native reveal on
+  # unread, which the mark-all-read step below depends on (it fails disabled over an
+  # all-read store). The swipe drives the toggle on every platform (native reveal on
   # macOS/iOS; the other toolkits show no affordance but share the wiring); the toolbar and
   # menu flips below are desktop-only, so on a phone the swipe's single flip is what
-  # guarantees the unread row the mark-all-read step needs. `key:` pins WHICH button the
-  # offer held — the row was just opened, so it must say Mark as Unread.
+  # guarantees the unread row the mark-all-read step needs. `key:` pins which button the
+  # offer held: the row was just opened, so it must say Mark as Unread.
   # Android first steps back out of the reader. On a phone its composed push swaps the
-  # timeline OUT of the tree while the reader shows (iOS and HarmonyOS keep both in their
+  # timeline out of the tree while the reader shows (iOS and HarmonyOS keep both in their
   # native stacks; the desktops keep the panes side by side). On a tablet the reader sits
   # beside the timeline, and the same back closes it without leaving the section. `nav_back`
   # is the app bar's arrow and the system back, the same route out a finger takes.
@@ -88,7 +88,7 @@ flow:
   - menu: { key: toggle_read, path: [menu_article], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
 
-  # The LEADING edge stars, and its label is state-dependent too: star, then unstar — the
+  # The leading edge stars, and its label is state-dependent too: star, then unstar. The
   # pair proves the dynamic offer and leaves the store unchanged for the next run.
   - swipe_row: { id: timeline, row: 0, edge: leading, key: star }
   - pause: { secs: 1 }
@@ -96,10 +96,10 @@ flow:
   - pause: { secs: 1 }
 
   # Article ▸ Mark as Unread guarantees the unread scope below is non-empty even when a
-  # previous run left everything read — mark-all-read would otherwise sit disabled.
+  # previous run left everything read; mark-all-read would otherwise sit disabled.
   - menu: { key: menu_mark_unread, path: [menu_article], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
-  # Mark-all-read empties the UNREAD timeline specifically.
+  # Mark-all-read empties the unread timeline specifically.
   - navigate: { route: unread }
   - pause: { secs: 1 }
   # Mark All as Read is a toolbar item wherever there is a toolbar (the phones included now),
@@ -112,7 +112,7 @@ flow:
 
   # Tag the open article through the Article menu (the prompt is scripted); the tag then
   # scopes the timeline. The route id is the tag name's deterministic hash
-  # (daynews_db::tag_id("keep") — stable across runs and machines).
+  # (daynews_db::tag_id("keep"), stable across runs and machines).
   - navigate: { route: all }
   - wait_for: { id: article-row-0, timeout_secs: 10 }
   - select: { id: timeline, index: 0 }

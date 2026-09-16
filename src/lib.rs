@@ -1,4 +1,4 @@
-//! Day News — a feed reader built on [Day](https://daybrite.dev), modeled on NetNewsWire.
+//! Day News: a feed reader built on [Day](https://daybrite.dev), modeled on NetNewsWire.
 //!
 //! Three panes on a desktop (subscriptions, timeline, article) and a push-navigation stack on a
 //! phone, from one `root()`. Everything the UI shows is a reactive signal published by
@@ -17,18 +17,18 @@ mod toolbar;
 
 use daynews_db::Scope;
 
-// The mobile / embedded entry point. Expands to the export each platform's shell binds against —
+// The mobile / embedded entry point. Expands to the export each platform's shell binds against,
 // and to nothing at all on a plain cargo desktop build, where src/main.rs is the entry instead.
 // Both entries hand `launch` the same description, so they open the same window.
 day::day_start!(options: window(), root);
 
-/// The window every entry point opens — `src/main.rs` on the desktop, the platform shells
+/// The window every entry point opens: `src/main.rs` on the desktop, the platform shells
 /// through the macro above.
 ///
 /// `launch` installs the catalog itself, after the OS's languages have reached day-l10n and
 /// before the first localized string is read; installing it here, or in `root`, would resolve
 /// against an empty hint list and open an English window on a French device. The same ordering
-/// is what lets the TITLE come from the catalog (docs/localization.md).
+/// is what lets the title come from the catalog (docs/localization.md).
 pub fn window() -> day::WindowOptions {
     day::WindowOptions {
         locales: Some((res::locales::DEFAULT, res::locales::CATALOG)),
@@ -67,7 +67,7 @@ fn scope_for_key(key: &str) -> Option<Scope> {
     }
 }
 
-/// A sidebar count, blank when there is nothing unread — an empty badge draws nothing.
+/// A sidebar count, blank when there is nothing unread; an empty badge draws nothing.
 fn count(n: i64) -> String {
     if n > 0 { n.to_string() } else { String::new() }
 }
@@ -83,14 +83,14 @@ pub fn root() -> impl Piece {
     }
     // Retention: prune per the stored setting (Settings page owns changing it).
     daynews_core::prune(settings::retention_days());
-    // Every window shows the same store — the reader is the app, not the window — so a new
+    // Every window shows the same store (the reader is the app, not the window), so a new
     // window is just another shell. Registered once; each window builds its own signals.
     day::register_new_window(build_shell);
     menus::install();
     build_shell()
 }
 
-/// The sidebar row a window opens on — NetNewsWire's top smart feed.
+/// The sidebar row a window opens on: NetNewsWire's top smart feed.
 const OPENING_SECTION: &str = "today";
 
 /// One window's contents. Called again for each File ▸ New Window.
@@ -99,8 +99,8 @@ fn build_shell() -> impl Piece {
     // window's own scope, so a second window browses its own scope, search and selection while
     // the store, the feeds and the badges below stay shared.
     daynews_core::NewsScene::scoped(|sc| {
-        // Each of these belongs to the WINDOW, not to a page: the toolbar outlives any page
-        // scope, and File ▸ New Feed focuses the field in the window the user is looking at —
+        // Each of these belongs to the window, not to a page: the toolbar outlives any page
+        // scope, and File ▸ New Feed focuses the field in the window the user is looking at,
         // so both are provided here, where `focused()` can find them (docs/state.md).
         toolbar::Bar::scoped(move |_bar| {
             subscriptions::UrlFocus::scoped(move |_focus| shell_body(sc))
@@ -111,7 +111,7 @@ fn build_shell() -> impl Piece {
 fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     let st = daynews_core::state();
     let section: Signal<Option<String>> = Signal::new(Some(OPENING_SECTION.into()));
-    // Apply the opening scope by hand: `watch` fires on CHANGE, so without this the sidebar
+    // Apply the opening scope by hand: `watch` fires on change, so without this the sidebar
     // highlights Today while the timeline still shows whatever scope the store opened with.
     if let Some(scope) = scope_for_key(OPENING_SECTION) {
         daynews_core::select_scope(scope);
@@ -129,9 +129,9 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     nav(section)
         .style(NavStyle::Sidebar)
         .title(res::str::app_title())
-        // Refresh and Mark All as Read act on the SCOPE this list has chosen, so they ride this
-        // host's own chrome (docs/toolbars.md) — the sidebar column on a desktop, the root
-        // list's bar when it collapses. The article's own commands are on the reader.
+        // Refresh and Mark All as Read act on the scope this list has chosen, so they ride this
+        // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root
+        // list's bar when it collapses. The article's commands are on the reader.
         .toolbar(toolbar::feed_items())
         // Search moved off the toolbar when day replaced `toolbar_search` with `.searchable()`:
         // the nav owns the field now, and the toolkit puts it in the window toolbar on
@@ -139,7 +139,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         // timeline filters on.
         .searchable(toolbar::search())
         .search_prompt(res::str::search_placeholder())
-        // The article list is the CONTENT-LIST pane (docs/navigation.md): its own column
+        // The article list is the content-list pane (docs/navigation.md): its own column
         // between the sidebar and the reader where the toolkit has one (a real `contentList`
         // split item on macOS, the supplementary column on iPadOS), the pushed middle layer
         // on a phone, and composed beside the reader elsewhere. Full-page sections keep the
@@ -150,7 +150,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
             !matches!(k.as_deref(), Some("subscriptions") | Some("settings"))
         })
         .detail_visible(sc.reader_open)
-        // Smart feeds — Today, All Unread and Starred, in NetNewsWire's order, under their own
+        // Smart feeds: Today, All Unread and Starred, in NetNewsWire's order, under their own
         // header. Counts are real badges: right-aligned and de-emphasized by the toolkit.
         .section(res::str::nav_smart_feeds())
         .item_icon(
@@ -203,7 +203,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
                     .context_menu(menus::feed_context_menu(f.id, f.unread))
             },
         )
-        // User tags, with their article counts — selecting one scopes the timeline to it.
+        // User tags, with their article counts; selecting one scopes the timeline to it.
         .section(res::str::nav_tags_section())
         .items(
             move || st.tags.get(),
@@ -234,7 +234,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         .id("nav")
 }
 
-/// The reader as a destination. The timeline is no longer in here — it is the nav's
+/// The reader as a destination. The timeline is no longer in here; it is the nav's
 /// content-list pane, its own column beside this on the desktops and the pushed middle layer
 /// on a phone (docs/navigation.md). Every phone's own back returns from it to the list: the
 /// iOS chevron, and on Android the app bar's arrow and the system back, which close the

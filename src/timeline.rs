@@ -1,4 +1,4 @@
-//! The article list: NetNewsWire's middle pane — title, summary, and a feed·date footer, with
+//! The article list, NetNewsWire's middle pane: title, summary, and a feed·date footer, with
 //! an unread dot in the left gutter.
 
 use crate::format::{relative_time, snippet};
@@ -20,7 +20,7 @@ const FOOTER_FONT: Font = Font::Caption;
 
 /// The list's uniform row pitch: a two-line title, up to two summary lines, and the footer,
 /// plus the row's vertical padding. Uniform because the native hosts size `Automatic` rows at
-/// a fixed default today (docs/list.md) — and a fixed pitch is the Mail/NetNewsWire idiom
+/// a fixed default today (docs/list.md), and a fixed pitch is the Mail/NetNewsWire idiom
 /// anyway. Content past the pitch clips on Android and draws over the next row on iOS, so the
 /// pitch has to hold the row's worst ordinary case.
 #[cfg(not(any(target_os = "ios", target_os = "android", target_env = "ohos")))]
@@ -31,7 +31,7 @@ const ROW_H: f64 = 88.0;
 #[cfg(any(target_os = "ios", target_os = "android", target_env = "ohos"))]
 const ROW_H: f64 = 124.0;
 
-/// How much summary the row shows. Two footnote lines at the pane's width — trimmed here so
+/// How much summary the row shows. Two footnote lines at the pane's width, trimmed here so
 /// an overlong summary doesn't push the footer past the fixed row pitch. Shorter on the phones,
 /// whose larger footnote fits fewer characters per line.
 #[cfg(not(any(target_os = "ios", target_os = "android", target_env = "ohos")))]
@@ -41,9 +41,9 @@ const SUMMARY_CHARS: usize = 90;
 
 /// One timeline row, bound to its slot.
 ///
-/// Every varying field — the ID INCLUDED — is read INSIDE a reactive closure. The native list
+/// Every varying field, the id included, is read inside a reactive closure. The native list
 /// recycles cells: a scrolled-away row's cell is rebound to a different article by one slot
-/// write, so anything captured eagerly freezes at the value the cell was BORN with, not the
+/// write, so anything captured eagerly freezes at the value the cell was born with, not the
 /// article it now shows.
 fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
     let sc = daynews_core::scene();
@@ -126,7 +126,7 @@ fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
     .spacing(6.0)
     .align(VAlign::Top)
     .padding(Insets::symmetric(12.0, 8.0))
-    // Taps are the native table's now (they select, and selection opens — see
+    // Taps are the native table's now (they select, and selection opens; see
     // `timeline_pane`), so the menu is the row's only gesture of its own.
     .context_menu(vec![
         menu_item(crate::res::str::mark_read().format())
@@ -139,10 +139,10 @@ fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
             .action(move || daynews_core::set_starred(id(), false)),
         menu_item(crate::res::str::tag_action().format()).action(move || begin_tag(id())),
     ])
-    // The POSITIONAL id: a script addresses "the first row" without knowing which article
+    // The positional id: a script addresses "the first row" without knowing which article
     // the network delivered. Reactive, so a recycled cell re-labels as it rebinds.
-    // Separation between rows is the LIST's (`.separators(true)` in `timeline_pane`), drawn
-    // by the host at the row boundary — nothing else wraps the row.
+    // Separation between rows is the list's (`.separators(true)` in `timeline_pane`), drawn
+    // by the host at the row boundary; nothing else wraps the row.
     .id_of(move || {
         let id = id();
         let pos = sc
@@ -154,7 +154,7 @@ fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
     .grow_w()
 }
 
-/// Prompt for a tag name and toggle it on the article — creating the tag on first use.
+/// Prompt for a tag name and toggle it on the article, creating the tag on first use.
 pub(crate) fn begin_tag(article: u64) {
     day::task(async move {
         if let Some(name) = prompt(crate::res::str::tag_prompt_title())
@@ -195,14 +195,14 @@ pub fn timeline_pane() -> impl Piece {
     let sc = daynews_core::scene();
     // Search lives in the window toolbar where there is one (the nav's `.searchable` field);
     // without a toolbar the timeline carries the field itself. Both write the same signal, and
-    // the query follows it either way — watching only the inline field left the toolbar's
+    // the query follows it either way; watching only the inline field left the toolbar's
     // search typing into a box that filtered nothing.
     let search = crate::toolbar::search();
     let in_toolbar = crate::toolbar::available();
     watch(move || search.get(), |q, _| daynews_core::set_search(q));
 
     column((
-        // Heading — the scope's name over its unread count, with the two actions a reader
+        // Heading: the scope's name over its unread count, with the two actions a reader
         // reaches for pinned right. NetNewsWire's shape, and it tells you where you are, which
         // a bare row of controls did not.
         row((
@@ -309,7 +309,7 @@ pub fn timeline_pane() -> impl Piece {
         ),
         {
             // Programmatic selection moves (Next Unread, a scripted `select:`) can land
-            // anywhere in the window — follow them so the selected row is visible. `watch`
+            // anywhere in the window; follow them so the selected row is visible. `watch`
             // never fires for the initial run, so building the pane doesn't force a scroll.
             let jump: Signal<Option<usize>> = Signal::new(None);
             watch(
@@ -324,8 +324,8 @@ pub fn timeline_pane() -> impl Piece {
                     }
                 },
             );
-            // The NATIVE list (docs/list.md): the platform table owns scrolling, cell reuse,
-            // selection — drawn with the platform's own focused/unfocused treatment — the
+            // The native list (docs/list.md): the platform table owns scrolling, cell reuse,
+            // selection (drawn with the platform's focused/unfocused treatment), the
             // arrow keys, and the swipe actions where the toolkit has them
             // (Cap::ListSwipeActions; the context menu and the Article menu carry the same
             // commands everywhere else).
@@ -354,8 +354,8 @@ pub fn timeline_pane() -> impl Piece {
                     .collect()
             })
             .scroll_to_row(jump)
-            // The trailing swipe toggles read/unread — Mail's triage gesture. The offer is
-            // pulled at GESTURE time, so the button names the flip it would make.
+            // The trailing swipe toggles read/unread, Mail's triage gesture. The offer is
+            // pulled at gesture time, so the button names the flip it would make.
             .swipe_trailing(move |i| {
                 let Some((id, read)) = sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_read)))
                 else {
@@ -366,7 +366,7 @@ pub fn timeline_pane() -> impl Piece {
                 } else {
                     crate::res::str::mark_read()
                 };
-                // The glyph speaks the dot language: marking read REMOVES the dot (an
+                // The glyph speaks the dot language: marking read removes the dot (an
                 // outlined circle), marking unread restores it (filled).
                 let symbol = if read {
                     Symbol::CircleFilled
@@ -399,10 +399,10 @@ pub fn timeline_pane() -> impl Piece {
                         .action(move || daynews_core::set_starred(id, !starred)),
                 ]
             })
-            // The host draws the row separators, at the row boundary — aligned with the
+            // The host draws the row separators, at the row boundary, aligned with the
             // native selection, and stationary while a swipe slides the row past them.
             .separators(true)
-            // `.id` on the LIST itself (not a wrapper): `select:`/`swipe_row:` steps resolve
+            // `.id` on the list itself (not a wrapper): `select:`/`swipe_row:` steps resolve
             // the id's node and expect the list driver right there.
             .id("timeline")
             .grow()

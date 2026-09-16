@@ -1,4 +1,4 @@
-//! Parsing checks against feeds actually captured from the wire — plain RSS 2.0, WordPress,
+//! Parsing checks against feeds captured from the wire: plain RSS 2.0, WordPress,
 //! Discourse, Atom and Mastodon variants. Fixtures are bytes, so these run offline and
 //! deterministically.
 use daynews_feed::parse;
@@ -64,7 +64,7 @@ fn every_real_feed_parses_with_usable_items() {
             );
         }
         // Microblog feeds (Mastodon) ship items with no <title> at all, so the requirement is
-        // that every item can still be NAMED and opened.
+        // that every item can still be named and opened.
         for it in &feed.items {
             assert!(
                 !it.display_title().is_empty(),
@@ -107,7 +107,7 @@ fn item_ids_are_stable_and_unique() {
     }
 }
 
-/// Titles are plain text: no tags, no raw entities.
+/// Titles are plain text, with neither tags nor raw entities.
 #[test]
 fn titles_are_clean_text() {
     for f in FIXTURES {
@@ -127,7 +127,7 @@ fn titles_are_clean_text() {
     }
 }
 
-/// Garbage in must not panic — a publisher serving an HTML error page is routine.
+/// Garbage in must not panic; a publisher serving an HTML error page is routine.
 #[test]
 fn non_feed_input_errors_cleanly() {
     assert!(
@@ -172,7 +172,7 @@ fn angle_brackets_in_prose_survive() {
     assert_eq!(feed.items[0].title.as_deref(), Some("Why 2 < 3 & 4 > 1"));
 }
 
-/// Summaries are shown as PLAIN TEXT in the timeline, so typographic entities must be resolved —
+/// Summaries are shown as plain text in the timeline, so typographic entities must be resolved;
 /// publishers escape them constantly and nothing downstream would decode them.
 #[test]
 fn typographic_entities_are_decoded_in_text() {
@@ -217,7 +217,7 @@ fn real_feed_summaries_have_no_raw_entities() {
 /// browsers read numeric references 128–159 through Windows-1252 (the HTML standard says so),
 /// and Merriam-Webster separates its pronunciations exactly this way. The XML layer resolves
 /// the reference before this crate sees it, so the raw control has to be remapped as a
-/// character — in titles, summaries and bodies alike — or Android draws a box.
+/// character, in titles, summaries and bodies alike, or Android draws a box.
 #[test]
 fn c1_controls_decode_as_windows_1252() {
     let xml = "<?xml version=\"1.0\"?><rss version=\"2.0\"><channel><title>T</title>\

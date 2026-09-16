@@ -1,4 +1,4 @@
-# The reader loop: opening an article must clear its dot AND swap the content pane.
+# The reader loop: opening an article must clear its dot and swap the content pane.
 name: day-news-reader
 description: Unread clears on open; a second article replaces the first in the reader.
 flow:

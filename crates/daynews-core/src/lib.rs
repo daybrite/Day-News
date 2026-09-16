@@ -1,12 +1,12 @@
-//! The app's view-model: opens the container, wires LIVE queries, and publishes what the UI
-//! renders as reactive signals — every one of them DERIVED. There is no reload call anywhere:
+//! The app's view-model: opens the container, wires live queries, and publishes what the UI
+//! renders as reactive signals, every one of them derived. There is no reload call anywhere:
 //! a write lands in the store, the affected queries re-derive, the standing effects rebuild
 //! exactly the signals whose sources moved, and the UI follows. Undo, a background refresh,
 //! and a menu command all reach the screen through the same road.
 //!
-//! Single-threaded by design. day's reactive core is `!Send` and its executor (`day::task`)
+//! Single-threaded. day's reactive core is `!Send` and its executor (`day::task`)
 //! polls futures on the UI thread, so the container lives here in a `RefCell` and every
-//! mutation happens between awaits — no marshaling, no locks. Network I/O is the only
+//! mutation happens between awaits, without marshaling or locks. Network I/O is the only
 //! off-thread part, and the HTTP part hands the response back on the main thread.
 
 use std::cell::{OnceCell, RefCell};
@@ -60,7 +60,7 @@ pub struct TagRow {
     pub count: i64,
 }
 
-/// A timeline row. Deliberately excludes the body: it lives in its own model
+/// A timeline row. Excludes the body: it lives in its own model
 /// (`ArticleBody`) and faults in only when the reader opens the article.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArticleSummary {
@@ -94,15 +94,15 @@ pub struct StoredArticle {
 
 pub use daynews_opml as opml;
 
-/// The app's DATA (docs/state.md): the subscription tree, the smart-feed badges, and the state
-/// of a refresh. One database, one set of feeds, one unread count — a second window is another
+/// The app's data (docs/state.md): the subscription tree, the smart-feed badges, and the state
+/// of a refresh. One database, one set of feeds, one unread count: a second window is another
 /// view of the same reader, not a second reader.
 #[derive(Clone, Copy)]
 pub struct SheetsState {
     pub feeds: Signal<Vec<FeedRow>>,
     pub folders: Signal<Vec<FolderRow>>,
     pub tags: Signal<Vec<TagRow>>,
-    /// `Some((done, total))` while a refresh runs — the progress NetNewsWire shows in its bar.
+    /// `Some((done, total))` while a refresh runs: the progress NetNewsWire shows in its bar.
     pub refresh_progress: Signal<Option<(usize, usize)>>,
     pub total_unread: Signal<i64>,
     pub total_starred: Signal<i64>,
@@ -111,10 +111,10 @@ pub struct SheetsState {
     pub status: Signal<String>,
 }
 
-/// Everything ONE WINDOW is looking at (docs/state.md): its sidebar scope, its search text, the
+/// Everything one window is looking at (docs/state.md): its sidebar scope, its search text, the
 /// timeline those two produce, and the article it has open.
 ///
-/// Per-window because that is what a second window is FOR — one on Unread while another sits in
+/// Per-window because that is what a second window is for: one on Unread while another sits in
 /// a folder, each with its own selection and its own reader. The timeline query behind it is
 /// per-window too: `create` stands up one live query and the effects that publish from it, and
 /// those effects hold it (the container keeps a live query weakly, so a dropped one goes quiet).
@@ -125,25 +125,25 @@ pub struct NewsScene {
     /// The open article's id, and its loaded body.
     pub selected: Signal<Option<u64>>,
     pub article: Signal<Option<StoredArticle>>,
-    /// Whether the reader is SHOWING — the selector's `detail_visible` binding. On a phone
+    /// Whether the reader is showing: the selector's `detail_visible` binding. On a phone
     /// this is the push gate for the reader page, and the platform's back writes it false;
     /// wide layouts keep the reader pane on screen and ignore it.
     pub reader_open: Signal<bool>,
     pub search: Signal<String>,
-    /// Articles marked read while the UNREAD scope shows them: they stay visible (their dot
-    /// clears in place) until the scope or search changes — NetNewsWire's rule. The timeline
-    /// fetch ORs these ids back into the unread predicate.
+    /// Articles marked read while the unread scope shows them: they stay visible (their dot
+    /// clears in place) until the scope or search changes, which is NetNewsWire's rule. The
+    /// timeline fetch ORs these ids back into the unread predicate.
     sticky_read: Signal<Vec<u64>>,
 }
 
-/// The open store and the query handles derived from it — one per PROCESS, held for the app's
-/// lifetime. Not app STATE (nothing here is a signal an app reads): a database connection, an
+/// The open store and the query handles derived from it, one per process, held for the app's
+/// lifetime. Not app state (nothing here is a signal an app reads): a database connection, an
 /// undo history, and the count queries whose badges feed `SheetsState`. `Ambient::app` owns the
 /// signals; this owns the resources behind them.
 struct Store {
     db: RefCell<Option<Db>>,
     undo: OnceCell<day_model::UndoStack>,
-    /// Per-feed and per-tag unread badges, created on first sight and reused — each is one
+    /// Per-feed and per-tag unread badges, created on first sight and reused; each is one
     /// live `SELECT COUNT(*)` that re-runs only when a change touches its dependency set.
     feed_counts: RefCell<HashMap<u64, CountQuery<Article>>>,
     tag_counts: RefCell<HashMap<u64, CountQuery<Article>>>,
@@ -172,7 +172,7 @@ fn store() -> std::rc::Rc<Store> {
 }
 
 impl Ambient for SheetsState {
-    /// Created on the reactive ROOT scope by `Ambient::app` — which is what the detached scope
+    /// Created on the reactive root scope by `Ambient::app`, which is what the detached scope
     /// this replaces existed for: it outlives any UI subtree.
     fn create() -> Self {
         SheetsState {
@@ -194,8 +194,8 @@ pub fn state() -> SheetsState {
 }
 
 impl Ambient for NewsScene {
-    /// One window's view. Stands up THIS window's timeline query and the effects that publish
-    /// from it — the effects capture the query, which is what keeps it subscribed (the container
+    /// One window's view. Stands up this window's timeline query and the effects that publish
+    /// from it; the effects capture the query, which is what keeps it subscribed (the container
     /// holds a live query weakly).
     fn create() -> Self {
         let scene = NewsScene {
@@ -212,7 +212,7 @@ impl Ambient for NewsScene {
     }
 }
 
-/// The window whose view a call belongs to: the ambient one while a piece BUILDS, the FOCUSED
+/// The window whose view a call belongs to: the ambient one while a piece builds, the focused
 /// window's when a command runs later from a handler that belongs to no scope (docs/state.md).
 pub fn scene() -> NewsScene {
     NewsScene::try_ambient()
@@ -241,7 +241,7 @@ fn wire_scene(sc: NewsScene) {
         return;
     };
 
-    // Timeline rows: ids from the query, fields read TRACKED so an edit to a visible row
+    // Timeline rows: ids from the query, fields read tracked so an edit to a visible row
     // (a star, a read dot) rebuilds exactly this list. The closure holds `timeline`.
     Effect::new(move || {
         let rows = build_summaries(&timeline);
@@ -255,7 +255,7 @@ fn wire_scene(sc: NewsScene) {
         sc.article.set(article);
     });
 
-    // Closing the reader (the platform's back on a phone) drops the selection with it —
+    // Closing the reader (the platform's back on a phone) drops the selection with it:
     // the row un-highlights, and reopening starts from the list.
     watch(
         move || sc.reader_open.get(),
@@ -271,7 +271,7 @@ fn wire_scene(sc: NewsScene) {
 /// build.
 pub fn init() {
     let dir = store_dir();
-    // The diesel-era store is a different schema; the redesign starts fresh, deliberately.
+    // The diesel-era store is a different schema; the redesign starts fresh.
     for legacy in ["sheets.sqlite3", "sheets.sqlite3-wal", "sheets.sqlite3-shm"] {
         let _ = std::fs::remove_file(dir.join(legacy));
     }
@@ -292,24 +292,24 @@ pub fn init() {
 }
 
 /// Run `f` against the store. A closed store (open failed) makes this a no-op, so the UI keeps
-/// working — empty — rather than panicking.
+/// working, empty, rather than panicking.
 fn with_db<R>(f: impl FnOnce(&Db) -> R) -> Option<R> {
     store_with(|s| s.db.borrow().as_ref().map(f))
 }
 
-/// The container's undo history — `day::install_undo` wires it to the platform.
+/// The container's undo history; `day::install_undo` wires it to the platform.
 pub fn undo_stack() -> Option<day_model::UndoStack> {
     store_with(|s| s.undo.get().cloned())
 }
 
 // ---- the live pipeline ----------------------------------------------------------------------
 
-/// Stand up the standing effects that DERIVE every published signal from live queries.
-/// Stand up the APP-wide standing effects: the subscription tree and the smart-feed badges.
+/// Stand up the standing effects that derive every published signal from live queries.
+/// Stand up the app-wide standing effects: the subscription tree and the smart-feed badges.
 /// A window's own timeline is `wire_scene`, run once per window.
 fn wire_app_state() {
     let st = state();
-    // On the ROOT scope: these outlive every window (the detached scope this replaces existed
+    // On the root scope: these outlive every window (the detached scope this replaces existed
     // for the same reason).
     let scope = RScope::root();
 
@@ -323,7 +323,7 @@ fn wire_app_state() {
     });
     let today_total = with_db(|db| db.unread_count(Scope::Today)).expect("open");
 
-    // The sidebar lists are standing queries too: the container holds a live query WEAKLY, so
+    // The sidebar lists are standing queries too: the container holds a live query weakly, so
     // one created inside an effect run and dropped at its end takes the subscription with it
     // and the list goes quiet. These live for the session, like the timeline's.
     let (feeds_q, folders_q, tags_q) = with_db(|db| {
@@ -567,7 +567,7 @@ pub fn open_article(id: u64) {
     }
 }
 
-/// Open the next unread article after the current one — NetNewsWire's ⌘/ .
+/// Open the next unread article after the current one (NetNewsWire's ⌘/).
 ///
 /// Searches the visible timeline first (so it follows whatever the sidebar and search box have
 /// filtered to), wrapping to the top; if nothing there is unread, falls back to the global
@@ -617,7 +617,7 @@ pub fn open_next_unread() -> bool {
 }
 
 pub fn set_read(id: u64, read: bool) {
-    // The sticky set belongs to the window that did the reading — only ITS unread timeline
+    // The sticky set belongs to the window that did the reading; only its unread timeline
     // should keep the row visible.
     let sc = scene();
     if read && sc.scope.get_untracked() == Scope::Unread {
@@ -631,7 +631,7 @@ pub fn set_read(id: u64, read: bool) {
     with_db(|d| d.set_read(id, read));
 }
 
-/// Flip one article's read flag — the row swipe, the toolbar toggle, and the menu item all
+/// Flip one article's read flag. The row swipe, the toolbar toggle, and the menu item all
 /// land here, so every affordance agrees on what "toggle" means.
 pub fn toggle_read(id: u64) {
     let read = with_db(|d| {
@@ -727,7 +727,7 @@ pub fn rename_feed(feed: u64, title: &str) {
     with_db(|d| d.rename_feed(feed, title));
 }
 
-/// Refresh one subscription — a feed row's Refresh and Feed ▸ Refresh Feed. A full refresh
+/// Refresh one subscription: a feed row's Refresh and Feed ▸ Refresh Feed. A full refresh
 /// already under way fetches this feed too, so asking again while it runs does nothing.
 pub fn refresh_feed(feed: u64) {
     let st = state();
@@ -760,7 +760,7 @@ pub fn refresh_feed(feed: u64) {
 
 /// Refresh every subscription, one at a time, publishing progress as it goes.
 ///
-/// Sequential on purpose: each `await` returns to the main loop, so the UI stays responsive
+/// Sequential: each `await` returns to the main loop, so the UI stays responsive
 /// and rows appear progressively, and a 145-feed import does not open 145 sockets at once.
 pub fn refresh_all() {
     let st = state();
@@ -796,11 +796,11 @@ pub fn refresh_all() {
 }
 
 /// Fetch and store one feed. Returns whether it succeeded.
-/// A feed's bytes, parsed: over HTTP normally, or from the app bundle for `asset:` URLs —
-/// the deterministic, network-free source the walkthrough seeds from on every platform
+/// A feed's bytes, parsed: over HTTP normally, or from the app bundle for `asset:` URLs, the
+/// deterministic, network-free source the walkthrough seeds from on every platform
 /// (dayscript/seed-demo.yaml subscribes to the demo feeds bundled under
 /// `resource/assets/demo/`). A missing asset reports as a 404 rather than a new error
-/// arm — the subscription then shows the same failed-refresh state a dead feed does.
+/// arm; the subscription then shows the same failed-refresh state a dead feed does.
 async fn fetch_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed::FeedError> {
     if let Some(name) = url.strip_prefix("asset:") {
         let locale = day_l10n::locale().get_untracked();
@@ -808,8 +808,8 @@ async fn fetch_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed:
             // wasm has no filesystem for the resource opener to read; the web dist serves the
             // same bundle over HTTP instead (`resource/assets/` staged under `assets/data/`,
             // day-cli web.rs), so the asset rides the ordinary fetch path as a same-origin URL.
-            // Fetch by the RELATIVE dist URL, parse against the absolute `asset:` base — the
-            // parser's URL resolution rejects a relative base outright.
+            // Fetch by the relative dist URL, parse against the absolute `asset:` base, because
+            // the parser's URL resolution rejects a relative base outright.
             #[cfg(target_arch = "wasm32")]
             match daynews_feed::fetch_with_base(&format!("assets/data/{candidate}"), url).await {
                 Err(daynews_feed::FeedError::Status(404)) => continue,
@@ -828,7 +828,7 @@ async fn fetch_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed:
 /// The bundle paths an `asset:` name may live at, most specific first.
 ///
 /// The demo feeds are written once per language (resource/assets/demo/README.md) and subscribed
-/// to WITHOUT one, as `demo/night-sky.xml`, so a subscription reads the set for the language the
+/// to without one, as `demo/night-sky.xml`, so a subscription reads the set for the language the
 /// app is running in: the exact locale, then its language alone, then English. Any other name is
 /// one file, taken as written.
 fn asset_candidates(name: &str, locale: &str) -> Vec<String> {
@@ -855,7 +855,7 @@ async fn refresh_one(id: u64, url: String) -> bool {
                 .iter()
                 .map(|i| IncomingArticle {
                     guid: i.guid.clone(),
-                    // Store the DISPLAY title so title-less microblog items are readable in the
+                    // Store the display title so title-less microblog items are readable in the
                     // timeline and findable in search.
                     title: Some(i.display_title()),
                     url: i.url.clone(),
@@ -894,7 +894,7 @@ pub fn import_opml(text: &str) -> std::result::Result<(usize, usize), String> {
     with_db(|d| {
         for (path, feed) in &entries {
             // Only the innermost folder becomes a folder; deeper nesting is rare and flattening
-            // it keeps the sidebar honest about what it can represent.
+            // it matches what the sidebar can represent.
             let folder = path.last().map(|name| d.add_folder(name));
             let url = feed.xml_url.clone();
             if d.container.get::<daynews_db::Feed>(feed_id(&url)).is_some() {
@@ -967,8 +967,8 @@ pub fn normalize_feed_url(input: &str) -> String {
     }
 }
 
-/// A provisional name for a brand-new subscription, replaced by the feed's own title on first
-/// refresh — the same placeholder NetNewsWire shows.
+/// A provisional name for a brand-new subscription, replaced by the feed's title on first
+/// refresh, the same placeholder NetNewsWire shows.
 fn fallback_title(url: &str) -> String {
     // A bundled feed has no host: name it after its file, not the `asset:demo` prefix.
     if let Some(name) = url.strip_prefix("asset:") {
@@ -995,7 +995,7 @@ fn base_dir() -> PathBuf {
 
 #[cfg(target_arch = "wasm32")]
 fn base_dir() -> PathBuf {
-    // Web: the "path" names an OPFS file, not a filesystem location — there is no $HOME and
+    // Web: the "path" names an OPFS file, not a filesystem location; there is no $HOME and
     // `std::env::temp_dir` panics on wasm.
     PathBuf::from("daybrite-sheets")
 }
@@ -1036,7 +1036,7 @@ fn android_files_dir() -> Option<PathBuf> {
     })
 }
 
-/// Run `f` against the process store — the shape the old `thread_local!` accessor had, so every
+/// Run `f` against the process store, the shape the old `thread_local!` accessor had, so every
 /// call site below reads the same.
 fn store_with<R>(f: impl FnOnce(&Store) -> R) -> R {
     f(&store())

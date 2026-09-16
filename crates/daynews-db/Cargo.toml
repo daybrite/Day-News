@@ -11,9 +11,9 @@ license = "Apache-2.0"
 day-persistence = { git = "https://github.com/daybrite/day.git" }
 day-model = { git = "https://github.com/daybrite/day.git" }
 day-macros = { git = "https://github.com/daybrite/day.git" }
-# "Today" means today WHERE THE READER IS, so the cut-off is local midnight, not UTC midnight —
+# "Today" means today where the reader is, so the cut-off is local midnight, not UTC midnight;
 # that needs the machine's UTC offset and its DST rules, and a wall clock that also works on wasm.
-# Both come from the host's own time-zone database through this workspace's `daynews-time`.
+# Both come from the host's time-zone database through this workspace's `daynews-time`.
 daynews-time = { path = "../daynews-time" }
 day-reactive = { git = "https://github.com/daybrite/day.git" }
 # Statement tracing rides the standard logging facade the day crates already pull in; the

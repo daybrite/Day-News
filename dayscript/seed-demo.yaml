@@ -1,9 +1,9 @@
-# Seeds the store from the BUNDLED demo feeds — the deterministic, network-free articles the
+# Seeds the store from the bundled demo feeds: the deterministic, network-free articles the
 # walkthrough's contract needs (its steps read "All Articles" and drive the read/star/tag flows,
 # so the store must already hold subscriptions with articles).
 #
 # The seven feeds live under resource/assets/demo/<locale>/ and ship inside the app; the README
-# there describes each one. An `asset:demo/…` URL names a feed WITHOUT its language: the app reads
+# there describes each one. An `asset:demo/…` URL names a feed without its language: the app reads
 # the set for the locale it is running in, falling back to English (daynews-core `fetch_feed`),
 # so a run under `--locale` shows that language's articles wherever the app has a set for it. No
 # live feed and no network, so it runs identically on every platform and on a fresh CI runner.
@@ -12,7 +12,7 @@
 # descriptions, Atom, RSS 1.0 (RDF) and a JSON Feed microblog whose posts carry no titles, so the
 # timeline's derived-title path stays covered.
 #
-# CONTRACT: expects a store with no other subscriptions (the count is the whole sidebar) — CI
+# CONTRACT: expects a store with no other subscriptions (the count is the whole sidebar); CI
 # runners start empty. Re-running adds nothing: feed ids are a hash of the URL.
 name: day-news-seed-demo
 description: Subscribe to the bundled demo feeds — the offline seed for the walkthrough.

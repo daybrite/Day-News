@@ -15,12 +15,12 @@ fn parses_a_real_subscription_list() {
     let feeds = doc.feeds();
     assert_eq!(feeds.len(), 13, "every subscription should be found");
     assert_eq!(doc.title.as_deref(), Some("mySubscriptions.opml"));
-    // This list is flat — folders get their own fixture below.
+    // This list is flat; folders get their own fixture below.
     assert!(
         feeds.iter().all(|(path, _)| path.is_empty()),
         "no folders in this export"
     );
-    // Attributes are DECODED, not passed through raw: this title carries `&gt;`…
+    // Attributes are decoded, not passed through raw: this title carries `&gt;`…
     let nyt = feeds
         .iter()
         .find(|(_, f)| f.xml_url.ends_with("nyt/Business.xml"))
@@ -38,7 +38,7 @@ fn parses_a_real_subscription_list() {
     );
     assert!(!site.contains("&amp;"), "no double-encoding: {site}");
     // The file also carries `description`, `type`, `version` and `language`, which this parser
-    // does not model — unknown attributes are ignored without dropping the subscription.
+    // does not model; unknown attributes are ignored without dropping the subscription.
     assert!(
         feeds.iter().all(|(_, f)| f.xml_url.starts_with("http")),
         "urls absolute"
@@ -69,7 +69,7 @@ fn folders_become_paths() {
 }
 
 /// The sample list an import seeds from: two folders plus one top-level subscription, so one
-/// file exercises both shapes — and its feeds are the live originals of the parser's captured
+/// file exercises both shapes, and its feeds are the live originals of the parser's captured
 /// fixtures (crates/daynews-feed/tests/data).
 #[test]
 fn sample_list_mixes_folders_and_top_level_feeds() {
@@ -103,7 +103,7 @@ fn sample_list_mixes_folders_and_top_level_feeds() {
     );
 }
 
-/// A subscription a reader has never fetched records no name at all — a real state, not a
+/// A subscription a reader has never fetched records no name at all: a real state, not a
 /// parse failure. The recorded title stays empty; the display fallback still names it.
 #[test]
 fn untitled_subscriptions_fall_back_to_the_host() {
@@ -122,7 +122,7 @@ fn untitled_subscriptions_fall_back_to_the_host() {
     );
 }
 
-/// Export then re-import must preserve the subscription set exactly — for every shape of
+/// Export then re-import must preserve the subscription set exactly, for every shape of
 /// document, since the flat list, the folders, the untitled feeds and the mixed sample each
 /// stress it differently.
 #[test]
@@ -157,7 +157,7 @@ fn round_trips_through_export() {
     }
 }
 
-/// Deeper nesting and an ampersand in the FEED url — shapes the vendored files (one folder
+/// Deeper nesting and an ampersand in the feed url: shapes the vendored files (one folder
 /// level, entities only in titles and site urls) do not reach.
 #[test]
 fn nested_folders_round_trip() {

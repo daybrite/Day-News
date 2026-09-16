@@ -1,6 +1,6 @@
-//! OPML subscription lists — the interchange format every feed reader speaks.
+//! OPML subscription lists: the interchange format every feed reader speaks.
 //!
-//! Import and export are deliberately lossy in one direction only: we read every `<outline>`
+//! Import and export are lossy in one direction only: we read every `<outline>`
 //! attribute we understand and ignore the rest, but we never drop a subscription. Folders nest
 //! (NetNewsWire writes one level; the format allows arbitrary depth, so we handle depth).
 
@@ -28,9 +28,9 @@ pub enum Outline {
 /// A subscription. `xml_url` is the feed itself; `html_url` is the human-facing site.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FeedRef {
-    /// As written in the file. Legitimately EMPTY for a subscription that has never been
-    /// fetched — a reader records the URL when you subscribe and only learns the name from the
-    /// feed's own `<title>` on first refresh. Real exports contain these; use
+    /// As written in the file. Legitimately empty for a subscription that has never been
+    /// fetched: a reader records the URL when you subscribe and only learns the name from the
+    /// feed's `<title>` on first refresh. Real exports contain these; use
     /// [`display_title`](Self::display_title) for anything user-facing.
     pub title: String,
     pub xml_url: String,
@@ -62,7 +62,7 @@ fn host_of(url: &str) -> Option<String> {
 #[derive(Debug)]
 pub enum OpmlError {
     Xml(String),
-    /// No `<opml>`/`<body>` element — almost certainly not an OPML file.
+    /// No `<opml>`/`<body>` element; almost certainly not an OPML file.
     NotOpml,
 }
 
@@ -104,7 +104,7 @@ fn collect<'a>(
 }
 
 /// Parse an OPML document. Unknown attributes and elements are ignored, and an `<outline>`
-/// carrying an `xmlUrl` is a subscription however it is otherwise labelled — real exports
+/// carrying an `xmlUrl` is a subscription however it is otherwise labeled; real exports
 /// disagree about `type="rss"` and about which of `text`/`title` carries the name.
 pub fn parse(src: &str) -> Result<Opml, OpmlError> {
     let mut reader = Reader::from_str(src);
@@ -221,7 +221,7 @@ fn read_outline(e: &BytesStart<'_>) -> Result<Outline, OpmlError> {
     }
 }
 
-/// Serialize to OPML 1.1 — the dialect NetNewsWire, Feedly and Reeder all import.
+/// Serialize to OPML 1.1, the dialect NetNewsWire, Feedly and Reeder all import.
 pub fn write(doc: &Opml) -> Result<String, OpmlError> {
     let mut w = Writer::new_with_indent(Cursor::new(Vec::new()), b'\t', 1);
     let map = |e: quick_xml::Error| OpmlError::Xml(e.to_string());

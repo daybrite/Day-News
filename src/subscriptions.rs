@@ -5,7 +5,7 @@ use day::prelude::*;
 use daynews_core::FeedRow;
 
 /// Focus for the "add a subscription" field, so File ▸ New Feed can put the cursor there.
-/// PER WINDOW (docs/state.md): the command should focus the field in the window the user is
+/// Per window (docs/state.md): the command should focus the field in the window the user is
 /// looking at, not in whichever window happened to build first.
 #[derive(Clone, Copy)]
 pub(crate) struct UrlFocus(Signal<bool>);
@@ -97,8 +97,8 @@ pub fn subscriptions_page() -> impl Piece {
             label(move || crate::res::str::feeds_count(st.feeds.with(|f| f.len()) as f64).format())
                 .font(Font::Headline)
                 .color(move || palette().text)
-                // `.id()` BEFORE `.padding()`: a decorator returns a wrapper node, so an id applied
-                // after one lands on the wrapper — which has no text for assertions to read.
+                // `.id()` before `.padding()`: a decorator returns a wrapper node, so an id applied
+                // after one lands on the wrapper, which has no text for assertions to read.
                 .id("feeds-count")
                 .padding(Insets {
                     top: 18.0,

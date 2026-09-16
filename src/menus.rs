@@ -60,7 +60,7 @@ pub fn install() {
             sub_menu(
                 res::str::menu_go().format(),
                 vec![
-                    // ⌘/ — NetNewsWire's shortcut for the single most-used command in a reader.
+                    // ⌘/ is NetNewsWire's shortcut for the single most-used command in a reader.
                     menu_item(res::str::menu_next_unread().format())
                         .key("/")
                         .action(|| {
@@ -137,7 +137,7 @@ pub fn install() {
     });
 }
 
-/// Read/star the article the reader currently shows. No open article means nothing to do —
+/// Read/star the article the reader currently shows. No open article means nothing to do:
 /// the commands stay harmless rather than acting on some other row.
 fn set_open_read(read: bool) {
     if let Some(id) = daynews_core::scene().selected.get_untracked() {

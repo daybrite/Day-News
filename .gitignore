@@ -3,10 +3,10 @@
 Cargo.lock
 /.cargo/config.toml
 
-# Gradle local state. platform/android/ is source, but everything Gradle generates INSIDE it is
+# Gradle local state. platform/android/ is source, but everything Gradle generates inside it is
 # not: the caches, the per-module build/ trees, and the SDK path local.properties records. These
 # need their own entries because `/build` above is anchored to the repo root and so never matches
-# platform/android/build/ — which is what fails the pristine check the android-mdc job runs
+# platform/android/build/, which is what fails the pristine check the android-mdc job runs
 # before packing (an untracked file is an input the commit does not describe).
 platform/android/.gradle/
 platform/android/**/build/

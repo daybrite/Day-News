@@ -1,11 +1,11 @@
-# A dayscript smoke test (https://daybrite.dev/docs/dayscript): drives the running app by
+# A dayscript check (https://daybrite.dev/docs/dayscript): drives the running app by
 # element id and route, on any target. Run it with:
 #
 #     day launch -p macos-appkit --script dayscript/smoke.yaml
 #
 flow:
   # The nav host mounts immediately on every platform (a section's content only mounts once
-  # selected — desktop auto-selects the first section, mobile starts at the list).
+  # selected; desktop auto-selects the first section, mobile starts at the list).
   - wait_for: { id: nav }
 
   # Home: the counter is a signal; tapping writes it, the label reads it.
@@ -22,7 +22,7 @@ flow:
   - navigate: { route: canvas }
   - assert_visible: { id: canvas-dial }
 
-  # The stack: push a typed item, check the FULL route, pop natively.
+  # The stack: push a typed item, check the full route, pop natively.
   - navigate: { route: items }
   - tap: { id: item-1 }
   - assert_route: { route: items/item-1 }

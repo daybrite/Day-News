@@ -8,7 +8,7 @@ license = "Apache-2.0"
 daynews-db = { path = "../daynews-db" }
 daynews-feed = { path = "../daynews-feed" }
 daynews-opml = { path = "../daynews-opml" }
-# The view-model publishes signals DERIVED from live queries: standing effects bridge the
+# The view-model publishes signals derived from live queries: standing effects bridge the
 # container's queries and count badges into the value shapes the UI binds. day-core supplies
 # the main-loop executor (`day::task`) the refresh loop runs on; no async runtime is involved.
 day-reactive = { git = "https://github.com/daybrite/day.git" }

@@ -4,9 +4,9 @@ version = "0.1.2"
 edition = "2024"
 license = "Apache-2.0"
 
-# No time-zone database of its own, on purpose. Every machine this app runs on already carries
-# one — /usr/share/zoneinfo behind POSIX `localtime_r`, the registry behind Win32's converters,
-# the browser's `Intl` on web — and asking the host is a few lines of FFI where bundling a second
+# No time-zone database of its own. Every machine this app runs on already carries one
+# (/usr/share/zoneinfo behind POSIX `localtime_r`, the registry behind Win32's converters, the
+# browser's `Intl` on web), and asking the host is a few lines of FFI where bundling a second
 # copy of the IANA rules is ~200 KB of dependency that also has to be kept current.
 
 # `localtime_r` and `struct tm`. libc is already in this app's graph (it is under nearly every

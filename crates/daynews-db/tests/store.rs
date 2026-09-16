@@ -100,7 +100,7 @@ fn full_text_search_matches_title_and_body_across_two_shadows() {
     );
 
     assert_eq!(titles(&db, Scope::All, "splines"), ["Reticulating splines"]);
-    // `parallax` lives only in the BODY — a different model, reached through the relation
+    // `parallax` lives only in the body, a different model, reached through the relation
     // crossing in the search fetch.
     assert_eq!(titles(&db, Scope::All, "parallax"), ["Unrelated"]);
     // Live-as-you-type: a partial last token still matches.
@@ -216,7 +216,7 @@ fn tags_cross_articles_and_scope_the_timeline() {
 
     db.set_tagged(a1, keep, false);
     assert_eq!(db.count(Scope::Tag(keep)).get_untracked(), 0);
-    // The tag itself survives an untag; deleting the ARTICLE drops the membership.
+    // The tag itself survives an untag; deleting the article drops the membership.
     db.set_tagged(a1, keep, true);
     db.delete_feed(f);
     assert_eq!(db.count(Scope::Tag(keep)).get_untracked(), 0);
@@ -237,7 +237,7 @@ fn retention_prunes_old_read_articles_but_never_starred_or_tagged() {
         item("fresh", "Fresh", "x", daynews_db::start_of_today()),
     ];
     // `first_seen_at` is stamped at insert; backdate it through the field so the pruner sees
-    // genuinely old rows.
+    // rows old enough to prune.
     db.upsert_articles(f, url, &items);
     let store = db.container.cache::<Article>();
     for guid in ["old-read", "old-starred", "old-tagged", "old-unread"] {

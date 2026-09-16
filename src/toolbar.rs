@@ -1,8 +1,8 @@
 //! The window's toolbar items and the search signal they share (docs/toolbars.md).
 //!
 //! Modeled on NetNewsWire's. The commands split three ways by what they act on, and each is
-//! declared where that thing is: refresh and mark-all-read on the FEED LIST (`lib.rs`'s
-//! nav), next-unread and the star and read toggles on the ARTICLE (`reader.rs`), and search
+//! declared where that thing is: refresh and mark-all-read on the feed list (`lib.rs`'s
+//! nav), next-unread and the star and read toggles on the article (`reader.rs`), and search
 //! on the surface it filters.
 //!
 //! What used to be here as well was the bookkeeping that a window-wide bar needed: two mirror
@@ -13,7 +13,7 @@
 use crate::res;
 use day::prelude::*;
 
-/// What this window's toolbar shows — PER WINDOW (docs/state.md), like everything else about
+/// What this window's toolbar shows, per window (docs/state.md), like everything else about
 /// what a window is looking at. The search text is shared with that window's timeline field on
 /// a phone.
 ///
@@ -33,7 +33,7 @@ impl Ambient for Bar {
     }
 }
 
-/// This window's bar state — ambient while a piece builds, the focused window's from a handler.
+/// This window's bar state: ambient while a piece builds, the focused window's from a handler.
 fn bar() -> Bar {
     Bar::try_ambient()
         .or_else(Bar::focused)
@@ -44,14 +44,14 @@ pub fn search() -> Signal<String> {
     bar().search
 }
 
-/// Does this toolkit put commands in a bar of its own? Where it does not, the reader's commands
-/// still appear — a contribution always lands on some chrome — but the timeline carries the
+/// Whether this toolkit puts commands in a window bar. Where it does not, the reader's commands
+/// still appear (a contribution always lands on some chrome), but the timeline carries the
 /// search field itself rather than handing it to a window toolbar.
 pub fn available() -> bool {
     capability(Cap::Toolbar) != Support::Unsupported
 }
 
-/// The FEED LIST's commands: they act on the scope the sidebar has chosen, which is what the
+/// The feed list's commands: they act on the scope the sidebar has chosen, which is what the
 /// user is looking at while the list is in front of them.
 pub fn feed_items() -> Vec<ToolbarEntry> {
     let st = daynews_core::state();
@@ -66,8 +66,8 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
     ]
 }
 
-/// The OPEN ARTICLE's commands. Declared on the reader, so they arrive with the article and
-/// leave with it — and each one reads the article it was built for rather than a mirror of it.
+/// The open article's commands. Declared on the reader, so they arrive with the article and
+/// leave with it, and each one reads the article it was built for rather than a mirror of it.
 pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> {
     let st = daynews_core::state();
     let (id, starred, read) = (article.id, article.is_starred, article.is_read);
