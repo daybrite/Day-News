@@ -23,16 +23,17 @@ flow:
   # Almanac), so the results shot has rows from more than one subscription. The English set is
   # the only one so far; a second language needs a localized term here (`key:`), which
   # resource/assets/demo/README.md describes.
-  # The search is the nav host's `.searchable()` field, driven through the toolbar model wherever
-  # the toolkit has a window toolbar: the desktops, and since 2026-09 the phones too, whose bar
-  # rides the navigation bar (iOS) or docks under the page (Android). HarmonyOS has no toolbar,
-  # so the timeline keeps an inline field there.
-  - toolbar: { item: day.search, text: "moon", skip_on: [harmony-arkui] }
-  - input: { id: search, text: "moon", only_on: [harmony-arkui] }
+  # The search is the nav host's `.searchable()` field, driven through the toolbar MODEL
+  # (day-core's, one for every toolkit) rather than through whatever draws it: the desktops'
+  # window toolbar, the phones' navigation bar (iOS) or docked bar (Android), and on HarmonyOS
+  # the navigation title's menus (`Cap::Toolbar` Emulated since 2026-09). The app hides its
+  # inline field wherever a bar exists, HarmonyOS included, so the model is the one path that
+  # holds everywhere; the HarmonyOS-only `input: search` branch this had asserted a field that
+  # no longer exists there.
+  - toolbar: { item: day.search, text: "moon" }
   - pause: { secs: 1 }
   - screenshot: search-results
-  - toolbar: { item: day.search, text: "", skip_on: [harmony-arkui] }
-  - input: { id: search, text: "", only_on: [harmony-arkui] }
+  - toolbar: { item: day.search, text: "" }
   - pause: { secs: 1 }
   - wait_for: { id: article-row-0, timeout_secs: 10 }
 
@@ -49,12 +50,15 @@ flow:
   # error page or a blank document would pass it (and did, when Android's WebView refused
   # file:// URLs). The reader document stamps its title with id="reader-title"; asking the
   # live page for it proves real content, on the backends whose eval arm exists
-  # (docs/webview-eval.md; gtk has no arm, web-dom's iframe can never have one).
+  # (docs/webview-eval.md; gtk has no arm, web-dom's iframe can never have one). HarmonyOS is
+  # off the list although its arm exists: CI's Oniro image is x86_64 and its ArkWeb ships
+  # arm64-only native libraries, so the web engine never loads there and an eval waits forever
+  # (docs/harmonyos.md); the view itself exists, which the assertion above still proves.
   - web_eval:
       id: reader-web
       script: "document.getElementById('reader-title') ? 'reader-ok' : 'no-title'"
       text: "reader-ok"
-      only_on: [macos-appkit, ios-uikit, macos-qt, android-mdc, harmony-arkui]
+      only_on: [macos-appkit, ios-uikit, macos-qt, android-mdc]
   - screenshot: article
 
   # Selection walks and the reader follows (docs/list.md): the native table owns the arrow
@@ -102,10 +106,11 @@ flow:
   # Mark-all-read empties the unread timeline specifically.
   - navigate: { route: unread }
   - pause: { secs: 1 }
-  # Mark All as Read is a toolbar item wherever there is a toolbar (the phones included now),
-  # and an inline button only on HarmonyOS.
-  - toolbar: { item: mark-all-read, skip_on: [harmony-arkui] }
-  - tap: { id: mark-all-read, only_on: [harmony-arkui] }
+  # Mark All as Read is a toolbar item everywhere: every toolkit has somewhere to draw a
+  # contribution (docs/toolbars.md), HarmonyOS's being the title-bar menus, and the step drives
+  # the model, so the inline button the app keeps for a bar-less toolkit is never what is
+  # pressed here.
+  - toolbar: { item: mark-all-read }
   - pause: { secs: 1 }
   - assert_visible: { id: timeline-empty }
   - screenshot: all-read
