@@ -6,6 +6,7 @@
 
 use day::prelude::*;
 
+mod commands;
 mod format;
 mod menus;
 mod reader;

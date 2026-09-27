@@ -54,15 +54,9 @@ pub fn available() -> bool {
 /// The feed list's commands: they act on the scope the sidebar has chosen, which is what the
 /// user is looking at while the list is in front of them.
 pub fn feed_items() -> Vec<ToolbarEntry> {
-    let st = daynews_core::state();
     vec![
-        toolbar_button("refresh", res::str::refresh_action())
-            .icon(Symbol::Refresh)
-            .action(daynews_core::refresh_all),
-        toolbar_button("mark-all-read", res::str::mark_all_read())
-            .icon(Symbol::Check)
-            .action(|| daynews_core::mark_scope_read(true))
-            .enabled_when(move || st.total_unread.get() > 0),
+        crate::commands::refresh().toolbar_item(),
+        crate::commands::mark_all_read().toolbar_item(),
     ]
 }
 

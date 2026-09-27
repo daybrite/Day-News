@@ -230,12 +230,8 @@ pub fn timeline_pane() -> impl Piece {
                 move || !in_toolbar,
                 || {
                     row((
-                        button(crate::res::str::refresh_action())
-                            .action(daynews_core::refresh_all)
-                            .id("refresh"),
-                        button(crate::res::str::mark_all_read())
-                            .action(|| daynews_core::mark_scope_read(true))
-                            .id("mark-all-read"),
+                        crate::commands::refresh().button(),
+                        crate::commands::mark_all_read().button(),
                     ))
                     .spacing(8.0)
                 },

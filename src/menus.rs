@@ -42,9 +42,7 @@ pub fn install() {
                     // builder registered with `register_new_window` (see `root`).
                     menu_role(MenuRole::NewWindow),
                     menu_separator(),
-                    menu_item(res::str::menu_refresh().format())
-                        .key("r")
-                        .action(daynews_core::refresh_all),
+                    crate::commands::refresh().menu_item(),
                     menu_separator(),
                     menu_item(res::str::menu_import().format())
                         .shortcut(Shortcut::new("i").shift())
