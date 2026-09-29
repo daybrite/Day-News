@@ -23,13 +23,13 @@ flow:
   # Almanac), so the results shot has rows from more than one subscription. The English set is
   # the only one so far; a second language needs a localized term here (`key:`), which
   # resource/assets/demo/README.md describes.
-  # The search is the nav host's `.searchable()` field, driven through the toolbar MODEL
-  # (day-core's, one for every toolkit) rather than through whatever draws it: the desktops'
-  # window toolbar, the phones' navigation bar (iOS) or docked bar (Android), and on HarmonyOS
-  # the navigation title's menus (`Cap::Toolbar` Emulated since 2026-09). The app hides its
-  # inline field wherever a bar exists, HarmonyOS included, so the model is the one path that
-  # holds everywhere; the HarmonyOS-only `input: search` branch this had asserted a field that
-  # no longer exists there.
+  # The search is the nav host's `.searchable()` field, and `day.search` is its reserved id on
+  # every toolkit, whichever surface draws it. A desktop bar can hold a field, so the item is on
+  # the window toolbar and the step drives it through the toolbar model. A phone's bar is a row
+  # of actions and ArkUI's is the navigation title's menus (`Cap::ToolbarSearch` unsupported),
+  # so there the field rides the navigation surface and no bar item exists at all; the step
+  # resolves the reserved id to that host instead (docs/search.md, day 2026-09-29). One id, one
+  # query, four surfaces — which is why this block needs no per-platform branch.
   - toolbar: { item: day.search, text: "moon" }
   - pause: { secs: 1 }
   - screenshot: search-results
