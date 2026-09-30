@@ -38,6 +38,19 @@ three panes become three taps, each one a native push.
   and a marker on any feed that stopped responding.
 - Full-text search across every article, matching as you type.
 - Star what you want to keep and mark what you have read. A refresh never undoes either.
+- Settings include live Light, Dark, or System appearance and a language selector (English
+  currently ships). On Mac, Command-comma opens a dedicated Settings window, including a
+  browser choice for Day News. On iOS, links follow the system browser setting.
+- Article List preferences offer an independent text-size slider and zero to five preview
+  lines (two by default), with matching row heights and a compact, single-row empty state.
+  List text defaults to 120% and reader text to 140%; size and preview choices persist
+  across launches.
+- Reader preferences include a persistent text-size slider, installed-font picker with reading
+  recommendations, and native background/text color wells. Article → Increase/Decrease Text
+  Size (Command-plus/minus) updates the same setting. Styles apply without reloading the article.
+  Reset Styles restores System appearance and automatic reader styling while keeping other settings.
+- Article links open externally while the reader keeps its place. The browser controls whether
+  the destination appears in a new tab or window.
 - Import and export OPML with folders intact, so moving in or out is a single file.
 - The timeline is a native recycling list with the platform's own swipe actions and keyboard
   navigation, and the article pane is the system web view over a document generated per article —
@@ -99,6 +112,10 @@ day launch -p android-mdc  --script dayscript/seed-mobile.yaml  # a few live fee
 day launch -p macos-appkit --script dayscript/walkthrough.yaml  # the full loop, with screenshots
 ```
 
+For an isolated validation run, pass `--env DAY_NEWS_DATA_DIR=/absolute/writable/path`
+to `day launch`. This selects a separate store for the demo scripts; omit it for normal use.
+On iOS the path must be inside the app's sandbox.
+
 Those [dayscripts](https://daybrite.dev/docs/dayscript) are the UI tests, and the walkthrough is
 what CI runs on every target to produce the gallery. Everything below the UI is testable without a
 screen or a network: `cargo test --workspace`.
@@ -117,7 +134,7 @@ day patch --local /path/to/day
 - `src/timeline.rs` is the article list, a native recycling [`list`](https://daybrite.dev/docs/internal/list)
   with platform selection and edge swipe actions.
 - `src/reader.rs` is the article pane: a native web view over a generated document, and the same
-  article composed from pieces on a backend with no web engine (macos-gtk).
+  article composed from pieces when a backend has no web engine. GTK on macOS uses WebKit.
 - `src/subscriptions.rs`, `src/settings.rs`, `src/menus.rs`, and `src/toolbar.rs` cover feed
   management with OPML import and export, retention, the app menus, and the window toolbar.
 - `crates/` holds `daynews-opml`, `daynews-feed`, `daynews-db`, and `daynews-core`: OPML, feed

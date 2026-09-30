@@ -1,59 +1,27 @@
 //! Small display helpers: relative dates and text snippets, the way a reader shows them.
 
-/// "3m", "5h", "Tue", "12 Mar": NetNewsWire's compact timeline stamp. Recent items get a
-/// relative age, older ones a date, so a glance tells you how fresh the list is.
+/// Compact, localized ages for recent articles and a local calendar date for older ones.
 pub fn relative_time(unix_secs: i64) -> String {
-    // `daynews_db::now_unix` rather than SystemTime, which panics on wasm32.
-    let now = daynews_db::now_unix();
-    let age = now - unix_secs;
+    let age = daynews_db::now_unix().saturating_sub(unix_secs);
     match age {
-        a if a < 0 => "now".into(),
-        a if a < 60 => "now".into(),
-        a if a < 3_600 => format!("{}m", a / 60),
-        a if a < 86_400 => format!("{}h", a / 3_600),
-        a if a < 7 * 86_400 => format!("{}d", a / 86_400),
-        _ => civil_date(unix_secs),
+        a if a < 60 => crate::res::str::time_now().format(),
+        a if a < 3_600 => crate::res::str::time_minutes((a / 60) as f64).format(),
+        a if a < 86_400 => crate::res::str::time_hours((a / 3_600) as f64).format(),
+        a if a < 7 * 86_400 => crate::res::str::time_days((a / 86_400) as f64).format(),
+        _ => crate::res::str::timeline_date(local_time(unix_secs) as f64).format(),
     }
 }
 
-/// `DD Mon` for dates in this year, `DD Mon YYYY` otherwise.
-pub fn civil_date(unix_secs: i64) -> String {
-    const MONTHS: [&str; 12] = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
-    let (y, m, d) = civil_from_days(unix_secs.div_euclid(86_400));
-    let now_y = civil_from_days(daynews_db::now_unix().div_euclid(86_400)).0;
-    let mon = MONTHS[(m as usize).clamp(1, 12) - 1];
-    if y == now_y {
-        format!("{d} {mon}")
-    } else {
-        format!("{d} {mon} {y}")
-    }
+/// Fluent formats numeric instants as UTC civil time. Apply the host's offset at the
+/// publication instant first, including daylight saving, to show the reader's local time.
+fn local_time(unix_secs: i64) -> i64 {
+    unix_secs.saturating_add(i64::from(
+        daynews_time::local_offset_seconds(unix_secs).unwrap_or(0),
+    ))
 }
 
-/// A full timestamp for the article header.
 pub fn full_date(unix_secs: i64) -> String {
-    let secs_of_day = unix_secs.rem_euclid(86_400);
-    format!(
-        "{} at {:02}:{:02}",
-        civil_date(unix_secs),
-        secs_of_day / 3600,
-        (secs_of_day % 3600) / 60
-    )
-}
-
-/// Howard Hinnant's days→civil algorithm (proleptic Gregorian), days since 1970-01-01.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
-    let m = (if mp < 10 { mp + 3 } else { mp - 9 }) as u32;
-    (if m <= 2 { y + 1 } else { y }, m, d)
+    crate::res::str::article_date(local_time(unix_secs) as f64).format()
 }
 
 /// The article's text as paragraphs, for the reader on a backend with no web engine to render

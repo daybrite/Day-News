@@ -15,11 +15,12 @@ use std::path::PathBuf;
 
 use day_core::Ambient;
 use day_persistence::{CountQuery, Query};
-use day_reactive::{Effect, Scope as RScope, Signal, watch};
+use day_reactive::{Effect, Scope as RScope, Signal, batch, watch};
 use daynews_db::{
     Article, ArticleFields, ArticleRelations, Db, FeedFields, FolderFields, IncomingArticle, Scope,
     TagFields, timeline_fetch,
 };
+use futures_util::{StreamExt, stream};
 
 pub use daynews_db::{Scope as TimelineScope, article_id, feed_id, folder_id, tag_id};
 
@@ -122,8 +123,12 @@ pub struct SheetsState {
 pub struct NewsScene {
     pub scope: Signal<Scope>,
     pub articles: Signal<Vec<ArticleSummary>>,
+    /// Unread count for the whole scope, including rows outside the timeline window.
+    pub scope_unread: Signal<usize>,
     /// The open article's id, and its loaded body.
     pub selected: Signal<Option<u64>>,
+    /// Two-way native timeline focus, requested by keyboard reading commands.
+    pub timeline_focused: Signal<bool>,
     pub article: Signal<Option<StoredArticle>>,
     /// Whether the reader is showing: the selector's `detail_visible` binding. On a phone
     /// this is the push gate for the reader page, and the platform's back writes it false;
@@ -201,7 +206,9 @@ impl Ambient for NewsScene {
         let scene = NewsScene {
             scope: Signal::new(Scope::Unread),
             articles: Signal::new(Vec::new()),
+            scope_unread: Signal::new(0),
             selected: Signal::new(None),
+            timeline_focused: Signal::new(false),
             article: Signal::new(None),
             reader_open: Signal::new(false),
             search: Signal::new(String::new()),
@@ -215,9 +222,12 @@ impl Ambient for NewsScene {
 /// The window whose view a call belongs to: the ambient one while a piece builds, the focused
 /// window's when a command runs later from a handler that belongs to no scope (docs/state.md).
 pub fn scene() -> NewsScene {
-    NewsScene::try_ambient()
-        .or_else(NewsScene::focused)
-        .expect("no window is open, so there is no NewsScene to act on")
+    try_scene().expect("no window is open, so there is no NewsScene to act on")
+}
+
+/// App menus are evaluated before the first window and after the last one closes.
+pub fn try_scene() -> Option<NewsScene> {
+    NewsScene::try_ambient().or_else(NewsScene::focused)
 }
 
 /// Stand up one window's timeline: the live query that follows its scope + search, and the
@@ -240,6 +250,21 @@ fn wire_scene(sc: NewsScene) {
     }) else {
         return;
     };
+
+    if let Some(unread) = with_db(|db| {
+        db.container.count_fn::<Article>(move || {
+            day_persistence::Fetch::new()
+                .filter(daynews_db::scope_pred(sc.scope.get()) & Article::is_read().eq(false))
+        })
+    }) {
+        Effect::new(move || sc.scope_unread.set(unread.get()));
+    }
+    // The native search field binds directly to this window's query. Changing it starts
+    // a fresh unread view, including when Next Unread clears a previous search.
+    watch(
+        move || sc.search.get(),
+        move |_, _| sc.sticky_read.set(Vec::new()),
+    );
 
     // Timeline rows: ids from the query, fields read tracked so an edit to a visible row
     // (a star, a read dot) rebuilds exactly this list. The closure holds `timeline`.
@@ -538,23 +563,22 @@ fn build_reader_article(id: u64) -> Option<StoredArticle> {
 
 pub fn select_scope(new_scope: Scope) {
     let sc = scene();
-    sc.scope.set(new_scope);
-    sc.selected.set(None);
-    sc.reader_open.set(false);
-    sc.sticky_read.set(Vec::new());
+    batch(|| {
+        sc.scope.set(new_scope);
+        sc.selected.set(None);
+        sc.reader_open.set(false);
+        sc.sticky_read.set(Vec::new());
+    });
 }
 
 pub fn set_search(text: &str) {
     let sc = scene();
     sc.search.set(text.to_string());
-    sc.sticky_read.set(Vec::new());
 }
 
 /// Open an article. Reading it marks it read, like every reader does.
 pub fn open_article(id: u64) {
     let sc = scene();
-    sc.selected.set(Some(id));
-    sc.reader_open.set(true);
     let unread = with_db(|d| {
         d.container
             .get::<Article>(id)
@@ -562,9 +586,13 @@ pub fn open_article(id: u64) {
     })
     .flatten()
     .unwrap_or(false);
-    if unread {
-        set_read(id, true);
-    }
+    batch(|| {
+        if unread {
+            set_read(id, true);
+        }
+        sc.selected.set(Some(id));
+        sc.reader_open.set(true);
+    });
 }
 
 /// Open the next unread article after the current one (NetNewsWire's ⌘/).
@@ -590,13 +618,16 @@ pub fn open_next_unread() -> bool {
         open_article(id);
         return true;
     }
-    // Nothing unread in view: jump to the oldest unread anywhere, which is what a reader wants
-    // when it has finished a feed.
+    // Match the timeline's newest-first order so the destination is inside its window.
+    // Skip a deliberately unread current article instead of reopening it immediately.
     let anywhere = with_db(|d| {
         d.container
             .query::<Article>()
-            .filter(daynews_db::scope_pred(Scope::Unread))
-            .sort(Article::published_at().asc())
+            .filter(
+                daynews_db::scope_pred(Scope::Unread)
+                    & !day_persistence::Pred::IdIn(current.into_iter().collect()),
+            )
+            .sort(Article::published_at().desc())
             .limit(1)
             .live()
             .first()
@@ -605,14 +636,14 @@ pub fn open_next_unread() -> bool {
     .flatten();
     match anywhere {
         Some(id) => {
-            select_scope(Scope::Unread);
+            batch(|| {
+                select_scope(Scope::Unread);
+                sc.search.set(String::new());
+            });
             open_article(id);
             true
         }
-        None => {
-            state().status.set("No unread articles".into());
-            false
-        }
+        None => false,
     }
 }
 
@@ -667,8 +698,13 @@ pub fn toggle_tag(article: u64, name: &str) {
 
 /// "Mark All as Read" for whatever the sidebar has selected.
 pub fn mark_scope_read(read: bool) {
-    let in_scope = scene().scope.get_untracked();
-    with_db(|d| d.set_read_all(in_scope, read));
+    let sc = scene();
+    let in_scope = sc.scope.get_untracked();
+    batch(|| {
+        with_db(|d| d.set_read_all(in_scope, read));
+        // Bulk completion clears rows retained by individual reading.
+        sc.sticky_read.set(Vec::new());
+    });
 }
 
 pub fn mark_feed_read(feed: u64, read: bool) {
@@ -702,8 +738,9 @@ pub fn subscribe(url: &str) {
     st.status
         .set(format!("Subscribed to {}", fallback_title(&url)));
     day_core::task(async move {
+        // This independent subscription fetch must not clear a concurrent full refresh's
+        // progress or allow a second full refresh to start.
         refresh_one(id, url).await;
-        state().refresh_progress.set(None);
     });
 }
 
@@ -758,10 +795,9 @@ pub fn refresh_feed(feed: u64) {
 
 // ---- refreshing -----------------------------------------------------------------------------
 
-/// Refresh every subscription, one at a time, publishing progress as it goes.
-///
-/// Sequential: each `await` returns to the main loop, so the UI stays responsive
-/// and rows appear progressively, and a 145-feed import does not open 145 sockets at once.
+/// Refresh up to four subscriptions concurrently. A slow server does not hold up every
+/// other feed; the bounded stream keeps resource use predictable. Futures still poll on
+/// the UI executor, where the store and reactive state belong.
 pub fn refresh_all() {
     let st = state();
     if st.refresh_progress.get_untracked().is_some() {
@@ -780,11 +816,14 @@ pub fn refresh_all() {
     st.refresh_progress.set(Some((0, total)));
     day_core::task(async move {
         let mut failed = 0usize;
-        for (i, (id, url)) in feeds.into_iter().enumerate() {
-            if !refresh_one(id, url).await {
-                failed += 1;
-            }
-            state().refresh_progress.set(Some((i + 1, total)));
+        let mut pending = stream::iter(feeds)
+            .map(|(id, url)| refresh_one(id, url))
+            .buffer_unordered(4);
+        let mut done = 0;
+        while let Some(ok) = pending.next().await {
+            failed += usize::from(!ok);
+            done += 1;
+            state().refresh_progress.set(Some((done, total)));
         }
         let st = state();
         st.refresh_progress.set(None);
@@ -982,7 +1021,11 @@ fn fallback_title(url: &str) -> String {
 
 /// Where the SQLite file lives, per platform.
 fn store_dir() -> PathBuf {
-    base_dir()
+    // UI validation can use a fresh store without modifying a reader's subscriptions.
+    std::env::var_os("DAY_NEWS_DATA_DIR")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .unwrap_or_else(base_dir)
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android", target_arch = "wasm32")))]
@@ -1045,6 +1088,93 @@ fn store_with<R>(f: impl FnOnce(&Store) -> R) -> R {
 #[cfg(test)]
 mod tests {
     use super::asset_candidates;
+
+    // Synthetic local fixtures: exercise the real live queries without network or UI hosts.
+    fn with_scene(test: impl FnOnce(super::NewsScene, &daynews_db::Db)) {
+        use day_core::Ambient;
+        let scope = day_reactive::Scope::child();
+        scope.enter(|| {
+            let db = daynews_db::Db::open_in_memory().unwrap();
+            super::store_with(|s| *s.db.borrow_mut() = Some(db));
+            let scene = super::NewsScene::create();
+            scope.provide(scene);
+            super::with_db(|db| test(scene, db)).unwrap();
+        });
+        scope.dispose();
+    }
+
+    fn seed(db: &daynews_db::Db, count: usize) -> Vec<u64> {
+        let url = "https://fixture.example/feed";
+        let feed = db.add_feed(url, "Fixture feed", None);
+        let articles: Vec<_> = (0..count)
+            .map(|i| daynews_db::IncomingArticle {
+                guid: i.to_string(),
+                title: Some(format!("Fixture {i}")),
+                url: None,
+                author: None,
+                published: Some(i as i64),
+                summary: Some("Fixture summary".into()),
+                content_html: None,
+            })
+            .collect();
+        db.upsert_articles(feed, url, &articles);
+        (0..count)
+            .map(|i| daynews_db::article_id(url, &i.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn reading_keeps_the_row_until_bulk_completion() {
+        with_scene(|sc, db| {
+            let ids = seed(db, 3);
+            super::open_article(ids[2]);
+            assert_eq!(sc.selected.get_untracked(), Some(ids[2]));
+            assert_eq!(sc.articles.get_untracked().len(), 3);
+            assert_eq!(sc.scope_unread.get_untracked(), 2);
+            assert!(sc.article.get_untracked().unwrap().is_read);
+            super::mark_scope_read(true);
+            assert!(sc.articles.get_untracked().is_empty());
+            assert_eq!(sc.scope_unread.get_untracked(), 0);
+        });
+    }
+
+    #[test]
+    fn next_unread_clears_search_and_lands_inside_a_large_timeline() {
+        with_scene(|sc, db| {
+            let ids = seed(db, super::TIMELINE_LIMIT + 5);
+            super::select_scope(daynews_db::Scope::Starred);
+            super::set_search("no matching fixture");
+            assert!(sc.articles.get_untracked().is_empty());
+            assert!(super::open_next_unread());
+            assert_eq!(sc.scope.get_untracked(), daynews_db::Scope::Unread);
+            assert_eq!(sc.search.get_untracked(), "");
+            assert_eq!(sc.selected.get_untracked(), ids.last().copied());
+            assert!(
+                sc.articles
+                    .get_untracked()
+                    .iter()
+                    .any(|a| Some(a.id) == sc.selected.get_untracked())
+            );
+            assert_eq!(sc.scope_unread.get_untracked(), super::TIMELINE_LIMIT + 4);
+        });
+    }
+
+    #[test]
+    fn next_unread_wraps_but_does_not_reopen_the_current_article() {
+        with_scene(|sc, db| {
+            let ids = seed(db, 3);
+            super::select_scope(daynews_db::Scope::All);
+            super::open_article(ids[0]);
+            assert!(super::open_next_unread());
+            assert_eq!(sc.selected.get_untracked(), Some(ids[2]));
+            super::mark_scope_read(true);
+            super::set_read(ids[2], false);
+            assert!(!super::open_next_unread());
+            // Model writes drain at the end of a native event turn.
+            day_reactive::flush_sync();
+            assert!(!sc.article.get_untracked().unwrap().is_read);
+        });
+    }
 
     #[test]
     fn demo_feeds_resolve_through_the_locale_then_english() {

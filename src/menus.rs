@@ -29,8 +29,10 @@ pub fn install() {
                         .key("n")
                         .action(|| {
                             // The subscriptions page owns the URL field; focus follows the user.
-                            navigate(ROUTE_SUBSCRIPTIONS);
-                            crate::subscriptions::focus_url_field();
+                            if daynews_core::try_scene().is_some() {
+                                navigate(ROUTE_SUBSCRIPTIONS);
+                                crate::subscriptions::focus_url_field();
+                            }
                         }),
                     menu_item(res::str::menu_new_folder().format())
                         .shortcut(Shortcut::new("n").shift())
@@ -58,12 +60,7 @@ pub fn install() {
             sub_menu(
                 res::str::menu_go().format(),
                 vec![
-                    // ⌘/ is NetNewsWire's shortcut for the single most-used command in a reader.
-                    menu_item(res::str::menu_next_unread().format())
-                        .key("/")
-                        .action(|| {
-                            daynews_core::open_next_unread();
-                        }),
+                    crate::commands::next_unread().menu_item(),
                     menu_separator(),
                     menu_item(res::str::nav_today().format())
                         .key("1")
@@ -104,7 +101,9 @@ pub fn install() {
                         .key("u")
                         .action(|| set_open_read(false)),
                     menu_item(res::str::toggle_read().format()).action(|| {
-                        if let Some(id) = daynews_core::scene().selected.get_untracked() {
+                        if let Some(id) =
+                            daynews_core::try_scene().and_then(|sc| sc.selected.get_untracked())
+                        {
                             daynews_core::toggle_read(id);
                         }
                     }),
@@ -121,14 +120,31 @@ pub fn install() {
                     menu_item(res::str::menu_tag().format())
                         .key("t")
                         .action(|| {
-                            if let Some(id) = daynews_core::scene().selected.get_untracked() {
+                            if let Some(id) =
+                                daynews_core::try_scene().and_then(|sc| sc.selected.get_untracked())
+                            {
                                 crate::timeline::begin_tag(id);
                             }
                         }),
                     menu_separator(),
-                    menu_item(res::str::menu_open_in_browser().format())
-                        .shortcut(Shortcut::new("Return"))
-                        .action(open_in_browser),
+                    crate::commands::open_in_browser().menu_item(),
+                    menu_separator(),
+                    menu_item(res::str::menu_increase_text_size().format())
+                        .id("reader-increase-text-size")
+                        .key("+")
+                        .enabled(
+                            crate::reader_styles::state().get().scale
+                                < crate::reader_styles::MAX_SCALE,
+                        )
+                        .action(|| crate::reader_styles::adjust_size(10.0)),
+                    menu_item(res::str::menu_decrease_text_size().format())
+                        .id("reader-decrease-text-size")
+                        .key("-")
+                        .enabled(
+                            crate::reader_styles::state().get().scale
+                                > crate::reader_styles::MIN_SCALE,
+                        )
+                        .action(|| crate::reader_styles::adjust_size(-10.0)),
                 ],
             ),
         ]
@@ -138,40 +154,31 @@ pub fn install() {
 /// Read/star the article the reader currently shows. No open article means nothing to do:
 /// the commands stay harmless rather than acting on some other row.
 fn set_open_read(read: bool) {
-    if let Some(id) = daynews_core::scene().selected.get_untracked() {
+    if let Some(id) = daynews_core::try_scene().and_then(|sc| sc.selected.get_untracked()) {
         daynews_core::set_read(id, read);
     }
 }
 
 fn set_open_starred(starred: bool) {
-    if let Some(id) = daynews_core::scene().selected.get_untracked() {
+    if let Some(id) = daynews_core::try_scene().and_then(|sc| sc.selected.get_untracked()) {
         daynews_core::set_starred(id, starred);
     }
 }
 
-/// Hand the article's own link to the platform browser.
-fn open_in_browser() {
-    if let Some(url) = daynews_core::scene()
-        .article
-        .get_untracked()
-        .and_then(|a| a.url.clone())
-    {
-        open_url(&url);
-    }
-}
-
 /// Move both the sidebar selection and the timeline filter. `navigate` alone would move the
-/// nav; the scope watch in `root` picks it up, but setting it here too means the menu works
-/// even before the nav has mounted.
+/// nav; the scope watch in `root` picks it up. Preferences and a closed last window have
+/// no news scene, so their global menu callbacks must tolerate that state.
 fn go(route: &str, scope: Scope) {
-    navigate(route);
-    daynews_core::select_scope(scope);
+    if daynews_core::try_scene().is_some() {
+        navigate(route);
+        daynews_core::select_scope(scope);
+    }
 }
 
 /// Run `f` on the feed the sidebar has selected. A smart feed, a tag or a page selected instead
 /// leaves no feed to act on, and the command does nothing.
 fn with_selected_feed(f: impl FnOnce(u64)) {
-    if let Scope::Feed(feed) = daynews_core::scene().scope.get_untracked() {
+    if let Some(Scope::Feed(feed)) = daynews_core::try_scene().map(|sc| sc.scope.get_untracked()) {
         f(feed);
     }
 }
@@ -188,4 +195,15 @@ pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
         menu_separator(),
         menu_item(res::str::unsubscribe().format()).action(move || daynews_core::unsubscribe(feed)),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn navigation_commands_tolerate_no_news_window() {
+        super::go(super::ROUTE_UNREAD, daynews_db::Scope::Unread);
+        super::set_open_read(true);
+        super::set_open_starred(true);
+        crate::subscriptions::focus_url_field();
+    }
 }

@@ -5,6 +5,7 @@ edition = "2024"
 license = "Apache-2.0"
 
 [dependencies]
+futures-util = "0.3"
 daynews-db = { path = "../daynews-db" }
 daynews-feed = { path = "../daynews-feed" }
 daynews-opml = { path = "../daynews-opml" }

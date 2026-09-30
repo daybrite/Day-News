@@ -25,7 +25,9 @@ fn url_focus() -> Signal<bool> {
 
 /// File ▸ New Feed: put the cursor in the URL field (the page may have just mounted).
 pub fn focus_url_field() {
-    url_focus().set(true);
+    if let Some(focus) = UrlFocus::try_ambient().or_else(UrlFocus::focused) {
+        focus.0.set(true);
+    }
 }
 
 /// File ▸ New Folder: ask for a name, then create it.

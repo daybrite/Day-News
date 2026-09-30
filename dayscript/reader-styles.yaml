@@ -1,0 +1,50 @@
+name: day-news-reader-styles
+description: Persistent reader controls update the existing document and reset together.
+flow:
+  - wait_for: { id: nav }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - menu: { key: day-preferences, only_on: [macos-appkit] }
+  - navigate: { route: settings, only_on: [ios-uikit] }
+  # A real native back proves Settings joined the visible phone stack, not a hidden column.
+  - pause: { secs: 1, only_on: [ios-uikit] }
+  - nav_back: { native: true, only_on: [ios-uikit] }
+  - assert_missing: { id: reader-size-slider, only_on: [ios-uikit] }
+  - navigate: { route: settings, only_on: [ios-uikit] }
+  - tap: { id: reader-reset-styles }
+  - set_value: { id: reader-size-slider, value: 140 }
+  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  # Georgia is the first installed recommendation on Apple platforms.
+  - select: { id: reader-font-picker, index: 1 }
+  - input: { id: reader-background-color, text: '#fff2d5' }
+  - input: { id: reader-text-color, text: '#243448' }
+  - screenshot: { name: reader-style-preferences, window: day.preferences, only_on: [macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit] }
+  - navigate: { route: all, only_on: [ios-uikit] }
+  - select: { id: timeline, index: 0, only_on: [ios-uikit] }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).fontFamily', contains: Georgia }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).backgroundColor', text: 'rgb(255, 242, 213)' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).color', text: 'rgb(36, 52, 72)' }
+  - web_eval: { id: reader-web, script: "window.readerStyleMarker = 'preserved'", text: preserved }
+  - menu: { id: reader-increase-text-size, only_on: [macos-appkit] }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-display").textContent', contains: '1rem * 1.5', only_on: [macos-appkit] }
+  - menu: { id: reader-decrease-text-size, only_on: [macos-appkit] }
+  - web_eval: { id: reader-web, script: 'window.readerStyleMarker', text: preserved }
+  - screenshot: { name: reader-custom-style, only_on: [macos-appkit] }
+  - menu: { key: day-preferences, only_on: [macos-appkit] }
+  - navigate: { route: settings, only_on: [ios-uikit] }
+  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  - select: { id: theme-picker, index: 0 }
+  - tap: { id: reader-reset-styles }
+  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  - close_window: { window: day.preferences, only_on: [macos-appkit] }
+  - navigate: { route: all, only_on: [ios-uikit] }
+  - select: { id: timeline, index: 0, only_on: [ios-uikit] }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-display").textContent', contains: '1rem * 1.4)' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).fontFamily', contains: system-ui }
+  - web_eval: { id: reader-web, script: 'window.readerStyleMarker', text: preserved, only_on: [macos-appkit] }

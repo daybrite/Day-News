@@ -1,3 +1,4 @@
+language_name = English
 app_title = Day News
 nav_all_unread = All Unread
 nav_all_articles = All Articles
@@ -66,3 +67,44 @@ retention_180 = For six months
 retention_365 = For one year
 retention_forever = Forever
 retention_pruned = Removed { $n } old articles
+
+time_now = now
+time_minutes = { $n }m
+time_hours = { $n }h
+time_days = { $n }d
+timeline_date = { DATETIME($when, dateStyle: "medium", timeStyle: "none") }
+article_date = { DATETIME($when, dateStyle: "long", timeStyle: "short") }
+
+settings_browser_label = Open web links in
+settings_browser_system = System Default
+settings_browser_default = System Default ({ $name })
+settings_browser_note = This choice applies to Day News. Other links use their system application.
+settings_browser_unavailable = Links use your default browser. Change it in the device’s system settings.
+
+menu_increase_text_size = Increase Text Size
+menu_decrease_text_size = Decrease Text Size
+settings_reader_heading = Article Reader
+settings_reader_size = Text size
+settings_reader_percent = { $value }%
+settings_reader_font = Font
+settings_reader_default_font = System Font
+settings_reader_font_note = Recommended fonts appear first, followed by all available fonts.
+settings_reader_background = Background color
+settings_reader_text = Text color
+settings_reader_reset = Reset Styles
+settings_reader_reset_note = Restore System appearance, two preview lines, and default list and reader sizes, reader font, and colors.
+settings_appearance = Appearance
+settings_light = Light
+settings_dark = Dark
+settings_system = System
+
+settings_list_heading = Article List
+settings_preview_lines = Preview lines
+settings_preview_none = No preview
+settings_preview_lines_count = { $count ->
+    [one] 1 line
+   *[other] { $count } lines
+    }
+
+settings_list_size = Text size
+settings_list_percent = { $value }%

@@ -1,0 +1,12 @@
+name: day-news-reader-styles-persist
+description: Save reader choices; follow with reader-styles-restore.yaml in a new process.
+flow:
+  - menu: { key: day-preferences, only_on: [macos-appkit] }
+  - navigate: { route: settings, only_on: [ios-uikit] }
+  - select: { id: preview-lines-picker, index: 3 }
+  - set_value: { id: list-size-slider, value: 170 }
+  - set_value: { id: reader-size-slider, value: 160 }
+  - select: { id: reader-font-picker, index: 1 }
+  - input: { id: reader-background-color, text: '#fff2d5' }
+  - input: { id: reader-text-color, text: '#243448' }
+  - close_window: { window: day.preferences, only_on: [macos-appkit] }

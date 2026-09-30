@@ -43,5 +43,9 @@ const DARK: Palette = Palette {
 /// Tracked read of the platform appearance, so color closures recolor live when the system
 /// theme flips.
 pub fn palette() -> &'static Palette {
-    if day::dark_mode() { &DARK } else { &LIGHT }
+    palette_for(day::dark_mode())
+}
+
+pub(crate) fn palette_for(dark: bool) -> &'static Palette {
+    if dark { &DARK } else { &LIGHT }
 }

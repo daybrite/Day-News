@@ -1,0 +1,29 @@
+# Run with seeded validation data. Restore System appearance/language and default browser.
+name: day-news-preferences
+description: Native preferences and live appearance changes on Apple platforms.
+flow:
+  - menu: { key: day-preferences, only_on: [macos-appkit] }
+  - navigate: { route: settings, only_on: [ios-uikit] }
+  - wait_for: { id: theme-picker }
+  - assert_visible: { id: language-picker }
+  - assert_visible: { id: reader-size-slider }
+  - assert_visible: { id: reader-font-picker }
+  - assert_visible: { id: reader-background-color }
+  - assert_visible: { id: reader-text-color }
+  - assert_visible: { id: reader-reset-styles }
+  - assert_visible: { id: browser-picker, only_on: [macos-appkit] }
+  - select: { id: theme-picker, index: 0 }
+  - pause: { secs: 1 }
+  - screenshot: { name: preferences-light, window: day.preferences, only_on: [macos-appkit] }
+  - screenshot: { name: preferences-light, only_on: [ios-uikit] }
+  - select: { id: theme-picker, index: 1 }
+  - pause: { secs: 1 }
+  - screenshot: { name: preferences-dark, window: day.preferences, only_on: [macos-appkit] }
+  - screenshot: { name: preferences-dark, only_on: [ios-uikit] }
+  - select: { id: language-picker, index: 1 }
+  - select: { id: language-picker, index: 0 }
+  - select: { id: theme-picker, index: 2 }
+  - select: { id: browser-picker, index: 0, only_on: [macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit] }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }

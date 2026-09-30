@@ -34,9 +34,13 @@ name = "dayapp"
 crate-type = ["rlib"]
 
 [dependencies]
+serde_json = "1"
+day-piece-colorpicker = { git = "https://github.com/daybrite/day.git" }
+day-piece-settings = { git = "https://github.com/daybrite/day.git" }
 day = { git = "https://github.com/daybrite/day.git", features = ["persistence"] }
 day-piece-webview = { git = "https://github.com/daybrite/day-piece-webview.git" }
 daynews-core = { path = "crates/daynews-core" }
+daynews-time = { path = "crates/daynews-time" }
 daynews-db = { path = "crates/daynews-db" }
 daynews-opml = { path = "crates/daynews-opml" }
 

@@ -42,10 +42,8 @@ flow:
   # the platform table emits for a click or an arrow step.
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  # macos-gtk has no WebKitGTK build, so the reader composes the article from pieces there rather
-  # than realizing day's placeholder leaf (docs/webview.md): the same reader, drawn differently.
-  - assert_visible: { id: reader-web, skip_on: [macos-gtk] }
-  - assert_visible: { id: reader-text, only_on: [macos-gtk] }
+  # GTK on macOS now hosts the native WebKit reader as well.
+  - assert_visible: { id: reader-web }
   # ...and that it rendered: `assert_visible` only proves the native view exists; an
   # error page or a blank document would pass it (and did, when Android's WebView refused
   # file:// URLs). The reader document stamps its title with id="reader-title"; asking the
@@ -70,7 +68,7 @@ flow:
   - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
 
-  # Read/unread toggling: the row's trailing swipe action, the toolbar toggle, and the
+  # Read/unread toggling: the row's leading swipe action, the toolbar toggle, and the
   # Article menu item all flip the same flag. Three toggles net one flip, leaving row 0
   # unread, which the mark-all-read step below depends on (it fails disabled over an
   # all-read store). The swipe drives the toggle on every platform (native reveal on
@@ -78,25 +76,25 @@ flow:
   # menu flips below are desktop-only, so on a phone the swipe's single flip is what
   # guarantees the unread row the mark-all-read step needs. `key:` pins which button the
   # offer held: the row was just opened, so it must say Mark as Unread.
-  # Android first steps back out of the reader. On a phone its composed push swaps the
-  # timeline out of the tree while the reader shows (iOS and HarmonyOS keep both in their
-  # native stacks; the desktops keep the panes side by side). On a tablet the reader sits
+  # Phones first step back out of the reader so native recycled timeline rows are visible
+  # for the swipe. Android removes the timeline from the tree; iOS retains its controller
+  # but can recycle offscreen cells. On a tablet the reader sits
   # beside the timeline, and the same back closes it without leaving the section. `nav_back`
   # is the app bar's arrow and the system back, the same route out a finger takes.
-  - nav_back: { native: true, only_on: [android-mdc] }
-  - pause: { secs: 1, only_on: [android-mdc] }
-  - swipe_row: { id: timeline, row: 0, key: mark_unread }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - pause: { secs: 1, only_on: [ios-uikit, android-mdc] }
+  - swipe_row: { id: timeline, row: 0, edge: leading, key: mark_unread }
   - pause: { secs: 1 }
   - toolbar: { item: read, on: true, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
   - menu: { key: toggle_read, path: [menu_article], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
 
-  # The leading edge stars, and its label is state-dependent too: star, then unstar. The
+  # The trailing edge stars, and its label is state-dependent too: star, then unstar. The
   # pair proves the dynamic offer and leaves the store unchanged for the next run.
-  - swipe_row: { id: timeline, row: 0, edge: leading, key: star }
+  - swipe_row: { id: timeline, row: 0, edge: trailing, key: star }
   - pause: { secs: 1 }
-  - swipe_row: { id: timeline, row: 0, edge: leading, key: unstar }
+  - swipe_row: { id: timeline, row: 0, edge: trailing, key: unstar }
   - pause: { secs: 1 }
 
   # Article ▸ Mark as Unread guarantees the unread scope below is non-empty even when a
@@ -141,9 +139,25 @@ flow:
   - pause: { secs: 1 }
   - assert_visible: { id: timeline-empty, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
-  # Settings: the retention picker is present and live.
+  # Settings: display controls share persistent bindings and reset to the shipped defaults.
   - navigate: { route: settings }
   - wait_for: { id: retention-picker }
+  - assert_visible: { id: theme-picker, only_on: [macos-appkit, ios-uikit] }
+  - assert_visible: { id: language-picker }
+  - assert_visible: { id: browser-picker, only_on: [macos-appkit] }
+  - assert_visible: { id: list-size-slider }
+  - assert_visible: { id: preview-lines-picker }
+  - assert_visible: { id: reader-size-slider }
+  - assert_visible: { id: reader-font-picker }
+  - set_value: { id: list-size-slider, value: 170 }
+  - assert_text: { id: list-size-value, key: settings_list_percent, args: { value: 170 } }
+  - set_value: { id: reader-size-slider, value: 160 }
+  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 160 } }
+  - select: { id: preview-lines-picker, index: 3 }
+  - tap: { id: reader-reset-styles }
+  - assert_text: { id: list-size-value, key: settings_list_percent, args: { value: 120 } }
+  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  - assert_value: { id: preview-lines-picker, value: 2 }
   - screenshot: settings
 
   # The toolbar's sidebar toggle hides the pane and brings it back.

@@ -24,15 +24,49 @@ pub fn render_to_file(article: &StoredArticle) -> Option<String> {
 }
 
 fn document(a: &StoredArticle) -> String {
-    let p = palette();
+    document_with_style(
+        a,
+        day::dark_mode(),
+        &crate::reader_styles::state().get_untracked(),
+    )
+}
+
+#[cfg(test)]
+fn document_in_appearance(a: &StoredArticle, dark: bool) -> String {
+    document_with_style(a, dark, &crate::reader_styles::ReaderStyle::default())
+}
+
+fn document_with_style(
+    a: &StoredArticle,
+    dark: bool,
+    style: &crate::reader_styles::ReaderStyle,
+) -> String {
+    let p = crate::theme::palette_for(dark);
+    let empty_body = format!(
+        "<p><em>{}</em></p>",
+        escape(&crate::res::str::reader_no_content().format())
+    );
+    // Parser summaries are plain text; only content_html is publication markup.
+    let summary = a.summary.as_deref().map(escape);
     let body = a
         .content_html
         .as_deref()
-        .or(a.summary.as_deref())
-        .unwrap_or(
-            "<p><em>This article has no content. Open it in your browser to read it.</em></p>",
-        );
-    let title = escape(a.title.as_deref().unwrap_or("Untitled"));
+        .filter(|body| !body.trim().is_empty())
+        .or_else(|| summary.as_deref().filter(|text| !text.trim().is_empty()))
+        .unwrap_or(&empty_body);
+    let title = a.title.as_deref().filter(|title| !title.trim().is_empty());
+    let title = match title {
+        Some(title) => escape(title),
+        None => escape(&crate::res::str::untitled().format()),
+    };
+    // Relative images and links in feed HTML resolve against the publication, not our
+    // temporary reader file. Only web URLs are suitable document bases.
+    let base = a
+        .url
+        .as_deref()
+        .filter(|url| url.starts_with("https://") || url.starts_with("http://"))
+        .map(|url| format!(r#"<base href="{}">"#, escape(url)))
+        .unwrap_or_default();
     let byline = match &a.author {
         Some(author) => format!(r#" <span class="by">{}</span>"#, escape(author)),
         None => String::new(),
@@ -56,13 +90,15 @@ fn document(a: &StoredArticle) -> String {
         r#"<!doctype html>
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{base}
 <style>
   :root {{ color-scheme: {scheme}; }}
+  html {{ -webkit-text-size-adjust: 100%; font-size: 17px; }}
   html, body {{ margin: 0; padding: 0; background: {bg}; color: {fg}; }}
   body {{
-    font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           "Helvetica Neue", system-ui, sans-serif;
-    padding: 26px 32px 72px; max-width: 42em; margin: 0 auto;
+    padding: 28px 32px 72px; max-width: 40em; margin: 0 auto;
     overflow-wrap: break-word; word-break: break-word;
   }}
   /* Masthead: source and byline, a rule, then the headline — the order a reader's eye wants,
@@ -77,13 +113,24 @@ fn document(a: &StoredArticle) -> String {
            margin: 0 0 22px; }}
   a {{ color: {accent}; }}
   /* Feed HTML is arbitrary: keep media inside the pane rather than forcing a sideways scroll. */
-  img, video, iframe, table {{ max-width: 100%; height: auto; }}
+  img, video, iframe, table {{ max-width: 100%; }}
+  img, video {{ height: auto; }}
+  table {{ display: block; overflow-x: auto; }}
+  iframe {{ border: 0; }}
   figure {{ margin: 1em 0; }}
   pre {{ background: {alt}; padding: 12px; overflow-x: auto; border-radius: 8px; }}
   code {{ font-size: 0.9em; }}
   blockquote {{ margin: 1em 0; padding-left: 1em; border-left: 3px solid {rule}; color: {muted}; }}
   hr {{ border: none; border-top: 1px solid {rule}; }}
-</style></head>
+  @supports (font: -apple-system-body) {{
+    html {{ font: -apple-system-body; }}
+  }}
+  @media (max-width: 480px) {{
+    body {{ padding: 20px 20px 48px; }}
+    h1.t {{ font-size: 1.65em; }}
+  }}
+</style>
+<style id="reader-display">{display_style}</style></head>
 <body>
 <p class="mast">{link}{byline}</p>
 <hr class="rule">
@@ -91,7 +138,8 @@ fn document(a: &StoredArticle) -> String {
 <p class="when">{when}</p>
 {body}
 </body></html>"#,
-        scheme = if day::dark_mode() { "dark" } else { "light" },
+        display_style = crate::reader_styles::stylesheet(style, dark),
+        scheme = if dark { "dark" } else { "light" },
         bg = css(p.bg),
         fg = css(p.text),
         muted = css(p.text_muted),
@@ -128,15 +176,28 @@ fn escape(s: &str) -> String {
 
 /// The open article, rendered the way this backend can.
 ///
-/// Where there is a web engine the generated document goes to the web view. macos-gtk has no
-/// WebKitGTK build, so the piece reports `Unsupported` there and would realize day's placeholder
-/// leaf (docs/webview.md), an empty pane. This composes the same article from pieces instead, so
-/// the reader reads everywhere.
+/// Where there is a web engine the generated document goes to the web view. A backend
+/// without one gets a composed text reader instead of a placeholder leaf.
 fn reader_body(url: Signal<String>, go: Trigger) -> AnyPiece {
     if day_piece_webview::support() == Support::Unsupported {
         article_text().any()
     } else {
-        web_view(url).go(go).id("reader-web").grow().any()
+        let js = day_piece_webview::JsHandle::new();
+        watch(
+            || (crate::reader_styles::state().get(), day::dark_mode()),
+            move |_, _| crate::reader_styles::apply_to(js),
+        );
+        web_view(url)
+            .js(js)
+            .on_load(move || crate::reader_styles::apply_to(js))
+            .go(go)
+            .on_external_link(|url| {
+                crate::settings::open_link(url);
+                day_piece_webview::LinkPolicy::Ignore
+            })
+            .id("reader-web")
+            .grow()
+            .any()
     }
 }
 
@@ -229,11 +290,11 @@ pub fn reader_pane() -> impl Piece {
     // when a `go` trigger fires (navigation writes the signal back, so auto-loading on every
     // change would loop). Writing the URL alone left the pane showing the first article forever.
     let go = Trigger::new();
-    // Re-render whenever the open article changes (and when the theme flips, so the document's
-    // colors follow the system appearance).
+    // Re-render only for article/locale changes. Typography and colors update the live
+    // document through its dedicated stylesheet, preserving reading position.
     bind(
-        move || (st.article.get().map(|a| a.id), day::dark_mode()),
-        move |_: &(Option<u64>, bool)| {
+        move || (st.article.get().map(|a| a.id), day::locale().get()),
+        move |_: &(Option<u64>, String)| {
             let doc = st.article.get_untracked().and_then(|a| render_to_file(&a));
             url.set(doc.unwrap_or_default());
             go.notify();
@@ -270,4 +331,30 @@ pub fn reader_pane() -> impl Piece {
         Some(a) => crate::toolbar::article_items(a),
         None => Vec::new(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn document_escapes_metadata_and_resolves_publication_links() {
+        // Synthetic publication data, not app-owned UI strings.
+        let article = daynews_core::StoredArticle {
+            id: 1,
+            feed_id: 1,
+            feed_title: "Fixture & source".into(),
+            title: Some("<Fixture title>".into()),
+            url: Some("https://fixture.example/posts/story?x=1&y=2".into()),
+            author: Some("<Fixture author>".into()),
+            published_at: 0,
+            summary: None,
+            content_html: Some(r#"<p><img src="../image.png"></p>"#.into()),
+            is_read: false,
+            is_starred: false,
+        };
+        let html = super::document_in_appearance(&article, false);
+        assert!(html.contains("&lt;Fixture title&gt;"));
+        assert!(html.contains("&lt;Fixture author&gt;"));
+        assert!(html.contains(r#"<base href="https://fixture.example/posts/story?x=1&amp;y=2">"#));
+        assert!(html.contains(r#"<img src="../image.png">"#));
+    }
 }

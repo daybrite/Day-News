@@ -1,0 +1,22 @@
+name: day-news-reader-styles-restore
+description: Verify saved styles in a fresh process and restore defaults afterwards.
+flow:
+  - wait_for: { id: nav }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-display").textContent', contains: '1rem * 1.6' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).fontFamily', contains: Georgia }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).backgroundColor', text: 'rgb(255, 242, 213)' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).color', text: 'rgb(36, 52, 72)' }
+  - menu: { key: day-preferences, only_on: [macos-appkit] }
+  - navigate: { route: settings, only_on: [ios-uikit] }
+  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 160 } }
+  - assert_value: { id: preview-lines-picker, value: 3 }
+  - assert_text: { id: list-size-value, key: settings_list_percent, args: { value: 170 } }
+  - tap: { id: reader-reset-styles }
+  - assert_text: { id: list-size-value, key: settings_list_percent, args: { value: 120 } }
+  - assert_value: { id: preview-lines-picker, value: 2 }
+  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  - close_window: { window: day.preferences, only_on: [macos-appkit] }

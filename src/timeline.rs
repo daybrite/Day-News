@@ -18,26 +18,16 @@ const TITLE_FONT: Font = Font::Body;
 const SUMMARY_FONT: Font = Font::Footnote;
 const FOOTER_FONT: Font = Font::Caption;
 
-/// The list's uniform row pitch: a two-line title, up to two summary lines, and the footer,
-/// plus the row's vertical padding. Uniform because the native hosts size `Automatic` rows at
-/// a fixed default today (docs/list.md), and a fixed pitch is the Mail/NetNewsWire idiom
-/// anyway. Content past the pitch clips on Android and draws over the next row on iOS, so the
-/// pitch has to hold the row's worst ordinary case.
+/// Scale the two title lines, footer, and preview line budget together; keep padding
+/// and inter-label gaps fixed. Zero preview lines also removes one gap.
 #[cfg(not(any(target_os = "ios", target_os = "android", target_env = "ohos")))]
-const ROW_H: f64 = 88.0;
-/// The phones' type ramp is larger (a 17pt body against the desktops' 13pt), so the same
-/// three-part row needs more height there: 2 × 22 title + 2 × 18 summary + 16 footer, the
-/// column's spacing and the row's padding.
+fn row_height(preview_lines: usize, scale: f64) -> f64 {
+    22.0 + (46.0 + preview_lines as f64 * 14.0) * scale - if preview_lines == 0 { 3.0 } else { 0.0 }
+}
 #[cfg(any(target_os = "ios", target_os = "android", target_env = "ohos"))]
-const ROW_H: f64 = 124.0;
-
-/// How much summary the row shows. Two footnote lines at the pane's width, trimmed here so
-/// an overlong summary doesn't push the footer past the fixed row pitch. Shorter on the phones,
-/// whose larger footnote fits fewer characters per line.
-#[cfg(not(any(target_os = "ios", target_os = "android", target_env = "ohos")))]
-const SUMMARY_CHARS: usize = 110;
-#[cfg(any(target_os = "ios", target_os = "android", target_env = "ohos"))]
-const SUMMARY_CHARS: usize = 90;
+fn row_height(preview_lines: usize, scale: f64) -> f64 {
+    22.0 + (66.0 + preview_lines as f64 * 18.0) * scale - if preview_lines == 0 { 3.0 } else { 0.0 }
+}
 
 /// One timeline row, bound to its slot.
 ///
@@ -45,13 +35,18 @@ const SUMMARY_CHARS: usize = 90;
 /// recycles cells: a scrolled-away row's cell is rebound to a different article by one slot
 /// write, so anything captured eagerly freezes at the value the cell was born with, not the
 /// article it now shows.
-fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
-    let sc = daynews_core::scene();
+fn row_for(
+    slot: ItemSlot<ArticleSummary, String>,
+    preview_lines: usize,
+    scale: f64,
+    sc: daynews_core::NewsScene,
+) -> impl Piece {
     let id = move || slot.field(|a| a.id);
     let read = move || slot.field(|a| a.is_read);
 
     // Selection is the native list's to draw (docs/list.md): the platform highlight tracks
-    // the table's own focus the way Mail's does. Rows keep their content colors.
+    // the table's own focus the way Mail's does. AppKit adapts plain label colors
+    // to the native selection while preserving these colors for unselected rows.
     let title_color = move || {
         if read() {
             palette().text_muted
@@ -66,7 +61,7 @@ fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
         // would otherwise float it down beside the summary. The gutter keeps its width whether
         // or not a dot is drawn, so every title starts on the same x.
         column((
-            column(()).height(5.0),
+            column(()).height(9.0 * scale - DOT / 2.0),
             when(
                 move || !read(),
                 move || {
@@ -86,26 +81,44 @@ fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
                     .unwrap_or_else(|| crate::res::str::untitled().format())
             })
             .font(TITLE_FONT)
+            .font_scale(scale)
+            .max_lines(2)
             .weight(FontWeight::Semibold)
             .color(title_color),
             when(
-                move || slot.field(|a| a.summary.is_some()),
+                move || preview_lines > 0 && slot.field(|a| a.summary.is_some()),
                 move || {
+                    // Apple labels enforce a real line cap. Keep the previous approximate
+                    // excerpt budget on backends that do not yet support native line limits.
+                    let chars = if cfg!(any(feature = "appkit", feature = "uikit")) {
+                        2048
+                    } else if cfg!(any(target_os = "android", target_env = "ohos")) {
+                        45 * preview_lines
+                    } else {
+                        55 * preview_lines
+                    };
                     label(move || {
-                        slot.field(|a| snippet(a.summary.as_deref().unwrap_or(""), SUMMARY_CHARS))
+                        slot.field(|a| snippet(a.summary.as_deref().unwrap_or(""), chars))
                     })
                     .font(SUMMARY_FONT)
+                    .font_scale(scale)
+                    .max_lines(preview_lines as u32)
+                    .id_of(move || format!("article-preview-{}", id()))
                     .color(sub_color)
                 },
             ),
             row((
                 label(move || slot.field(|a| a.feed_title.clone()))
                     .font(FOOTER_FONT)
+                    .font_scale(scale)
+                    .single_line()
                     .weight(FontWeight::Medium)
                     .color(sub_color)
                     .grow_w(),
                 label(move || slot.field(|a| relative_time(a.published_at)))
                     .font(FOOTER_FONT)
+                    .font_scale(scale)
+                    .single_line()
                     .color(sub_color),
             ))
             .spacing(8.0)
@@ -119,6 +132,7 @@ fn row_for(slot: ItemSlot<ArticleSummary, String>) -> impl Piece {
             move || {
                 label("\u{2605}")
                     .font(FOOTER_FONT)
+                    .font_scale(scale)
                     .color(move || palette().star)
             },
         ),
@@ -199,7 +213,6 @@ pub fn timeline_pane() -> impl Piece {
     // search typing into a box that filtered nothing.
     let search = crate::toolbar::search();
     let in_toolbar = crate::toolbar::available();
-    watch(move || search.get(), |q, _| daynews_core::set_search(q));
 
     column((
         // Heading: the scope's name over its unread count, with the two actions a reader
@@ -213,9 +226,7 @@ pub fn timeline_pane() -> impl Piece {
                     .color(move || palette().text)
                     .id("scope-title"),
                 label(move || {
-                    let n = sc
-                        .articles
-                        .with(|a| a.iter().filter(|x| !x.is_read).count());
+                    let n = sc.scope_unread.get();
                     crate::res::str::unread_count(n as f64).format()
                 })
                 .font(Font::Caption)
@@ -232,6 +243,7 @@ pub fn timeline_pane() -> impl Piece {
                     row((
                         crate::commands::refresh().button(),
                         crate::commands::mark_all_read().button(),
+                        crate::commands::next_unread().button(),
                     ))
                     .spacing(8.0)
                 },
@@ -266,13 +278,15 @@ pub fn timeline_pane() -> impl Piece {
         when(
             move || st.refresh_progress.get().is_some(),
             move || {
-                let (done, total) = st.refresh_progress.get_untracked().unwrap_or((0, 0));
                 row((
                     spinner(),
-                    label(crate::res::str::refresh_progress(done as f64, total as f64))
-                        .font(Font::Caption)
-                        .color(move || palette().text_muted)
-                        .id("refresh-progress"),
+                    label(move || {
+                        let (done, total) = st.refresh_progress.get().unwrap_or((0, 0));
+                        crate::res::str::refresh_progress(done as f64, total as f64).format()
+                    })
+                    .font(Font::Caption)
+                    .color(move || palette().text_muted)
+                    .id("refresh-progress"),
                 ))
                 .spacing(8.0)
                 .align(VAlign::Center)
@@ -281,26 +295,57 @@ pub fn timeline_pane() -> impl Piece {
             },
         ),
         divider(),
+        // Rebuild just the native list when its display geometry changes; selection is
+        // restored from the scene's stable article ID by the existing two-way binding.
+        each(
+            items(
+                || {
+                    vec![(
+                        crate::settings::preview_lines().get(),
+                        crate::settings::list_scale().get(),
+                    )]
+                },
+                |style| *style,
+            ),
+            move |slot| {
+                let (lines, percent) = slot.get();
+                timeline_rows(lines, percent as f64 / 100.0, sc)
+            },
+        ),
+    ))
+    .background(move || palette().bg_alt)
+    .grow()
+}
+
+fn timeline_rows(preview_lines: usize, scale: f64, sc: daynews_core::NewsScene) -> impl Piece {
+    column((
         when(
             move || sc.articles.with(|a| a.is_empty()),
             move || {
                 column((
-                    spacer(),
-                    // An empty unread scope is an achievement, not an absence.
-                    label(move || {
-                        if sc.scope.get() == Scope::Unread {
-                            crate::res::str::timeline_empty_unread().format()
-                        } else {
-                            crate::res::str::timeline_empty().format()
-                        }
-                    })
-                    .font(Font::Body)
-                    .color(move || palette().text_muted)
-                    .id("timeline-empty"),
-                    spacer(),
+                    column((
+                        spacer(),
+                        // An empty unread scope is an achievement, not an absence.
+                        label(move || {
+                            if sc.scope.get() == Scope::Unread {
+                                crate::res::str::timeline_empty_unread().format()
+                            } else {
+                                crate::res::str::timeline_empty().format()
+                            }
+                        })
+                        .font(Font::Body)
+                        .font_scale(scale)
+                        .color(move || palette().text_muted)
+                        .id("timeline-empty"),
+                        spacer(),
+                    ))
+                    .align(HAlign::Center)
+                    .height(row_height(preview_lines, scale))
+                    .grow_w()
+                    .id("timeline-empty-row"),
+                    divider(),
                 ))
-                .align(HAlign::Center)
-                .grow()
+                .grow_w()
             },
         ),
         {
@@ -330,9 +375,9 @@ pub fn timeline_pane() -> impl Piece {
                     move || sc.articles.get(),
                     |a: &ArticleSummary| a.id.to_string(),
                 ),
-                row_for,
+                move |slot| row_for(slot, preview_lines, scale, sc),
             )
-            .row_height(RowHeight::Uniform(ROW_H))
+            .row_height(RowHeight::Uniform(row_height(preview_lines, scale)))
             // Selection reads as it moves (NetNewsWire): a click or a native arrow step both
             // land here and open the row.
             .on_select(|key: String| {
@@ -350,9 +395,10 @@ pub fn timeline_pane() -> impl Piece {
                     .collect()
             })
             .scroll_to_row(jump)
-            // The trailing swipe toggles read/unread, Mail's triage gesture. The offer is
+            .focused(sc.timeline_focused)
+            // The left (leading) swipe action toggles read/unread. The offer is
             // pulled at gesture time, so the button names the flip it would make.
-            .swipe_trailing(move |i| {
+            .swipe_leading(move |i| {
                 let Some((id, read)) = sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_read)))
                 else {
                     return Vec::new();
@@ -376,8 +422,8 @@ pub fn timeline_pane() -> impl Piece {
                         .action(move || daynews_core::set_read(id, !read)),
                 ]
             })
-            // The leading swipe stars, in the star's own warm tint.
-            .swipe_leading(move |i| {
+            // The right (trailing) swipe action stars, in the star's own warm tint.
+            .swipe_trailing(move |i| {
                 let Some((id, starred)) =
                     sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_starred)))
                 else {
@@ -404,6 +450,5 @@ pub fn timeline_pane() -> impl Piece {
             .grow()
         },
     ))
-    .background(move || palette().bg_alt)
     .grow()
 }

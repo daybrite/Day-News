@@ -10,6 +10,7 @@ mod commands;
 mod format;
 mod menus;
 mod reader;
+mod reader_styles;
 mod settings;
 mod subscriptions;
 mod theme;
@@ -74,6 +75,15 @@ fn count(n: i64) -> String {
 }
 
 pub fn root() -> impl Piece {
+    settings::apply_startup();
+    day::register_preferences_with(
+        day::WindowOptions {
+            title_fn: Some(|| res::str::nav_settings().format()),
+            size: Size::new(600.0, 720.0),
+            ..Default::default()
+        },
+        settings::settings_page,
+    );
     // Open the store and stand up its live queries before the first build, so the sidebar is
     // populated on the very first frame instead of flashing empty.
     daynews_core::init();
@@ -87,7 +97,11 @@ pub fn root() -> impl Piece {
     // Every window shows the same store (the reader is the app, not the window), so a new
     // window is just another shell. Registered once; each window builds its own signals.
     day::register_new_window(build_shell);
-    menus::install();
+    // Menu availability needs the registered window's scene. Install on the next UI
+    // turn, after the shell has mounted; commands also tolerate the last window closing.
+    day::task(async {
+        menus::install();
+    });
     build_shell()
 }
 
@@ -96,16 +110,10 @@ const OPENING_SECTION: &str = "today";
 
 /// One window's contents. Called again for each File ▸ New Window.
 fn build_shell() -> impl Piece {
-    // This window's view and its bar (docs/state.md): `scoped` creates one of each in the
-    // window's own scope, so a second window browses its own scope, search and selection while
-    // the store, the feeds and the badges below stay shared.
+    // Each window owns its scope, search and selection; the store and badges stay shared.
     daynews_core::NewsScene::scoped(|sc| {
-        // Each of these belongs to the window, not to a page: the toolbar outlives any page
-        // scope, and File ▸ New Feed focuses the field in the window the user is looking at,
-        // so both are provided here, where `focused()` can find them (docs/state.md).
-        toolbar::Bar::scoped(move |_bar| {
-            subscriptions::UrlFocus::scoped(move |_focus| shell_body(sc))
-        })
+        // File ▸ New Feed focuses the field in the window the user is looking at.
+        subscriptions::UrlFocus::scoped(move |_focus| shell_body(sc))
     })
 }
 
@@ -121,7 +129,9 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     watch(
         move || section.get(),
         move |key, _| {
-            if let Some(scope) = key.as_deref().and_then(scope_for_key) {
+            if let Some(scope) = key.as_deref().and_then(scope_for_key)
+                && sc.scope.get_untracked() != scope
+            {
                 daynews_core::select_scope(scope);
             }
         },
@@ -133,7 +143,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         // Refresh and Mark All as Read act on the scope this list has chosen, so they ride this
         // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root
         // list's bar when it collapses. The article's commands are on the reader.
-        .toolbar(toolbar::feed_items())
+        .toolbar(toolbar::feed_items)
         // Search moved off the toolbar when day replaced `toolbar_search` with `.searchable()`:
         // the nav owns the field now, and the toolkit puts it in the window toolbar on
         // desktop and inline above the list on a phone. The signal is still the shared one the
