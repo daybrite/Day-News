@@ -17,6 +17,7 @@ qt = ["day/qt", "day-piece-webview/qt"]
 uikit = ["day/uikit", "day-piece-webview/uikit"]
 mdc = ["day/mdc", "day-piece-webview/mdc"]
 xaml = ["day/xaml", "day-piece-webview/xaml"]
+winui = ["day/winui", "day-piece-webview/winui"]
 arkui = ["day/arkui", "day-piece-webview/arkui"]
 dom = ["day/dom", "day-piece-webview/dom"]
 # day-piece-webview ships no mock renderer, so the headless default omits it.
