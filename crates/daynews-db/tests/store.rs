@@ -2,6 +2,7 @@
 //! refreshes, scoped timelines, two-shadow full-text search, deep cascades, tags, retention,
 //! and live count badges.
 
+use day_reactive::Binding;
 use daynews_db::{Article, ArticleFields, Db, FeedFields, IncomingArticle, Scope, article_id};
 
 fn item(guid: &str, title: &str, body: &str, published: i64) -> IncomingArticle {
@@ -337,4 +338,53 @@ fn undo_restores_an_unsubscribed_feeds_whole_subtree() {
         "and the BODY row came back with it"
     );
     assert_eq!(titles(&db, Scope::All, "body"), ["Kept by undo"]);
+}
+
+#[test]
+fn conditional_check_persists_validators_without_changing_articles() {
+    let root = std::env::temp_dir().join(format!("day-news-validators-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let file = root.join("store.sqlite");
+    let url = "https://fixture.example/conditional";
+    let f;
+    {
+        let db = Db::open(&file).unwrap();
+        f = db.add_feed(url, "Fixture", None);
+        db.upsert_articles(
+            f,
+            url,
+            &[item("one", "Fixture article", "Original body", 100)],
+        );
+        db.set_read(article_id(url, "one"), true);
+        db.set_starred(article_id(url, "one"), true);
+        db.feed_checked(
+            f,
+            Some("W/\"revision-1\"".into()),
+            Some("Wed, 30 Sep 2026 10:00:00 GMT".into()),
+        );
+        db.container.save().unwrap();
+    }
+    {
+        let db = Db::open(&file).unwrap();
+        let validators = db.feed_validators(f).unwrap();
+        assert_eq!(validators.0.as_deref(), Some("W/\"revision-1\""));
+        db.set_feed_error(f, "synthetic failure");
+        db.feed_checked(f, validators.0, validators.1);
+        assert_eq!(db.count(Scope::All).get_untracked(), 1);
+        assert_eq!(db.unread_count(Scope::All).get_untracked(), 0);
+        assert_eq!(db.count(Scope::Starred).get_untracked(), 1);
+        assert_eq!(
+            db.body(article_id(url, "one")).as_deref(),
+            Some("<p>Original body</p>")
+        );
+        assert!(
+            db.container
+                .get::<daynews_db::Feed>(f)
+                .unwrap()
+                .last_error()
+                .peek()
+                .is_none()
+        );
+    }
+    std::fs::remove_dir_all(root).unwrap();
 }

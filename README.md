@@ -50,7 +50,8 @@ three panes become three taps, each one a native push.
   Size (Command-plus/minus) updates the same setting. Styles apply without reloading the article.
   Reset Styles restores System appearance and automatic reader styling while keeping other settings.
 - Article links open externally while the reader keeps its place. The browser controls whether
-  the destination appears in a new tab or window.
+  the destination appears in a new tab or window. Article → Open in Browser opens the selected
+  article with Return/Enter, without a modifier key.
 - Import and export OPML with folders intact, so moving in or out is a single file.
 - The timeline is a native recycling list with the platform's own swipe actions and keyboard
   navigation, and the article pane is the system web view over a document generated per article —
@@ -129,12 +130,26 @@ day patch --local /path/to/day
 
 ## Inside the code
 
+**Reader View** (Article menu, **⌘⇧R** on macOS / **Ctrl+Shift+R** elsewhere) loads the
+publisher's full article into the current reader. The article toolbar exposes the same command
+on phones. Invoke it again to return to the RSS version, or while loading to cancel. Your
+reader typography and colors apply to both versions.
+
+Extraction runs locally using bundled Mozilla Readability and DOMPurify. It does not execute
+publisher scripts, so pages requiring JavaScript, sign-in, or a subscription may not yield an
+article. Web builds also remain subject to publisher CORS rules. NetNewsWire's Feedbin service
+requires authorized application credentials; Day News does not reuse NetNewsWire's credentials
+or impersonate it. `ArticleExtractor` in `src/extraction.rs` is the replacement point for an
+authorized service or another local engine.
+
 - `src/lib.rs` is the shell: a typed-route sidebar whose article list is a content-list pane, so
   desktops get three columns and a phone pushes through them.
 - `src/timeline.rs` is the article list, a native recycling [`list`](https://daybrite.dev/docs/internal/list)
   with platform selection and edge swipe actions.
 - `src/reader.rs` is the article pane: a native web view over a generated document, and the same
   article composed from pieces when a backend has no web engine. GTK on macOS uses WebKit.
+- `src/extraction.rs` defines the extraction provider; `src/reader_view.rs` owns per-window
+  loading, cancellation, errors, and the temporary full-text overlay.
 - `src/subscriptions.rs`, `src/settings.rs`, `src/menus.rs`, and `src/toolbar.rs` cover feed
   management with OPML import and export, retention, the app menus, and the window toolbar.
 - `crates/` holds `daynews-opml`, `daynews-feed`, `daynews-db`, and `daynews-core`: OPML, feed
@@ -150,3 +165,29 @@ from. `day lint` checks routes, element ids, and locale coverage, and `DESIGN.md
 architecture.
 
 Day News is open source under the Apache-2.0 license.
+
+Feed refreshes run up to four requests concurrently, including newly added subscriptions.
+ETag and Last-Modified validators survive relaunch; unchanged feeds return 304 without
+reparsing or rewriting articles. On AppKit/UIKit, active feeds show a subtle spinner over
+their sidebar icon while connecting or when the response length is unknown. A known-length
+download fills a circular progress ring. Feed names and unread counts stay in place. Native
+feed parsing runs off the UI thread, and downloads have a 30-second request deadline and
+16 MiB body limit.
+
+The sidebar discovers color site icons from feed metadata, home-page icon links, web
+manifests, and conventional favicon/touch-icon locations. Raster icons are normalized to
+64-pixel PNG thumbnails and cached in the app data directory (seven days for successful
+lookups, one day for misses). Cached thumbnails appear before network discovery, which runs
+four sites at a time with a 25-second per-site deadline. Sites without a usable icon keep the
+RSS symbol; no third-party favicon service receives the subscription list. SVG-only icons
+currently fall back to another raster candidate or the RSS symbol. Web builds retain the RSS
+fallback because the local filesystem cache is a native capability.
+
+Feed → Show Only Unread Feeds and the toolbar's filter button (above the article list on macOS, in the feed bar on iOS) control the same
+persistent preference. Smart feeds remain available, and hiding an empty feed does not close
+an already open article.
+
+Network regressions: run `python3 tests/feed-refresh-server.py`, then launch against a fresh
+`DAY_NEWS_DATA_DIR` with `--script dayscript/feed-refresh.yaml`. Relaunch the same library on
+macOS with `--script dayscript/feed-refresh-relaunch.yaml`; `/stats` on port 28762 should show
+additional 304s, no new icon downloads, and at most four active feed requests.

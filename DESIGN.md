@@ -75,24 +75,42 @@ a stable id (feed id → article URL → hash of title+date).
 
 ## Threading
 
-There is none. Day's reactive core is `!Send` and its executor (`day::task`) polls futures on the
-UI thread, so the store lives in a `RefCell` and every mutation happens between awaits — no
-marshaling, no locks. Only network I/O is off-thread, and the HTTP part hands the response back on
-the main thread.
+Native builds own the database through `day-persistence::DatabaseWorker`. Open/migrate,
+article/body materialization, FTS, retention, OPML import, read/star edits, undo and feed commits
+run on that worker. The UI holds owned sidebar/timeline/reader values in signals. It does not
+share the worker's reactive model handles. The web build retains the compatible synchronous
+OPFS implementation in `daynews-core::legacy` until an async transferable protocol exists.
 
-Refresh is sequential on purpose: each `await` returns to the main loop, so rows appear
-progressively and importing a large subscription list does not open one socket per feed at once.
+Four network exchanges can run concurrently. Parsing HTTP responses already runs off the UI
+thread; parsed items move into one atomic worker transaction with metadata and HTTP validators.
+The import checks subscription existence at commit time so a late response cannot resurrect an
+unsubscribed feed. Existing articles retain their read status and bodies. Imports and retention
+are excluded from user undo. An existence-query failure aborts import rather than overwriting
+stored read state. Status translations are formatted on the UI thread.
 
-> [!NOTE]
-> **Known limitation.** Parsing and the database writes also run on the UI thread. On a slow
-> device a large refresh can block it long enough to be noticeable (on the Android emulator it
-> exceeded dayscript's 10-second main-thread timeout twice during a 5-feed seed). The fix is to
-> move parse + insert off-thread and marshal results back with `Setter`, or to yield between
-> articles. Deferred, not forgotten.
+Each window owns cancellable subscriptions for its scope/search and selected article. Retraction
+of an effect aborts the old receiver before a new one can publish; completions capture the
+originating scene. Reader content clears immediately when selection changes. Sidebar unread
+counts use one indexed grouped SQL query, replacing one query per feed. The `(feed,is_read)`
+index supports these counts. Projection equality and latest-value delivery reduce unnecessary UI
+work; SQL tracing is installed only when trace logging is actually enabled.
+
+Find Articles (Cmd-F) activates the native search field at the right of the desktop toolbar.
+Its edits drive the same FTS query as programmatic search. Title and body indexes are queried
+on the worker. Row scrolling follows a changed selected article ID; inserting newer rows above
+the selection does not repeatedly jump the scrolling list.
+
+The worker drains accepted edits at termination. Errors are delivered to the UI instead of
+being reported as success. Unit tests cover search punctuation/title/body matches, concurrent
+refresh/read edits, per-search subscriptions, sticky unread rows, sidebar counts and deletion
+of the currently displayed article. Framework tests cover transaction/cancellation/close races.
+The synchronous database API is still used by the headless store tests and the web tier.
 
 ## Reader
 
-The article pane is a native web view pointed at a `file://` document we generate per article.
+The article pane is a native web view pointed at a `file://` document we generate per reader pane.
+Each pane reuses and cleans up its own temporary file, so windows showing the same article in
+different reading modes cannot overwrite one another's content.
 A `data:` URL would avoid the temp file, but Android's WebView refuses top-level `data:`
 navigations (API 30+) and every platform caps their length. Android needed one more thing:
 API 30 also turned `WebSettings.setAllowFileAccess` off, refusing even the app's own file, so
@@ -102,6 +120,38 @@ to write to at all, which is why its reader is blank until the piece grows a way
 view HTML directly. The document is self-contained — no
 external CSS or fonts — so it renders identically offline and leaks no reading activity to third
 parties. Feed HTML is sanitized at the parse boundary rather than trusting the renderer.
+
+### Reader View
+
+`ArticleExtractor` (`src/extraction.rs`) returns an owned `ExtractedArticle` from an article URL.
+It is independent of selection, commands, database storage, and presentation; an authorized
+HTTP service or an offscreen engine can replace `LocalReadability`. The current provider uses
+Day's native HTTP stack with the DayNews user agent, validates status/content type, decodes the
+response charset, and resolves links against the final redirect URL. It rejects documents above
+5 MiB before parsing and limits Readability to 50,000 elements. This is a parse limit, not a
+streaming download limit. The command has a 30-second deadline.
+
+Bundled Readability 0.6.0 and DOMPurify 3.4.16 run in the existing reader's JS engine on a
+detached document; the publisher page is never navigated to or executed. HTML is sanitized both
+before extraction and before returning it to the reader. All bundled scripts use generated
+asset accessors. JS-only and authenticated pages are not supported, and web HTTP requests
+remain subject to CORS. A backend without JS evaluation disables the command.
+
+`ReaderView` is ambient per-window state. The command toggles a temporary full-text overlay;
+it never writes over stored RSS content. Repeating it while loading cancels, while repeating it
+after completion switches between the two versions without refetching. Changing article ID or
+URL cancels the task and clears the overlay. Window disposal cancels pending work. Errors leave
+the RSS version visible, with localized retry guidance. Reader styles and external-link handling
+are shared by both modes. Command-Shift-R belongs to Reader View; Refresh Feed no longer claims
+that shortcut. A toolbar command exposes the same action on mobile.
+
+NetNewsWire uses signed Feedbin extraction requests with a client ID and secret; no unauthenticated
+or User-Agent-whitelist integration is provided. Feedbin access requires credentials authorized
+for this app. Provider replacement requires no change to the reader state or rendering.
+
+`tests/reader-extraction.cjs` exercises the bundled scripts with synthetic publication HTML.
+`tests/reader-view-server.py` plus `dayscript/reader-view.yaml` cover native success, cached
+toggle, cancellation on selection, and HTTP failure using an isolated database.
 
 ## Looking like a reader
 
@@ -186,7 +236,7 @@ Each of these is a test, because each was a wrong assumption first:
 
 ## Not yet built
 
-Cloud sync (iCloud/Feedbin/Reader), reader view / article extraction, per-feed refresh intervals,
+Cloud sync (iCloud/Feedbin/Reader), per-feed refresh intervals,
 starred-article sync, images cached offline, folder editing in the UI (import creates folders,
 but there is no rename/move), and article pagination beyond the 500-row timeline cap.
 
@@ -194,3 +244,55 @@ Two want Day itself to grow first: an HTML-content API on `day-piece-webview`, w
 the web build's article pane stays blank (it has no filesystem for the generated document), and
 self-sizing list rows — `RowHeight::Automatic` is a fixed default on every backend today, which
 is why the timeline pins a uniform pitch and why a wrapped title can clip its footer on Android.
+
+### Feed refresh and sidebar identity
+
+`daynews-feed::fetch_conditional` returns either a parsed feed with replacement HTTP
+validators or `NotModified` with merged validators. `daynews-core` stores those validators on
+`Feed` alongside the articles, using nullable columns for existing libraries. 304 updates the
+last-check timestamp and clears errors without touching bodies/read/star state. Failed HTTP
+or parsing attempts never advance validators. The shared HTTP client reuses connections;
+native parsing and sanitization use worker threads. Four shared permits bound all feed
+requests, while an in-flight ID set prevents overlapping subscription/manual refreshes.
+Deleted subscriptions are checked before requests and before storing results. RAII clears
+activity and releases permits on completion or cancellation. `SheetsState::updating_feeds`
+is an active-ID map whose optional fraction drives `Nav::icon_progress`, separately from
+row labels, badges and icons. The icon overlay spins while connecting or when the body length
+is unknown/encoded, then fills a circular ring for a trustworthy decoded content length.
+Progress updates are throttled to 100 ms (mode changes and completion are immediate).
+Finishing, failure, removal and cancellation clear the overlay without changing row geometry.
+AppKit/UIKit animate only native Core Animation layers; download ticks never rebuild rows.
+Other toolkits currently omit this optional per-icon decoration; aggregate refresh remains
+visible on every platform.
+
+`feed_icons` owns discovery, the local thumbnail cache and its separate four-worker queue.
+All cached thumbnails are loaded before queued network discovery. Each source consists of
+feed/home/icon URLs; source changes invalidate queued results. Batched publications avoid a
+sidebar rebuild for every individual image. Untrusted responses and decoded image dimensions
+are bounded. Successful thumbnails remain visible after transient rediscovery errors.
+AppKit/UIKit display absolute-file icons in original color; generated bundled RSS symbols
+remain the fallback. `feed_list` owns the persistent unread-only signal used by both the
+menu and toolbar. Filtering changes visible subscription rows, not the scene's article scope.
+
+
+## Worker migration validation (2026-10-01)
+
+The migration was checked against isolated test libraries, not the user's active database.
+Day-News's AppKit walkthrough passed 127 executed steps (2 platform skips); UIKit passed 97
+(32 skips). Native AppKit Cmd-F and actual keyboard typing were verified separately, since
+synthetic toolbar events alone do not exercise NSSearchField's action delivery.
+
+Day-News builds passed for AppKit, UIKit, Android, GTK, Qt, web and HarmonyOS. Harmony was
+compile/package checked only; no emulator was run. Its local build needed NODE_PATH pointing
+to the installed Hvigor modules and a temporary versioned SDK root because the machine's SDK
+symlink was stale. Windows/XAML was not built on this macOS host.
+
+Framework validation includes 38 worker tests, plus existing model, persistence, core and spec
+suites. The worker suite also passed ten consecutive runs to vary thread scheduling. Day-News's
+77 headless tests include six native worker/projection regressions. The Showcase query script
+passed 48 steps; Sketch's editor script passed 640 executed steps (15 skips). Stanza-Redux's
+27 tests, Sketch's 109 tests and day-lite's 13 tests passed. Compatibility checks also passed
+for App-Fair, Games-Fair, Day-Tunes, Day-Bench, Day-Rise, Day-Skies and Day-Trader. App-Fair needed
+small updates from the retired selector/stack builders to nav/nav_stack and an explicit image
+conversion. These checks do not imply that the apps retaining synchronous containers have
+migrated every query to a worker.

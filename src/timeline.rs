@@ -314,6 +314,7 @@ pub fn timeline_pane() -> impl Piece {
         ),
     ))
     .background(move || palette().bg_alt)
+    .toolbar(crate::toolbar::list_items)
     .grow()
 }
 
@@ -356,11 +357,17 @@ fn timeline_rows(preview_lines: usize, scale: f64, sc: daynews_core::NewsScene) 
             watch(
                 move || {
                     let sel = sc.selected.get();
-                    sc.articles
-                        .with(|a| sel.and_then(|id| a.iter().position(|x| x.id == id)))
+                    let pos = sc
+                        .articles
+                        .with(|a| sel.and_then(|id| a.iter().position(|x| x.id == id)));
+                    (sel, pos)
                 },
-                move |pos: &Option<usize>, _| {
-                    if pos.is_some() {
+                move |(selected, pos), previous| {
+                    // New feed rows can move the index of the same selected article. That
+                    // must not pull the scroll position away from a person browsing the list.
+                    let changed =
+                        previous.is_none_or(|(old, old_pos)| old != selected || old_pos.is_none());
+                    if changed && pos.is_some() {
                         jump.set(*pos);
                     }
                 },

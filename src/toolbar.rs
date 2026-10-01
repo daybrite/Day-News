@@ -32,6 +32,9 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
         crate::commands::refresh().toolbar_item(),
         crate::commands::mark_all_read().toolbar_item(),
     ];
+    if !cfg!(feature = "appkit") {
+        items.push(crate::commands::unread_feeds_only().toolbar_item());
+    }
     if sc.article.with(|a| a.is_none()) {
         items.push(crate::commands::next_unread().toolbar_item());
     }
@@ -68,5 +71,16 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
         .placement(ToolbarPlacement::Primary)
         .action(move || daynews_core::set_read(id, !read)),
         crate::commands::open_in_browser().toolbar_item(),
+        crate::commands::reader_view().toolbar_item(),
     ]
+}
+
+/// AppKit's narrow sidebar bar already contains the window controls, sidebar toggle,
+/// refresh and search. Put the feed filter above the adjacent list so it stays visible.
+pub fn list_items() -> Vec<ToolbarEntry> {
+    if cfg!(feature = "appkit") {
+        vec![crate::commands::unread_feeds_only().toolbar_item()]
+    } else {
+        Vec::new()
+    }
 }

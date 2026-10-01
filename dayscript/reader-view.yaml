@@ -1,0 +1,42 @@
+# Start tests/reader-view-server.py and launch with a fresh isolated DAY_NEWS_DATA_DIR.
+name: day-news-reader-view
+description: Local full-text extraction, cached toggling, selection cancellation, and errors.
+flow:
+  - navigate: { route: subscriptions }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28761/feed.json' }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 2 }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - menu: { id: reader-view, only_on: [macos-appkit] }
+  - toolbar: { item: reader-view, on: true, only_on: [ios-uikit] }
+  - pause: { secs: 2 }
+  - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Full publication content.' }
+  - web_eval: { id: reader-web, script: 'Boolean(window.publisherScriptRan)', text: 'false' }
+  - screenshot: reader-view-full-article
+  - toolbar: { item: reader-view, on: false }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'RSS excerpt for complete.' }
+  - toolbar: { item: reader-view, on: true }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Full publication content.' }
+  - navigate: { route: all }
+  - select: { id: timeline, index: 1 }
+  - pause: { secs: 1 }
+  - toolbar: { item: reader-view, on: true }
+  - assert_visible: { id: reader-view-status }
+  - navigate: { route: all }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 5 }
+  - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'RSS excerpt for complete.' }
+  - assert_missing: { id: reader-view-status }
+  - navigate: { route: all }
+  - select: { id: timeline, index: 2 }
+  - pause: { secs: 1 }
+  - toolbar: { item: reader-view, on: true }
+  - pause: { secs: 1 }
+  - assert_text: { id: reader-view-status, key: reader_view_network_error }
+  - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'RSS excerpt for denied.' }
+  - screenshot: reader-view-error

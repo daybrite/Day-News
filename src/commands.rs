@@ -77,7 +77,7 @@ pub(crate) fn open_in_browser() -> CommandHandle {
     }
     .build()
     .image(res::vectors::open_browser)
-    .shortcut(Shortcut::new("Return"))
+    .shortcut(Shortcut::plain("Return"))
     .enabled(|| {
         daynews_core::try_scene().is_some_and(|sc| {
             sc.article.with(|a| {
@@ -89,6 +89,50 @@ pub(crate) fn open_in_browser() -> CommandHandle {
     })
 }
 
+pub(crate) fn unread_feeds_only() -> CommandHandle {
+    Command {
+        id: "unread-feeds-only",
+        label: res::str::show_unread_feeds_only(),
+        action: crate::feed_list::toggle,
+    }
+    .build()
+    .icon(Symbol::Filter)
+    .checked(|| crate::feed_list::FeedList::app().unread_only.get())
+}
+
+pub(crate) fn reader_view() -> CommandHandle {
+    Command {
+        id: "reader-view",
+        label: res::str::menu_reader_view(),
+        action: || {
+            if let (Some(view), Some(scene)) = (
+                crate::reader_view::ReaderView::current(),
+                daynews_core::try_scene(),
+            ) {
+                view.toggle(scene);
+            }
+        },
+    }
+    .build()
+    .icon(Symbol::Document)
+    .shortcut(Shortcut::new("r").shift())
+    .checked(|| crate::reader_view::ReaderView::current().is_some_and(|view| view.active.get()))
+    .enabled(|| {
+        crate::reader_view::ReaderView::current().is_some_and(|view| {
+            (view.ready.get() || view.loading.get())
+                && day_piece_webview::eval_support() == Support::Native
+                && daynews_core::try_scene().is_some_and(|scene| {
+                    scene.article.with(|a| {
+                        a.as_ref()
+                            .and_then(|a| a.url.as_deref())
+                            .and_then(crate::extraction::web_url)
+                            .is_some()
+                    })
+                })
+        })
+    })
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -96,5 +140,18 @@ mod tests {
         assert!(!super::open_in_browser().is_enabled());
         assert!(!super::mark_all_read().is_enabled());
         assert!(!super::next_unread().is_enabled());
+        assert!(!super::reader_view().is_enabled());
     }
+}
+
+/// Find searches the indexed articles through the native toolbar field.
+pub(crate) fn find() -> CommandHandle {
+    Command {
+        id: "find-articles",
+        label: res::str::menu_find_articles(),
+        action: day::focus_search,
+    }
+    .build()
+    .shortcut(Shortcut::new("f"))
+    .enabled(|| daynews_core::try_scene().is_some())
 }

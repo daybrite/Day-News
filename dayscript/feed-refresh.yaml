@@ -1,0 +1,38 @@
+# Run tests/feed-refresh-server.py first, with a fresh isolated app data directory.
+name: day-news-feed-refresh
+description: Conditional refresh, simultaneous updating indicators, icons and unread filtering.
+flow:
+  - navigate: { route: subscriptions }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/1' }
+  - tap: { id: subscribe-add }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/2' }
+  - tap: { id: subscribe-add }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/3' }
+  - tap: { id: subscribe-add }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/4' }
+  - tap: { id: subscribe-add }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/5' }
+  - tap: { id: subscribe-add }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/6' }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 8 }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - nav_back: { native: true, only_on: [ios-uikit] }
+  - screenshot: cached-feed-icons
+  - toolbar: { item: refresh }
+  - pause: { secs: 0.5 }
+  - screenshot: feeds-updating
+  - pause: { secs: 6 }
+  - navigate: { route: all }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - nav_back: { native: true, only_on: [ios-uikit] }
+  - nav_back: { native: true, only_on: [ios-uikit] }
+  - toolbar: { item: unread-feeds-only, on: true }
+  - screenshot: unread-feeds-filter
+  - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Stable original body.', only_on: [macos-appkit] }
+  - toolbar: { item: unread-feeds-only, on: false }
+  - menu: { id: unread-feeds-only, only_on: [macos-appkit] }
+  - screenshot: unread-feeds-menu-filter
+  - menu: { id: unread-feeds-only, only_on: [macos-appkit] }

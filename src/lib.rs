@@ -7,10 +7,14 @@
 use day::prelude::*;
 
 mod commands;
+mod extraction;
+mod feed_icons;
+mod feed_list;
 mod format;
 mod menus;
 mod reader;
 mod reader_styles;
+mod reader_view;
 mod settings;
 mod subscriptions;
 mod theme;
@@ -84,16 +88,54 @@ pub fn root() -> impl Piece {
         },
         settings::settings_page,
     );
-    // Open the store and stand up its live queries before the first build, so the sidebar is
-    // populated on the very first frame instead of flashing empty.
+    // Start opening the store before building the views. Native database work runs on its
+    // owning worker; committed snapshots populate the UI as they become available.
+    #[cfg(target_arch = "wasm32")]
     daynews_core::init();
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        daynews_core::init(|message| {
+            use daynews_core::StatusMessage;
+            match message {
+                StatusMessage::RefreshedFeed(title, true) => {
+                    res::str::status_feed_refreshed(title).format()
+                }
+                StatusMessage::RefreshedFeed(title, false) => {
+                    res::str::status_feed_failed(title).format()
+                }
+                StatusMessage::RefreshedFeeds(total, failed) => res::str::status_feeds_refreshed(
+                    (total - failed) as i64,
+                    total as i64,
+                    failed as i64,
+                )
+                .format(),
+                StatusMessage::Imported(added, existing) => {
+                    res::str::status_imported(added as i64, existing as i64).format()
+                }
+                StatusMessage::ExportTitle => res::str::subscriptions_export_title().format(),
+            }
+        });
+        day::on_lifecycle(Lifecycle::WillTerminate, daynews_core::shutdown);
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    Effect::new(|| {
+        if let Some(error) = daynews_core::StorageError::app().0.get() {
+            daynews_core::state()
+                .status
+                .set(res::str::storage_error(error).format());
+        }
+    });
+    feed_icons::init();
     // The undo history rides the container's change log; the platform bridge gives it ⌘Z,
     // the Edit menu, and the mobile gestures.
+    #[cfg(target_arch = "wasm32")]
     if let Some(stack) = daynews_core::undo_stack() {
         day::install_undo(&stack);
     }
     // Retention: prune per the stored setting (Settings page owns changing it).
-    daynews_core::prune(settings::retention_days());
+    day::task(async {
+        daynews_core::prune(settings::retention_days()).await;
+    });
     // Every window shows the same store (the reader is the app, not the window), so a new
     // window is just another shell. Registered once; each window builds its own signals.
     day::register_new_window(build_shell);
@@ -113,7 +155,9 @@ fn build_shell() -> impl Piece {
     // Each window owns its scope, search and selection; the store and badges stay shared.
     daynews_core::NewsScene::scoped(|sc| {
         // File ▸ New Feed focuses the field in the window the user is looking at.
-        subscriptions::UrlFocus::scoped(move |_focus| shell_body(sc))
+        reader_view::ReaderView::scoped(move |_| {
+            subscriptions::UrlFocus::scoped(move |_focus| shell_body(sc))
+        })
     })
 }
 
@@ -144,6 +188,13 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root
         // list's bar when it collapses. The article's commands are on the reader.
         .toolbar(toolbar::feed_items)
+        .icon_progress(move || {
+            st.updating_feeds
+                .get()
+                .into_iter()
+                .map(|(id, progress)| (Some(format!("feed:{id}")), progress))
+                .collect()
+        })
         // Search moved off the toolbar when day replaced `toolbar_search` with `.searchable()`:
         // the nav owns the field now, and the toolkit puts it in the window toolbar on
         // desktop and inline above the list on a phone. The signal is still the shared one the
@@ -200,17 +251,33 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         // One row per subscription, re-derived whenever the feed list or its counts change.
         .section(res::str::nav_feeds_section())
         .items(
-            move || st.feeds.get(),
-            |f: &daynews_core::FeedRow| {
+            move || {
+                let unread_only = feed_list::FeedList::app().unread_only.get();
+                let icons = feed_icons::paths().get();
+                st.feeds
+                    .get()
+                    .into_iter()
+                    .filter(|feed| feed_list::visible(feed.unread, unread_only))
+                    .map(|feed| {
+                        let icon = icons.get(&feed.id).cloned();
+                        (feed, icon)
+                    })
+                    .collect::<Vec<_>>()
+            },
+            |(f, icon): &(daynews_core::FeedRow, Option<String>)| {
                 let name = if f.has_error {
                     format!("⚠ {}", f.title)
                 } else {
                     f.title.clone()
                 };
-                item(format!("feed:{}", f.id), name)
-                    .icon(res::images::sidebar_feed)
-                    .icon_tint(Color::hex(0x30B0C7))
-                    .badge(count(f.unread))
+                let row = item(format!("feed:{}", f.id), name);
+                let row = if let Some(path) = icon {
+                    row.icon(path.clone())
+                } else {
+                    row.icon(res::images::sidebar_feed)
+                        .icon_tint(Color::hex(0x30B0C7))
+                };
+                row.badge(count(f.unread))
                     .context_menu(menus::feed_context_menu(f.id, f.unread))
             },
         )

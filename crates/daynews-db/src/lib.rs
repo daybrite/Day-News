@@ -60,6 +60,9 @@ pub struct Feed {
     pub icon_url: Option<String>,
     pub last_fetched_at: Option<i64>,
     pub last_error: Option<String>,
+    /// HTTP validators belong to the last successfully stored representation.
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
     /// Order within the folder (or among top-level feeds).
     pub position: f64,
     #[model(relation(target = Article, inverse = "feed", delete = "cascade"))]
@@ -70,6 +73,7 @@ pub struct Feed {
 #[model(
     table = "articles",
     index("feed", "published_at"),
+    index("feed", "is_read"),
     index("is_read", "published_at"),
     fts(
         "title",
@@ -282,7 +286,7 @@ const BULK_CHUNK: usize = 2_000;
 /// `cfg!(debug_assertions)` guard stays: a release build should not pay to format SQL it will
 /// then discard.
 fn traced(driver: Sqlite) -> Sqlite {
-    if cfg!(debug_assertions) {
+    if cfg!(debug_assertions) && log::log_enabled!(log::Level::Trace) {
         driver.trace_sql(|sql| log::trace!("sql: {sql}"))
     } else {
         driver
@@ -418,6 +422,22 @@ impl Db {
         }
     }
 
+    /// Finish a successful conditional check without rewriting article bodies or read state.
+    pub fn feed_checked(&self, id: u64, etag: Option<String>, last_modified: Option<String>) {
+        if let Some(feed) = self.container.get::<Feed>(id) {
+            feed.etag().write(etag);
+            feed.last_modified().write(last_modified);
+            feed.last_fetched_at().write(Some(now()));
+            feed.last_error().write(None);
+        }
+    }
+
+    pub fn feed_validators(&self, id: u64) -> Option<(Option<String>, Option<String>)> {
+        self.container
+            .get::<Feed>(id)
+            .map(|feed| (feed.etag().peek(), feed.last_modified().peek()))
+    }
+
     pub fn rename_feed(&self, id: u64, title: &str) {
         if let Some(feed) = self.container.get::<Feed>(id) {
             feed.title().write(title.to_string());
@@ -441,6 +461,18 @@ impl Db {
     /// present is left completely alone, which is what preserves read state (ids are the
     /// (feed, guid) hash, so existence is one id-set query, no faulting).
     pub fn upsert_articles(&self, feed: u64, feed_url: &str, items: &[IncomingArticle]) -> usize {
+        self.try_upsert_articles(feed, feed_url, items)
+            .unwrap_or_default()
+    }
+
+    /// Checked import for asynchronous transactions. A failed existence query must abort
+    /// the import rather than treating stored articles as new and overwriting read state.
+    pub fn try_upsert_articles(
+        &self,
+        feed: u64,
+        feed_url: &str,
+        items: &[IncomingArticle],
+    ) -> Result<usize, day_persistence::DbError> {
         let seen = now();
         let ids: Vec<u64> = items
             .iter()
@@ -451,7 +483,7 @@ impl Db {
             .query::<Article>()
             .filter(Pred::IdIn(ids.clone()))
             .live()
-            .ids()
+            .try_ids()?
             .iter()
             .map(|i| i.handle())
             .collect();
@@ -483,7 +515,7 @@ impl Db {
             }
             added += 1;
         }
-        added
+        Ok(added)
     }
 
     /// One article's body, faulted on open; `None` when the item shipped none.

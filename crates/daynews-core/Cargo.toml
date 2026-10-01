@@ -7,6 +7,7 @@ license = "Apache-2.0"
 [dependencies]
 futures-util = "0.3"
 daynews-db = { path = "../daynews-db" }
+daynews-time = { path = "../daynews-time" }
 daynews-feed = { path = "../daynews-feed" }
 daynews-opml = { path = "../daynews-opml" }
 # The view-model publishes signals derived from live queries: standing effects bridge the

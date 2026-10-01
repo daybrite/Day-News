@@ -116,19 +116,99 @@ pub async fn fetch(url: &str) -> Result<ParsedFeed, FeedError> {
 /// is not a usable base (the web build fetches bundled `asset:` feeds as relative same-origin
 /// URLs, and URL resolution inside the parser needs an absolute base).
 pub async fn fetch_with_base(fetch_url: &str, base_url: &str) -> Result<ParsedFeed, FeedError> {
+    match fetch_conditional_with_base(fetch_url, base_url, &CacheValidators::default(), |_, _| {})
+        .await?
+    {
+        FeedUpdate::Modified(feed, _) => Ok(feed),
+        FeedUpdate::NotModified(_) => Err(FeedError::Status(304)),
+    }
+}
+
+pub use day_part_http::CacheValidators;
+
+pub enum FeedUpdate {
+    Modified(ParsedFeed, CacheValidators),
+    NotModified(CacheValidators),
+}
+
+/// Revalidate the last stored representation, preserving its validators on 304. Callers must
+/// only persist new validators after the corresponding parsed articles are successfully stored.
+pub async fn fetch_conditional(
+    url: &str,
+    validators: &CacheValidators,
+) -> Result<FeedUpdate, FeedError> {
+    fetch_conditional_with_base(url, url, validators, |_, _| {}).await
+}
+
+pub async fn fetch_conditional_with_progress(
+    url: &str,
+    validators: &CacheValidators,
+    progress: impl FnMut(u64, Option<u64>),
+) -> Result<FeedUpdate, FeedError> {
+    fetch_conditional_with_base(url, url, validators, progress).await
+}
+
+async fn fetch_conditional_with_base(
+    fetch_url: &str,
+    base_url: &str,
+    validators: &CacheValidators,
+    progress: impl FnMut(u64, Option<u64>),
+) -> Result<FeedUpdate, FeedError> {
     let req = day_part_http::Request::get(fetch_url)
         .header(
             "Accept",
             "application/atom+xml, application/rss+xml, application/xml;q=0.9, */*;q=0.8",
         )
-        .header("User-Agent", USER_AGENT);
-    let res = day_part_http::fetch_future(req)
-        .await
-        .map_err(FeedError::Http)?;
-    if !(200..300).contains(&res.status) {
-        return Err(FeedError::Status(res.status));
+        .header("User-Agent", USER_AGENT)
+        .conditional(validators)
+        .timeout(std::time::Duration::from_secs(25))
+        .timeout_total(std::time::Duration::from_secs(30));
+    // One shared native client reuses connections. Bound bytes even for chunked responses.
+    let response =
+        day_part_http::fetch_limited_with_progress_future(req, 16 * 1024 * 1024, progress)
+            .await
+            .map_err(FeedError::Http)?;
+    if response.status != 200 {
+        return process_response(response, base_url, validators);
     }
-    parse(&res.body, base_url)
+    let validators = validators.clone();
+    let base = base_url.to_string();
+    // Feed parsing and HTML sanitization must not stall the reader while several feeds finish.
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let (tx, rx) = day_async::oneshot();
+        std::thread::Builder::new()
+            .name("feed-parse".into())
+            .spawn(move || tx.send(process_response(response, &base, &validators)))
+            .map_err(|e| FeedError::Http(HttpError::Io(e.to_string())))?;
+        rx.await
+            .map_err(|_| FeedError::Http(HttpError::Cancelled))?
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        process_response(response, &base, &validators)
+    }
+}
+
+fn process_response(
+    response: day_part_http::Response,
+    base_url: &str,
+    validators: &CacheValidators,
+) -> Result<FeedUpdate, FeedError> {
+    if response.status == 304 {
+        return if validators.is_empty() {
+            Err(FeedError::Status(304))
+        } else {
+            Ok(FeedUpdate::NotModified(validators.updated(&response)))
+        };
+    }
+    if response.status != 200 {
+        return Err(FeedError::Status(response.status));
+    }
+    let updated = validators.updated(&response);
+    // Keep the subscription URL as the identity base for ID-less entries across redirects.
+    let base = base_url;
+    Ok(FeedUpdate::Modified(parse(&response.body, base)?, updated))
 }
 
 /// Identifies us to publishers; several block requests with no agent string.
@@ -454,4 +534,65 @@ fn decode_entities(s: &str) -> String {
     }
     out.push_str(rest);
     out
+}
+
+#[cfg(test)]
+mod refresh_tests {
+    use super::*;
+    use day_part_http::Response;
+
+    #[test]
+    fn unchanged_response_needs_a_cached_representation_and_never_parses() {
+        let validators = CacheValidators {
+            etag: Some("W/\"one\"".into()),
+            last_modified: Some("Wed, 30 Sep 2026 10:00:00 GMT".into()),
+        };
+        let response = || Response::new(304, vec![], b"not a feed".to_vec());
+        assert!(matches!(
+            process_response(
+                response(),
+                "https://fixture.example/feed",
+                &CacheValidators::default()
+            ),
+            Err(FeedError::Status(304))
+        ));
+        match process_response(response(), "https://fixture.example/feed", &validators).unwrap() {
+            FeedUpdate::NotModified(next) => assert_eq!(next, validators),
+            _ => panic!("304 must preserve the stored representation"),
+        }
+    }
+
+    #[test]
+    fn only_a_parsed_success_can_replace_validators() {
+        let previous = CacheValidators {
+            etag: Some("\"old\"".into()),
+            last_modified: None,
+        };
+        let json =
+            br#"{"version":"https://jsonfeed.org/version/1.1","title":"Fixture","items":[]}"#;
+        let response = Response::new(200, vec![], json.to_vec());
+        match process_response(response, "https://fixture.example/feed", &previous).unwrap() {
+            FeedUpdate::Modified(feed, next) => {
+                assert_eq!(feed.title.as_deref(), Some("Fixture"));
+                assert!(next.is_empty());
+            }
+            _ => panic!("200 must parse the new representation"),
+        }
+        assert!(
+            process_response(
+                Response::new(200, vec![], b"invalid".to_vec()),
+                "https://fixture.example/feed",
+                &previous
+            )
+            .is_err()
+        );
+        assert!(matches!(
+            process_response(
+                Response::new(503, vec![], vec![]),
+                "https://fixture.example/feed",
+                &previous
+            ),
+            Err(FeedError::Status(503))
+        ));
+    }
 }

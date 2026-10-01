@@ -79,8 +79,9 @@ pub fn install() {
             sub_menu(
                 res::str::menu_feed().format(),
                 vec![
+                    crate::commands::unread_feeds_only().menu_item(),
+                    menu_separator(),
                     menu_item(res::str::menu_refresh_feed().format())
-                        .shortcut(Shortcut::new("r").shift())
                         .action(|| with_selected_feed(daynews_core::refresh_feed)),
                     menu_item(res::str::mark_all_read().format()).action(|| {
                         with_selected_feed(|feed| daynews_core::mark_feed_read(feed, true))
@@ -128,6 +129,8 @@ pub fn install() {
                         }),
                     menu_separator(),
                     crate::commands::open_in_browser().menu_item(),
+                    crate::commands::reader_view().menu_item(),
+                    crate::commands::find().menu_item(),
                     menu_separator(),
                     menu_item(res::str::menu_increase_text_size().format())
                         .id("reader-increase-text-size")

@@ -163,7 +163,7 @@ pub fn import_opml() {
         match url.read() {
             Ok(bytes) => {
                 let text = String::from_utf8_lossy(&bytes).to_string();
-                if let Err(e) = daynews_core::import_opml(&text) {
+                if let Err(e) = daynews_core::import_opml(&text).await {
                     daynews_core::state()
                         .status
                         .set(format!("Import failed: {e}"));

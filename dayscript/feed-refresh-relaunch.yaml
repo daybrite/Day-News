@@ -1,0 +1,13 @@
+# Reuse the library from feed-refresh.yaml with tests/feed-refresh-server.py still running.
+name: feed-cache-relaunch
+flow:
+  - pause: { secs: 2 }
+  - navigate: { route: all }
+  - screenshot: icons-after-relaunch
+  - toolbar: { item: refresh }
+  - pause: { secs: 0.5 }
+  - screenshot: updating-after-relaunch
+  - pause: { secs: 5 }
+  - toolbar: { item: unread-feeds-only, on: true }
+  - screenshot: filter-toolbar-active
+  - toolbar: { item: unread-feeds-only, on: false }

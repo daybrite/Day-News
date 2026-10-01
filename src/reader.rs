@@ -13,14 +13,21 @@ use daynews_core::StoredArticle;
 /// navigations (API 30+) and every platform caps their length, so a file is the portable choice.
 /// The scratch directory is the one the backend reports as app-writable, which is the only
 /// writable location on iOS and Android.
-pub fn render_to_file(article: &StoredArticle) -> Option<String> {
-    let dir = app_temp_dir().join("news-reader");
-    std::fs::create_dir_all(&dir).ok()?;
-    // One file per article id: revisiting an article reuses its path, and the set stays bounded
-    // by how many distinct articles were opened this session.
-    let path = dir.join(format!("article-{}.html", article.id));
-    std::fs::write(&path, document(article)).ok()?;
-    Some(format!("file://{}", path.to_string_lossy()))
+fn render_to_file(path: &std::path::Path, article: &StoredArticle) -> Option<String> {
+    std::fs::create_dir_all(path.parent()?).ok()?;
+    std::fs::write(path, document(article)).ok()?;
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        url::Url::from_file_path(path).ok().map(Into::into)
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        // Day's web filesystem uses POSIX paths, while url's OS-path helper is unavailable
+        // on wasm. The webview backend resolves this URL through that virtual filesystem.
+        let mut url = url::Url::parse("file:///").ok()?;
+        url.set_path(&path.to_string_lossy());
+        Some(url.into())
+    }
 }
 
 fn document(a: &StoredArticle) -> String {
@@ -178,18 +185,21 @@ fn escape(s: &str) -> String {
 ///
 /// Where there is a web engine the generated document goes to the web view. A backend
 /// without one gets a composed text reader instead of a placeholder leaf.
-fn reader_body(url: Signal<String>, go: Trigger) -> AnyPiece {
+fn reader_body(url: Signal<String>, go: Trigger, view: crate::reader_view::ReaderView) -> AnyPiece {
     if day_piece_webview::support() == Support::Unsupported {
         article_text().any()
     } else {
-        let js = day_piece_webview::JsHandle::new();
+        let js = view.engine;
         watch(
             || (crate::reader_styles::state().get(), day::dark_mode()),
             move |_, _| crate::reader_styles::apply_to(js),
         );
         web_view(url)
             .js(js)
-            .on_load(move || crate::reader_styles::apply_to(js))
+            .on_load(move || {
+                crate::reader_styles::apply_to(js);
+                view.ready.set(true);
+            })
             .go(go)
             .on_external_link(|url| {
                 crate::settings::open_link(url);
@@ -205,10 +215,11 @@ fn reader_body(url: Signal<String>, go: Trigger) -> AnyPiece {
 /// then its text, with the feed's markup reduced to headings and paragraphs.
 fn article_text() -> impl Piece {
     let st = daynews_core::scene();
+    let view = crate::reader_view::ReaderView::ambient();
     // One label per block, keyed by article and position, so a new article rebuilds the column
     // and a heading keeps its weight instead of reading as one more paragraph.
     let body = move || {
-        let Some(a) = st.article.get() else {
+        let Some(a) = view.article(st.article.get()) else {
             return Vec::new();
         };
         let html = a
@@ -285,6 +296,19 @@ fn article_text() -> impl Piece {
 /// window's bar cannot see the open article, which is why they used to need mirror signals.
 pub fn reader_pane() -> impl Piece {
     let st = daynews_core::scene();
+    let view = crate::reader_view::ReaderView::ambient();
+    // Two windows may show the same article in different modes. Never share their files.
+    static NEXT_READER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
+    let slot = NEXT_READER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    #[cfg(not(target_arch = "wasm32"))]
+    let filename = format!("reader-{}-{slot}.html", std::process::id());
+    #[cfg(target_arch = "wasm32")]
+    let filename = format!("reader-{slot}.html");
+    let path = app_temp_dir().join("news-reader").join(filename);
+    let cleanup_path = path.clone();
+    day::reactive::Scope::current().on_cleanup(move || {
+        let _ = std::fs::remove_file(cleanup_path);
+    });
     let url = Signal::new(String::new());
     // The web view's bound URL is imperative: it loads on creation and thereafter only
     // when a `go` trigger fires (navigation writes the signal back, so auto-loading on every
@@ -293,15 +317,35 @@ pub fn reader_pane() -> impl Piece {
     // Re-render only for article/locale changes. Typography and colors update the live
     // document through its dedicated stylesheet, preserving reading position.
     bind(
-        move || (st.article.get().map(|a| a.id), day::locale().get()),
-        move |_: &(Option<u64>, String)| {
-            let doc = st.article.get_untracked().and_then(|a| render_to_file(&a));
+        move || {
+            (
+                st.article
+                    .with(|a| a.as_ref().map(|a| (a.id, a.url.clone()))),
+                view.active.get(),
+                view.extracted.get(),
+                day::locale().get(),
+            )
+        },
+        move |_| {
+            view.ready.set(false);
+            let doc = view
+                .article(st.article.get_untracked())
+                .and_then(|a| render_to_file(&path, &a));
             url.set(doc.unwrap_or_default());
             go.notify();
         },
     );
 
     column((
+        when(
+            move || view.loading.get() || view.error.get().is_some(),
+            move || {
+                label(move || view.status())
+                    .font(Font::Footnote)
+                    .id("reader-view-status")
+                    .padding(8.0)
+            },
+        ),
         when(
             move || st.article.get().is_none(),
             || {
@@ -319,7 +363,7 @@ pub fn reader_pane() -> impl Piece {
         ),
         when(
             move || st.article.get().is_some(),
-            move || reader_body(url, go),
+            move || reader_body(url, go, view),
         ),
     ))
     .background(move || palette().bg)

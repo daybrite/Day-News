@@ -108,3 +108,20 @@ settings_preview_lines_count = { $count ->
 
 settings_list_size = Text size
 settings_list_percent = { $value }%
+menu_reader_view = Reader View
+reader_view_loading = Loading full article…
+reader_view_network_error = Couldn’t load the full article. Try Reader View again or open the original website.
+reader_view_too_large = This page is too large for Reader View. Open the original website to read it.
+reader_view_no_content = No readable article was found. Open the original website to read it.
+reader_view_timeout = Loading the full article took too long. Try Reader View again.
+reader_view_unavailable = Reader View is unavailable. Open the original website to read the full article.
+show_unread_feeds_only = Show Only Unread Feeds
+
+menu_find_articles = Find Articles…
+storage_error = { $error }
+
+status_feed_refreshed = Refreshed { $title }
+status_feed_failed = Could not refresh { $title }
+status_feeds_refreshed = Refreshed { $done } of { $total } feeds — { $failed } failed
+status_imported = Imported { $added } feeds ({ $existing } already subscribed)
+subscriptions_export_title = Day News Subscriptions

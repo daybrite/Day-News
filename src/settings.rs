@@ -263,10 +263,12 @@ pub fn settings_page() -> impl Piece {
         move |i, _| {
             let days = CHOICES.get(*i).copied().unwrap_or(0);
             day::prefs::set(RETENTION_KEY, &days.to_string());
-            let pruned = daynews_core::prune(days);
-            if pruned > 0 {
-                note.set(crate::res::str::retention_pruned(pruned as f64).format());
-            }
+            day::task(async move {
+                let pruned = daynews_core::prune(days).await;
+                if pruned > 0 && note.try_get().is_some() {
+                    note.set(crate::res::str::retention_pruned(pruned as f64).format());
+                }
+            });
         },
     );
 
