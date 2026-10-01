@@ -46,6 +46,8 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
 pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> {
     let (id, starred, read) = (article.id, article.is_starred, article.is_read);
     vec![
+        crate::commands::navigate_article(false).toolbar_item(),
+        crate::commands::navigate_article(true).toolbar_item(),
         crate::commands::next_unread().toolbar_item(),
         toolbar_toggle(
             "star",
@@ -72,6 +74,9 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
         .action(move || daynews_core::set_read(id, !read)),
         crate::commands::open_in_browser().toolbar_item(),
         crate::commands::reader_view().toolbar_item(),
+        crate::commands::copy_article_link()
+            .toolbar_item()
+            .placement(ToolbarPlacement::Secondary),
     ]
 }
 

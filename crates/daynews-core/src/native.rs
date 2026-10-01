@@ -142,11 +142,14 @@ pub struct NewsScene {
     sticky_read: Signal<Vec<u64>>,
 }
 
+type StatusFormatter = fn(StatusMessage) -> String;
+type OpeningWorker = Shared<LocalBoxFuture<'static, Result<DatabaseWorker, DbError>>>;
+
 struct Store {
     worker: RefCell<Option<DatabaseWorker>>,
-    format_status: RefCell<Option<fn(StatusMessage) -> String>>,
+    format_status: RefCell<Option<StatusFormatter>>,
     ready: Signal<bool>,
-    opening: RefCell<Option<Shared<LocalBoxFuture<'static, Result<DatabaseWorker, DbError>>>>>,
+    opening: RefCell<Option<OpeningWorker>>,
     refresh_slots: [futures_util::lock::Mutex<()>; 4],
     scheduled_feeds: RefCell<HashSet<u64>>,
     can_undo: Signal<bool>,
@@ -182,10 +185,10 @@ fn status(message: StatusMessage) -> String {
         .unwrap_or_default()
 }
 pub fn shutdown() {
-    if let Some(worker) = worker() {
-        if let Err(error) = worker.close_blocking() {
-            report(error);
-        }
+    if let Some(worker) = worker()
+        && let Err(error) = worker.close_blocking()
+    {
+        report(error);
     }
 }
 async fn ready_worker() -> Result<DatabaseWorker, DbError> {
@@ -303,11 +306,13 @@ fn wire_scene(sc: NewsScene) {
     Effect::new(move || {
         let ready = st.ready.get();
         let id = sc.selected.get();
-        // Clear immediately: the previous article must never masquerade as the selection.
-        sc.article.set(None);
         let (true, Some(id), Some(worker)) = (ready, id, worker()) else {
+            sc.article.set_if_changed(None);
             return;
         };
+        // Keep the displayed snapshot until its replacement arrives. Clearing it between
+        // worker reads destroys the WebView and toolbar even though the reader stayed open.
+        // The scoped task still cancels obsolete subscriptions on every selection change.
         scoped_task(async move {
             let mut projection = match worker.observe(move |db| reader_snapshot(db, id)).await {
                 Ok(v) => v,
@@ -535,12 +540,12 @@ fn timeline_snapshot(
     let mut result = Vec::with_capacity(rows.len());
     for a in rows {
         let feed_id = a.feed.id().map(|v| v.handle()).unwrap_or(0);
-        if !feeds.contains_key(&feed_id) {
+        if let std::collections::hash_map::Entry::Vacant(entry) = feeds.entry(feed_id) {
             let title = db
                 .try_get::<daynews_db::Feed>(feed_id)?
                 .and_then(|f| f.with_value_untracked(|f| f.map(|f| f.title.clone())))
                 .unwrap_or_default();
-            feeds.insert(feed_id, title);
+            entry.insert(title);
         }
         result.push(ArticleSummary {
             id: a.id,
@@ -635,13 +640,8 @@ pub fn open_next_unread() -> bool {
     if state().total_unread.get_untracked() == 0 {
         return false;
     }
-    batch(|| {
-        sc.scope.set(Scope::Unread);
-        sc.search.set(String::new());
-        sc.sticky_read.set(vec![]);
-        sc.selected.set(None);
-        sc.reader_open.set(false);
-    });
+    let scope = sc.scope.get_untracked();
+    let search = sc.search.get_untracked();
     let request = worker.read(move |db| {
         let q = db
             .query::<Article>()
@@ -658,9 +658,9 @@ pub fn open_next_unread() -> bool {
     day_core::task(async move {
         match request.await {
             Ok(Some(id))
-                if sc.selected.try_get() == Some(None)
-                    && sc.scope.try_get() == Some(Scope::Unread)
-                    && sc.search.try_get().is_some_and(|s| s.is_empty()) =>
+                if sc.selected.try_get() == Some(current)
+                    && sc.scope.try_get() == Some(scope)
+                    && sc.search.try_get().as_ref() == Some(&search) =>
             {
                 batch(|| {
                     sc.scope.set(Scope::Unread);
@@ -1448,7 +1448,7 @@ mod tests {
             wait(worker.observe(|db| reader_snapshot(db, article_id(URL, "1")))).unwrap();
         assert!(wait(reader.next()).unwrap().unwrap().value.is_some());
         wait(worker.write(|db| {
-            db.delete::<Article>(article_id(URL, "1"));
+            db.delete::<Article>(article_id(URL, "1"))?;
             Ok(())
         }))
         .unwrap();

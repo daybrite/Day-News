@@ -90,10 +90,17 @@ stored read state. Status translations are formatted on the UI thread.
 
 Each window owns cancellable subscriptions for its scope/search and selected article. Retraction
 of an effect aborts the old receiver before a new one can publish; completions capture the
-originating scene. Reader content clears immediately when selection changes. Sidebar unread
+originating scene. Reader content stays visible while the next selected article loads, then
+the worker snapshot replaces it without an intermediate empty state. Explicitly closing the
+reader or changing scope still clears it. Next Unread waits for its cross-scope candidate
+before changing the scene. Sidebar filtering uses `Nav::retain_selection_when` so hiding the
+last-read feed preserves its current document and toolbar. Sidebar unread
 counts use one indexed grouped SQL query, replacing one query per feed. The `(feed,is_read)`
 index supports these counts. Projection equality and latest-value delivery reduce unnecessary UI
-work; SQL tracing is installed only when trace logging is actually enabled.
+work; SQL tracing is installed only when trace logging is actually enabled or
+`DAY_NEWS_LOG_SQL` is set. The latter writes engine-traced, parameter-expanded statements to
+stderr in both debug and release builds, independently of `DAY_LOG`, including worker queries,
+transactions, and migrations. Unset it for normal operation without trace formatting overhead.
 
 Find Articles (Cmd-F) activates the native search field at the right of the desktop toolbar.
 Its edits drive the same FTS query as programmatic search. Title and body indexes are queried
@@ -197,8 +204,8 @@ opened with — invisible on a store whose newest unread articles are all from t
 on a stale one.
 
 Desktop gets a File menu (New Feed, New Folder, New Window, Refresh, Import/Export Subscriptions,
-Close Window), a Go menu (Next Unread ⌘/, then the three smart feeds), a Feed menu (Refresh Feed
-⇧⌘R, Mark All as Read, Unsubscribe) and an Article menu. These are one `app_menu_reactive` model,
+Close Window), a Go menu (Previous/Next Article ⌘[/⌘], Next Unread ⌘/, then the three smart feeds),
+a Feed menu (Refresh Feed, Mark All as Read, Unsubscribe) and an Article menu. These are one `app_menu_reactive` model,
 so all four desktop toolkits get the same bar from the same code, and dayscript drives them by
 Fluent key on every one. Next Unread walks the visible timeline forward and wraps, then falls back
 to any unread article, so it keeps working when the current scope is exhausted.
@@ -296,3 +303,18 @@ for App-Fair, Games-Fair, Day-Tunes, Day-Bench, Day-Rise, Day-Skies and Day-Trad
 small updates from the retired selector/stack builders to nav/nav_stack and an explicit image
 conversion. These checks do not imply that the apps retaining synchronous containers have
 migrated every query to a worker.
+
+### Reading navigation and link actions
+
+Previous/Next Article resolve against the current scene's lightweight timeline snapshot,
+including search filters, and use the selected ID rather than the asynchronously loaded body.
+Rapid commands therefore advance from the latest selection. They never wrap or cross scopes;
+missing selections disable movement, while no selection starts at the first/last visible row.
+The existing selection binding scrolls and highlights the native row. Both commands live in
+Go and in the reader toolbar; Next Unread has a distinct double-chevron image.
+
+Copy Article Link uses the displayed article URL and Day's asynchronous clipboard API, started
+inside the user action for browser permissions. It is available in Article and the secondary
+reader toolbar. Article context menus are built when summoned, show state-appropriate actions,
+and snapshot the clicked row's ID and URL so recycled cells cannot retarget an open menu.
+Clipboard failures use a localized alert. Missing/blank URLs disable link commands.

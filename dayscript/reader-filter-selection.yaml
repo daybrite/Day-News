@@ -1,0 +1,53 @@
+# Requires seed-demo.yaml and an isolated DAY_NEWS_DATA_DIR. Feed IDs are deterministic.
+name: day-news-reader-filter-selection
+description: Reading the last unread article hides its feed without closing or reloading the reader.
+flow:
+  - toolbar: { item: unread-feeds-only, on: false }
+  - navigate: { route: 'feed:5756297993796914528' }
+  - wait_for: { id: article-row-0 }
+  - toolbar: { item: mark-all-read }
+  - pause: { secs: 1 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - toolbar: { item: read, on: false }
+  - pause: { secs: 1 }
+  - toolbar: { item: unread-feeds-only, on: true }
+  - web_eval:
+      id: reader-web
+      script: "window.retainedReaderMarker = 'same document'"
+      text: same document
+      only_on: [macos-appkit, ios-uikit]
+  - toolbar: { item: read, on: true }
+  - pause: { secs: 1 }
+  - assert_route: { route: 'feed:5756297993796914528' }
+  - assert_text: { id: scope-title, text: Field Notes }
+  - assert_visible: { id: reader-web }
+  - web_eval:
+      id: reader-web
+      script: window.retainedReaderMarker
+      text: same document
+      only_on: [macos-appkit, ios-uikit]
+  - screenshot: reader-retained-after-feed-hidden
+  # The remaining article commands must continue to work on the retained document.
+  - toolbar: { item: star, on: true }
+  - toolbar: { item: star, on: false }
+  # Exercise opening (and automatically marking read) the last unread article as well.
+  - toolbar: { item: read, on: false }
+  - toolbar: { item: unread-feeds-only, on: false }
+  - navigate: { route: all }
+  - navigate: { route: 'feed:5756297993796914528' }
+  - toolbar: { item: unread-feeds-only, on: true }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - assert_route: { route: 'feed:5756297993796914528' }
+  - web_eval:
+      id: reader-web
+      script: "document.getElementById('reader-title').textContent"
+      text: How monarch butterflies find their way to Mexico
+      only_on: [macos-appkit, ios-uikit]
+  - toolbar: { item: next-unread }
+  - pause: { secs: 1 }
+  - assert_visible: { id: reader-web }
+  - assert_missing: { id: reader-empty }
+  - screenshot: reader-after-next-unread
+  - toolbar: { item: unread-feeds-only, on: false }

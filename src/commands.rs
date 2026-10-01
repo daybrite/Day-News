@@ -53,7 +53,7 @@ pub(crate) fn next_unread() -> CommandHandle {
         },
     }
     .build()
-    .icon(Symbol::Down)
+    .image(res::vectors::next_unread)
     .shortcut(Shortcut::new("/"))
     .enabled(|| {
         daynews_core::try_scene().is_some_and(|sc| {
@@ -68,9 +68,7 @@ pub(crate) fn open_in_browser() -> CommandHandle {
         id: "open-in-browser",
         label: res::str::menu_open_in_browser(),
         action: || {
-            if let Some(url) = daynews_core::try_scene()
-                .and_then(|sc| sc.article.with(|a| a.as_ref().and_then(|a| a.url.clone())))
-            {
+            if let Some(url) = displayed_link() {
                 crate::settings::open_link(&url);
             }
         },
@@ -78,15 +76,99 @@ pub(crate) fn open_in_browser() -> CommandHandle {
     .build()
     .image(res::vectors::open_browser)
     .shortcut(Shortcut::plain("Return"))
-    .enabled(|| {
-        daynews_core::try_scene().is_some_and(|sc| {
-            sc.article.with(|a| {
-                a.as_ref()
-                    .and_then(|a| a.url.as_ref())
-                    .is_some_and(|url| !url.is_empty())
-            })
-        })
-    })
+    .enabled(|| displayed_link().is_some())
+}
+
+/// Traverse the visible ordering, including search results, without wrapping or jumping
+/// to another feed. A stale selection must not silently jump to an unrelated article.
+fn adjacent_id(
+    mut ids: impl DoubleEndedIterator<Item = u64>,
+    selected: Option<u64>,
+    forward: bool,
+) -> Option<u64> {
+    let Some(selected) = selected else {
+        return if forward { ids.next() } else { ids.next_back() };
+    };
+    let mut previous = None;
+    while let Some(id) = ids.next() {
+        if id == selected {
+            return if forward { ids.next() } else { previous };
+        }
+        previous = Some(id);
+    }
+    None
+}
+
+fn adjacent_article(forward: bool) -> Option<u64> {
+    let sc = daynews_core::try_scene()?;
+    let selected = sc.selected.get();
+    sc.articles
+        .with(|rows| adjacent_id(rows.iter().map(|a| a.id), selected, forward))
+}
+
+pub(crate) fn navigate_article(forward: bool) -> CommandHandle {
+    Command {
+        id: if forward {
+            "next-article"
+        } else {
+            "previous-article"
+        },
+        label: if forward {
+            res::str::menu_next_article()
+        } else {
+            res::str::menu_previous_article()
+        },
+        action: move || {
+            if let Some(id) = adjacent_article(forward) {
+                daynews_core::open_article(id);
+                if cfg!(feature = "appkit") {
+                    daynews_core::scene().timeline_focused.set(true);
+                }
+            }
+        },
+    }
+    .build()
+    .icon(if forward { Symbol::Down } else { Symbol::Up })
+    .shortcut(Shortcut::new(if forward { "]" } else { "[" }))
+    .enabled(move || adjacent_article(forward).is_some())
+}
+
+pub(crate) fn copy_article_link() -> CommandHandle {
+    Command {
+        id: "copy-article-link",
+        label: res::str::menu_copy_article_link(),
+        action: || {
+            if let Some(url) = displayed_link() {
+                copy_link(&url);
+            }
+        },
+    }
+    .build()
+    .icon(Symbol::Copy)
+    .shortcut(Shortcut::new("c").shift())
+    .enabled(|| displayed_link().is_some())
+}
+
+fn displayed_link() -> Option<String> {
+    daynews_core::try_scene()?
+        .article
+        .with(|a| a.as_ref().and_then(|a| a.url.clone()))
+        .filter(|url| !url.trim().is_empty())
+}
+
+pub(crate) fn copy_link(url: &str) {
+    // Start in the user gesture: browsers need its clipboard permission context.
+    let write = day::clipboard::write(day::clipboard::Content(vec![
+        day::clipboard::Representation::new("text/plain", url.as_bytes()),
+    ]));
+    day::task(async move {
+        if write.await.is_err() {
+            alert(res::str::copy_link_failed())
+                .button(res::str::dismiss_alert(), ())
+                .present()
+                .await;
+        }
+    });
 }
 
 pub(crate) fn unread_feeds_only() -> CommandHandle {
@@ -124,6 +206,7 @@ pub(crate) fn reader_view() -> CommandHandle {
                 && daynews_core::try_scene().is_some_and(|scene| {
                     scene.article.with(|a| {
                         a.as_ref()
+                            .filter(|a| scene.selected.get() == Some(a.id))
                             .and_then(|a| a.url.as_deref())
                             .and_then(crate::extraction::web_url)
                             .is_some()
@@ -131,17 +214,6 @@ pub(crate) fn reader_view() -> CommandHandle {
                 })
         })
     })
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn article_commands_are_disabled_before_a_window_exists() {
-        assert!(!super::open_in_browser().is_enabled());
-        assert!(!super::mark_all_read().is_enabled());
-        assert!(!super::next_unread().is_enabled());
-        assert!(!super::reader_view().is_enabled());
-    }
 }
 
 /// Find searches the indexed articles through the native toolbar field.
@@ -154,4 +226,44 @@ pub(crate) fn find() -> CommandHandle {
     .build()
     .shortcut(Shortcut::new("f"))
     .enabled(|| daynews_core::try_scene().is_some())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn article_commands_are_disabled_before_a_window_exists() {
+        assert!(!super::open_in_browser().is_enabled());
+        assert!(!super::mark_all_read().is_enabled());
+        assert!(!super::next_unread().is_enabled());
+        assert!(!super::reader_view().is_enabled());
+        assert!(!super::navigate_article(false).is_enabled());
+        assert!(!super::navigate_article(true).is_enabled());
+        assert!(!super::copy_article_link().is_enabled());
+    }
+
+    #[test]
+    fn article_navigation_follows_visible_order_without_wrapping() {
+        let ids = [80, 3, 42]; // Synthetic IDs deliberately differ from sort order.
+        assert_eq!(super::adjacent_id(ids.into_iter(), None, true), Some(80));
+        assert_eq!(super::adjacent_id(ids.into_iter(), None, false), Some(42));
+        assert_eq!(super::adjacent_id(ids.into_iter(), Some(3), true), Some(42));
+        assert_eq!(
+            super::adjacent_id(ids.into_iter(), Some(3), false),
+            Some(80)
+        );
+        assert_eq!(super::adjacent_id(ids.into_iter(), Some(80), false), None);
+        assert_eq!(super::adjacent_id(ids.into_iter(), Some(42), true), None);
+    }
+
+    #[test]
+    fn article_navigation_handles_empty_single_and_filtered_out_selections() {
+        for forward in [false, true] {
+            assert_eq!(super::adjacent_id([].into_iter(), None, forward), None);
+            assert_eq!(super::adjacent_id([3].into_iter(), Some(3), forward), None);
+            assert_eq!(
+                super::adjacent_id([3, 4].into_iter(), Some(2), forward),
+                None
+            );
+        }
+    }
 }

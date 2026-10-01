@@ -142,17 +142,50 @@ fn row_for(
     .padding(Insets::symmetric(12.0, 8.0))
     // Taps are the native table's now (they select, and selection opens; see
     // `timeline_pane`), so the menu is the row's only gesture of its own.
-    .context_menu(vec![
-        menu_item(crate::res::str::mark_read().format())
-            .action(move || daynews_core::set_read(id(), true)),
-        menu_item(crate::res::str::mark_unread().format())
-            .action(move || daynews_core::set_read(id(), false)),
-        menu_item(crate::res::str::star().format())
-            .action(move || daynews_core::set_starred(id(), true)),
-        menu_item(crate::res::str::unstar().format())
-            .action(move || daynews_core::set_starred(id(), false)),
-        menu_item(crate::res::str::tag_action().format()).action(move || begin_tag(id())),
-    ])
+    .context_menu_fn(move |_| {
+        // Snapshot the clicked row when the menu opens. A recycled cell or later selection
+        // change must not redirect a menu action to a different article.
+        let article = slot.get();
+        let (id, read, starred) = (article.id, article.is_read, article.is_starred);
+        let url = article.url.filter(|url| !url.trim().is_empty());
+        let browser_url = url.clone();
+        vec![
+            menu_item(if read {
+                crate::res::str::mark_unread().format()
+            } else {
+                crate::res::str::mark_read().format()
+            })
+            .id("row-toggle-read")
+            .action(move || daynews_core::set_read(id, !read)),
+            menu_item(if starred {
+                crate::res::str::unstar().format()
+            } else {
+                crate::res::str::star().format()
+            })
+            .id("row-toggle-star")
+            .action(move || daynews_core::set_starred(id, !starred)),
+            menu_item(crate::res::str::tag_action().format())
+                .id("row-tag")
+                .action(move || begin_tag(id)),
+            menu_separator(),
+            menu_item(crate::res::str::menu_open_in_browser().format())
+                .id("row-open-in-browser")
+                .enabled(url.is_some())
+                .action(move || {
+                    if let Some(url) = &browser_url {
+                        crate::settings::open_link(url);
+                    }
+                }),
+            menu_item(crate::res::str::menu_copy_article_link().format())
+                .id("row-copy-article-link")
+                .enabled(url.is_some())
+                .action(move || {
+                    if let Some(url) = &url {
+                        crate::commands::copy_link(url);
+                    }
+                }),
+        ]
+    })
     // The positional id: a script addresses "the first row" without knowing which article
     // the network delivered. Reactive, so a recycled cell re-labels as it rebinds.
     // Separation between rows is the list's (`.separators(true)` in `timeline_pane`), drawn

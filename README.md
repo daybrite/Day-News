@@ -187,6 +187,26 @@ Feed → Show Only Unread Feeds and the toolbar's filter button (above the artic
 persistent preference. Smart feeds remain available, and hiding an empty feed does not close
 an already open article.
 
+The reader toolbar and Go menu offer Previous Article (⌘[) and Next Article (⌘])
+within the current feed or search results, stopping at either end. Next Unread (⌘/)
+uses a double-chevron icon and continues across feeds. Other desktop platforms use their
+primary shortcut modifier in place of Command.
+
+Copy Article Link (⇧⌘C) is in the Article menu and reader toolbar. Right-click or long-press
+an article row to copy its link, open it in the chosen browser, tag it, or toggle its read/star
+state without opening it in the reader first.
+
+To log every executed SQL statement, including database-worker queries and migrations:
+
+```sh
+day launch -p macos-appkit --env DAY_NEWS_LOG_SQL=1
+```
+
+Statements appear on the console with a `[Day-News SQL]` prefix, including bound values.
+This works in debug and release builds without changing `DAY_LOG`. Any set value enables it;
+unset the variable and relaunch to disable it. Logs can include article text and subscription
+URLs, and tracing adds overhead, so enable it when diagnosing database behavior.
+
 Network regressions: run `python3 tests/feed-refresh-server.py`, then launch against a fresh
 `DAY_NEWS_DATA_DIR` with `--script dayscript/feed-refresh.yaml`. Relaunch the same library on
 macOS with `--script dayscript/feed-refresh-relaunch.yaml`; `/stats` on port 28762 should show

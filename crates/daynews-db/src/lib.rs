@@ -279,14 +279,16 @@ pub struct Db {
 /// balloon the cache: each chunk faults, writes, and flushes before the next.
 const BULK_CHUNK: usize = 2_000;
 
-/// Statement logging in debug builds: every SQL the engine executes for this store (migrations,
-/// autosave flushes, cascades, live queries) through the engine's trace (docs/persistence.md),
-/// at `trace!` because it is a per-statement firehose (docs/logging.md).
-/// `DAY_LOG=trace` shows it; anything less hides it, which is what a level is for. The
-/// `cfg!(debug_assertions)` guard stays: a release build should not pay to format SQL it will
-/// then discard.
+/// Explicit SQL diagnostics work in release and debug builds, independently of DAY_LOG.
+/// Otherwise retain the normal debug-only trace logging, with no formatting cost when off.
 fn traced(driver: Sqlite) -> Sqlite {
-    if cfg!(debug_assertions) && log::log_enabled!(log::Level::Trace) {
+    if std::env::var_os("DAY_NEWS_LOG_SQL").is_some() {
+        driver.trace_sql(|sql| {
+            use std::io::Write;
+            // A closed console must not interrupt a database operation.
+            let _ = writeln!(std::io::stderr().lock(), "[Day-News SQL] {sql}");
+        })
+    } else if cfg!(debug_assertions) && log::log_enabled!(log::Level::Trace) {
         driver.trace_sql(|sql| log::trace!("sql: {sql}"))
     } else {
         driver

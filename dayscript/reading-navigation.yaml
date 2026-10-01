@@ -1,0 +1,67 @@
+# Run after seed-demo.yaml with an isolated DAY_NEWS_DATA_DIR.
+name: day-news-reading-navigation
+description: Previous/Next follow the visible list and search; link copying preserves the reader.
+flow:
+  - wait_for: { id: nav }
+  - toolbar: { item: unread-feeds-only, on: false }
+  - navigate: { route: "feed:5756297993796914528" }
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - toolbar: { item: next-article }
+  - pause: { secs: 1 }
+  - web_eval:
+      id: reader-web
+      script: "document.getElementById('reader-title').textContent"
+      text: "What a honeybee's dance tells the hive"
+      only_on: [macos-appkit, ios-uikit]
+  - toolbar: { item: previous-article }
+  - pause: { secs: 1 }
+  - web_eval:
+      id: reader-web
+      script: "document.getElementById('reader-title').textContent"
+      text: "How monarch butterflies find their way to Mexico"
+      only_on: [macos-appkit, ios-uikit]
+  - toolbar: { item: next-article }
+  - toolbar: { item: next-article }
+  - pause: { secs: 1 }
+  - web_eval:
+      id: reader-web
+      script: "document.getElementById('reader-title').textContent"
+      text: "Three hearts and blue blood: inside the octopus"
+      only_on: [macos-appkit, ios-uikit]
+  - assert_focused: { id: timeline, only_on: [macos-appkit] }
+  - web_eval:
+      id: reader-web
+      script: "window.linkCopyMarker = 'preserved'"
+      text: "preserved"
+      only_on: [macos-appkit, ios-uikit]
+  - toolbar: { item: copy-article-link }
+  - pause: { secs: 1 }
+  - web_eval:
+      id: reader-web
+      script: "window.linkCopyMarker"
+      text: "preserved"
+      only_on: [macos-appkit, ios-uikit]
+  - screenshot: reading-navigation
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - toolbar: { item: day.search, text: "sun" }
+  - pause: { secs: 1 }
+  - select: { id: timeline, index: 0 }
+  - toolbar: { item: next-article }
+  - pause: { secs: 1 }
+  - web_eval:
+      id: reader-web
+      script: "document.getElementById('reader-title').textContent"
+      text: "What a honeybee's dance tells the hive"
+      only_on: [macos-appkit, ios-uikit]
+  - toolbar: { item: next-article }
+  - pause: { secs: 1 }
+  - web_eval:
+      id: reader-web
+      script: "document.getElementById('reader-title').textContent"
+      text: "Reading the tide pools: why the sea rises twice a day"
+      only_on: [macos-appkit, ios-uikit]
+  - screenshot: reading-search-navigation
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - toolbar: { item: day.search, text: "" }

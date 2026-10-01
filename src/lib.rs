@@ -183,6 +183,10 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
 
     nav(section)
         .style(NavStyle::Sidebar)
+        .retain_selection_when(move |key: &Option<String>| {
+            matches!(key.as_deref().and_then(scope_for_key), Some(Scope::Feed(id))
+                if st.feeds.with_untracked(|feeds| feeds.iter().any(|feed| feed.id == id)))
+        })
         .title(res::str::app_title())
         // Refresh and Mark All as Read act on the scope this list has chosen, so they ride this
         // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root

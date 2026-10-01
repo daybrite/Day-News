@@ -30,6 +30,9 @@ impl Ambient for ReaderView {
             task: Signal::new(pending.clone()),
         };
         let scene = daynews_core::scene();
+        // The displayed snapshot stays visible while the next database read is pending.
+        // Cancel extraction as soon as the selection changes, before that snapshot arrives.
+        watch(move || scene.selected.get(), move |_, _| state.cancel());
         watch(
             move || {
                 scene
@@ -108,10 +111,12 @@ impl ReaderView {
                 futures_util::future::Either::Right(_) => Err(ExtractionError::Timeout),
             };
             // A delayed response must never replace another article or another window's body.
-            if !scene.article.with_untracked(|a| {
-                a.as_ref()
-                    .is_some_and(|a| a.id == article.id && a.url.as_deref() == Some(&url))
-            }) {
+            if scene.selected.get_untracked() != Some(article.id)
+                || !scene.article.with_untracked(|a| {
+                    a.as_ref()
+                        .is_some_and(|a| a.id == article.id && a.url.as_deref() == Some(&url))
+                })
+            {
                 return;
             }
             day::reactive::batch(|| {
@@ -265,7 +270,8 @@ mod tests {
                 view.task.get_untracked().set(Some(task));
                 view.loading.set(true);
                 if iteration == 0 {
-                    scene.article.set(Some(fixture(2)));
+                    // The next article is still loading: its predecessor remains displayed.
+                    scene.selected.set(Some(2));
                     day::reactive::flush_sync();
                     assert!(task.is_finished());
                     assert!(!view.loading.get());

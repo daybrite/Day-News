@@ -10,6 +10,8 @@ name: day-news-walkthrough
 description: Sidebar, timeline, reader, search, and read/unread marking.
 flow:
   - wait_for: { id: nav }
+  # The user's persisted unread-only filter must not hide the feed this script later edits.
+  - toolbar: { item: unread-feeds-only, on: false }
   - screenshot: sidebar
 
   # All Articles: present regardless of what an earlier run marked read.

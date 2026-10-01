@@ -60,6 +60,8 @@ pub fn install() {
             sub_menu(
                 res::str::menu_go().format(),
                 vec![
+                    crate::commands::navigate_article(false).menu_item(),
+                    crate::commands::navigate_article(true).menu_item(),
                     crate::commands::next_unread().menu_item(),
                     menu_separator(),
                     menu_item(res::str::nav_today().format())
@@ -129,6 +131,7 @@ pub fn install() {
                         }),
                     menu_separator(),
                     crate::commands::open_in_browser().menu_item(),
+                    crate::commands::copy_article_link().menu_item(),
                     crate::commands::reader_view().menu_item(),
                     crate::commands::find().menu_item(),
                     menu_separator(),
