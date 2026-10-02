@@ -15,6 +15,7 @@ mod menus;
 mod reader;
 mod reader_styles;
 mod reader_view;
+mod refresh_schedule;
 mod settings;
 mod subscriptions;
 mod theme;
@@ -125,6 +126,8 @@ pub fn root() -> impl Piece {
                 .set(res::str::storage_error(error).format());
         }
     });
+    refresh_schedule::start();
+    day::on_lifecycle(Lifecycle::WillTerminate, refresh_schedule::stop);
     feed_icons::init();
     // The undo history rides the container's change log; the platform bridge gives it ⌘Z,
     // the Edit menu, and the mobile gestures.

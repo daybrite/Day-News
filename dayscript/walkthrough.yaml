@@ -160,6 +160,13 @@ flow:
   - assert_text: { id: list-size-value, key: settings_list_percent, args: { value: 120 } }
   - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
   - assert_value: { id: preview-lines-picker, value: 2 }
+  - assert_visible: { id: refresh-interval-picker }
+  - select: { id: refresh-interval-picker, index: 0 }
+  - assert_value: { id: refresh-interval-picker, value: 0 }
+  - select: { id: refresh-interval-picker, index: 1 }
+  - assert_value: { id: refresh-interval-picker, value: 1 }
+  - select: { id: refresh-interval-picker, index: 3 }
+  - assert_value: { id: refresh-interval-picker, value: 3 }
   - screenshot: settings
 
   # The toolbar's sidebar toggle hides the pane and brings it back.

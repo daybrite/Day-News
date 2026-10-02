@@ -130,3 +130,11 @@ menu_next_article = Next Article
 menu_copy_article_link = Copy Article Link
 copy_link_failed = The article link could not be copied. Please try again.
 dismiss_alert = OK
+
+settings_refresh_feeds = Refresh Feeds
+settings_refresh_manual = Manually
+settings_refresh_30 = Every 30 Minutes
+settings_refresh_60 = Every Hour
+settings_refresh_120 = Every 2 Hours
+settings_refresh_240 = Every 4 Hours
+settings_refresh_480 = Every 8 Hours

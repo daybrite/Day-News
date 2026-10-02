@@ -295,6 +295,21 @@ pub fn settings_page() -> impl Piece {
             day_piece_settings::language_picker(LOCALE_KEY, crate::res::locales::ALL),
             browser_picker(),
             labeled(
+                crate::res::str::settings_refresh_feeds(),
+                picker(
+                    [
+                        crate::res::str::settings_refresh_manual().format(),
+                        crate::res::str::settings_refresh_30().format(),
+                        crate::res::str::settings_refresh_60().format(),
+                        crate::res::str::settings_refresh_120().format(),
+                        crate::res::str::settings_refresh_240().format(),
+                        crate::res::str::settings_refresh_480().format(),
+                    ],
+                    crate::refresh_schedule::Interval,
+                )
+                .id("refresh-interval-picker"),
+            ),
+            labeled(
                 crate::res::str::settings_retention_label(),
                 picker(CHOICES.iter().map(|d| choice_label(*d)), selected).id("retention-picker"),
             ),
