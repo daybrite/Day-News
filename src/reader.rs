@@ -4,38 +4,39 @@
 use crate::format::full_date;
 use crate::theme::palette;
 use day::prelude::*;
-use day_piece_webview::web_view;
+use day_piece_webview::{ResourceProvider, ResourceResponse, web_view_resources};
 use daynews_core::StoredArticle;
 
-/// Build the article document and hand the web view a `file://` URL for it.
-///
-/// A `data:` URL would avoid the temp file, but Android's WebView refuses top-level `data:`
-/// navigations (API 30+) and every platform caps their length, so a file is the portable choice.
-/// The scratch directory is the one the backend reports as app-writable, which is the only
-/// writable location on iOS and Android.
-fn render_to_file(path: &std::path::Path, article: &StoredArticle) -> Option<String> {
-    std::fs::create_dir_all(path.parent()?).ok()?;
-    std::fs::write(path, document(article)).ok()?;
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        url::Url::from_file_path(path).ok().map(Into::into)
-    }
-    #[cfg(target_arch = "wasm32")]
-    {
-        // Day's web filesystem uses POSIX paths, while url's OS-path helper is unavailable
-        // on wasm. The webview backend resolves this URL through that virtual filesystem.
-        let mut url = url::Url::parse("file:///").ok()?;
-        url.set_path(&path.to_string_lossy());
-        Some(url.into())
-    }
-}
-
-fn document(a: &StoredArticle) -> String {
-    document_with_style(
+fn document(a: &StoredArticle, control_above: bool) -> String {
+    let mut document = document_with_style(
         a,
         day::dark_mode(),
         &crate::reader_styles::state().get_untracked(),
-    )
+    );
+    if a.url
+        .as_deref()
+        .and_then(crate::extraction::web_url)
+        .is_some()
+    {
+        let control = format!(
+            r#"<div id="reader-load-control"><button type="button" id="reader-load-full" aria-busy="false" aria-expanded="false" aria-controls="reader-full-slot" onclick="document.getElementById('reader-load-link').click()"><span class="reader-spinner" aria-hidden="true"></span><span class="reader-load-label">{}</span><svg class="reader-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 5 6 6 6-6M6 12l6 6 6-6"/></svg></button><a hidden id="reader-load-link" href="day-news-reader://load/{}"></a><a hidden id="reader-auto-link" href="day-news-reader://auto/{}"></a></div>"#,
+            escape(&crate::res::str::reader_load_full().format()),
+            a.id,
+            a.id
+        );
+        document = if control_above {
+            document.replace(
+                "<div id=\"reader-feed-content\">",
+                &format!("{control}<div id=\"reader-feed-content\">"),
+            )
+        } else {
+            document.replace(
+                "<div id=\"reader-full-slot\"></div>",
+                &format!("{control}<div id=\"reader-full-slot\"></div>"),
+            )
+        };
+    }
+    document
 }
 
 #[cfg(test)]
@@ -67,7 +68,7 @@ fn document_with_style(
         None => escape(&crate::res::str::untitled().format()),
     };
     // Relative images and links in feed HTML resolve against the publication, not our
-    // temporary reader file. Only web URLs are suitable document bases.
+    // application resource address. Only web URLs are suitable document bases.
     let base = a
         .url
         .as_deref()
@@ -118,7 +119,26 @@ fn document_with_style(
           font-weight: 700; }}
   .when {{ color: {muted}; font-size: 0.74em; letter-spacing: 0.06em; text-transform: uppercase;
            margin: 0 0 22px; }}
-  a {{ color: {accent}; }}
+  a, #reader-load-full {{ color: {accent}; }}
+  #reader-load-control {{ margin: 28px 0 0; overflow-anchor: none; }}
+  #reader-full-slot {{ overflow-anchor: none; }}
+  #reader-load-full {{ width: 100%; display: flex; align-items: center; gap: 12px;
+    padding: 15px 16px; border: 1px solid {rule}; border-radius: 6px;
+    background: linear-gradient(color-mix(in srgb, {alt} 80%, {bg}), {alt});
+    box-shadow: inset 0 1px 0 color-mix(in srgb, {fg} 8%, transparent), 0 1px 2px #0001;
+    font: inherit; cursor: pointer; }}
+  .reader-load-label {{ flex: 1; text-align: left; font-size: .85em; font-weight: 600;
+    letter-spacing: .015em; text-shadow: 0 1px 0 color-mix(in srgb, {bg} 75%, transparent); }}
+  .reader-download {{ width: 21px; height: 21px; flex-shrink: 0; }}
+  #reader-load-full[aria-expanded="true"] .reader-download {{ transform: rotate(180deg); }}
+  .reader-spinner {{ width: 15px; height: 15px; flex-shrink: 0; border: 2px solid currentColor;
+    border-right-color: transparent; border-radius: 50%; visibility: hidden; }}
+  #reader-load-full[aria-busy="true"] .reader-spinner {{ visibility: visible; animation: reader-spin .85s linear infinite; }}
+  @keyframes reader-spin {{ to {{ transform: rotate(360deg); }} }}
+  @media (prefers-reduced-motion: reduce) {{ .reader-spinner {{ animation-duration: 2s !important; }} }}
+  #reader-load-full:hover:not(:disabled) {{ background: color-mix(in srgb, currentColor 8%, transparent); }}
+  #reader-load-full:focus-visible {{ outline: 2px solid currentColor; outline-offset: 3px; }}
+  #reader-load-full:disabled {{ opacity: .55; cursor: progress; }}
   #reader-link-tooltip {{ position: fixed; z-index: 2147483647; pointer-events: none;
     max-width: min(680px, calc(100vw - 16px)); padding: 7px 10px;
     background: {alt}; color: {fg}; border: 1px solid {rule}; border-radius: 6px;
@@ -148,7 +168,8 @@ fn document_with_style(
 <hr class="rule">
 <h1 class="t" id="reader-title">{title}</h1>
 <p class="when">{when}</p>
-{body}
+<div id="reader-feed-content">{body}</div>
+<div id="reader-full-slot"></div>
 <div id="reader-link-tooltip" role="tooltip" hidden></div>
 <script>
 (() => {{
@@ -195,7 +216,7 @@ fn css(c: Color) -> String {
 }
 
 /// Escape for HTML text and quoted attributes.
-fn escape(s: &str) -> String {
+pub(crate) fn escape(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
         match c {
@@ -214,23 +235,84 @@ fn escape(s: &str) -> String {
 ///
 /// Where there is a web engine the generated document goes to the web view. A backend
 /// without one gets a composed text reader instead of a placeholder leaf.
-fn reader_body(url: Signal<String>, go: Trigger, view: crate::reader_view::ReaderView) -> AnyPiece {
-    if day_piece_webview::support() == Support::Unsupported {
+fn reader_body(
+    provider: ResourceProvider,
+    go: Trigger,
+    view: crate::reader_view::ReaderView,
+) -> AnyPiece {
+    if day_piece_webview::support() == Support::Unsupported
+        || (crate::site_browser::incognito()
+            && day_piece_webview::private_browsing_support() == Support::Unsupported)
+    {
         article_text().any()
     } else {
+        let scene = daynews_core::scene();
         let js = view.engine;
         watch(
             || (crate::reader_styles::state().get(), day::dark_mode()),
             move |_, _| crate::reader_styles::apply_to(js),
         );
-        web_view(url)
+        watch(
+            move || {
+                (
+                    view.ready.get(),
+                    view.loading.get(),
+                    view.active.get(),
+                    day::locale().get(),
+                )
+            },
+            move |(ready, loading, active, _), _| {
+                if !ready {
+                    return;
+                }
+                let text = if *loading {
+                    crate::res::str::reader_view_loading().format()
+                } else if *active {
+                    crate::res::str::reader_hide_full().format()
+                } else {
+                    crate::res::str::reader_load_full().format()
+                };
+                let text = serde_json::to_string(&text).unwrap();
+                let script = format!(
+                    "(() => {{ const button = document.getElementById('reader-load-full'); if (button) {{ button.disabled = {loading}; button.setAttribute('aria-busy', String({loading})); button.setAttribute('aria-expanded', String({active})); button.querySelector('.reader-load-label').textContent = {text}; }} }})()"
+                );
+                day::task(async move {
+                    let _ = js.eval(script).await;
+                });
+            },
+        );
+        let profile = scene
+            .article
+            .with_untracked(|a| a.as_ref().map(|a| crate::site_browser::profile(a.feed_id)))
+            .unwrap_or_default();
+        web_view_resources(provider, "reader.html")
+            .profile(profile)
             .js(js)
             .on_load(move || {
                 crate::reader_styles::apply_to(js);
                 view.ready.set(true);
+                view.show_inline_content(scene);
             })
-            .go(go)
-            .on_external_link(|url| {
+            .reload(go)
+            .on_external_link(move |url| {
+                if let Some(id) = url
+                    .strip_prefix("day-news-reader://auto/")
+                    .and_then(|id| id.parse::<u64>().ok())
+                {
+                    if scene.selected.get_untracked() == Some(id) {
+                        view.auto_load(scene);
+                    }
+                    return day_piece_webview::LinkPolicy::Ignore;
+                }
+                if let Some(id) = url
+                    .strip_prefix("day-news-reader://load/")
+                    .and_then(|id| id.parse::<u64>().ok())
+                {
+                    if scene.selected.get_untracked() == Some(id) && !view.loading.get_untracked() {
+                        view.toggle_from_bar(scene);
+                    }
+                    return day_piece_webview::LinkPolicy::Ignore;
+                }
                 crate::settings::open_link(url);
                 day_piece_webview::LinkPolicy::Ignore
             })
@@ -326,23 +408,23 @@ fn article_text() -> impl Piece {
 pub fn reader_pane() -> impl Piece {
     let st = daynews_core::scene();
     let view = crate::reader_view::ReaderView::ambient();
-    // Two windows may show the same article in different modes. Never share their files.
-    static NEXT_READER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
-    let slot = NEXT_READER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    #[cfg(not(target_arch = "wasm32"))]
-    let filename = format!("reader-{}-{slot}.html", std::process::id());
-    #[cfg(target_arch = "wasm32")]
-    let filename = format!("reader-{slot}.html");
-    let path = app_temp_dir().join("news-reader").join(filename);
-    let cleanup_path = path.clone();
-    day::reactive::Scope::current().on_cleanup(move || {
-        let _ = std::fs::remove_file(cleanup_path);
+    // The resource provider serves UI-thread-rendered HTML through every backend's
+    // app resource channel, whose link policy also handles the inline load action.
+    // Each window owns its document; native IO callbacks never touch UI signals.
+    let content = std::sync::Arc::new(std::sync::RwLock::new(Vec::<u8>::new()));
+    let shared = content.clone();
+    let provider = ResourceProvider::new(move |request| {
+        if request.path == "reader.html" {
+            ResourceResponse::new(
+                "text/html; charset=utf-8",
+                shared.read().unwrap_or_else(|e| e.into_inner()).clone(),
+            )
+        } else {
+            ResourceResponse::not_found()
+        }
     });
-    let url = Signal::new(String::new());
-    // The web view's bound URL is imperative: it loads on creation and thereafter only
-    // when a `go` trigger fires (navigation writes the signal back, so auto-loading on every
-    // change would loop). Writing the URL alone left the pane showing the first article forever.
     let go = Trigger::new();
+    let rendered = std::rc::Rc::new(std::cell::RefCell::new(None::<String>));
     // Re-render only for article/locale changes. Typography and colors update the live
     // document through its dedicated stylesheet, preserving reading position.
     bind(
@@ -353,14 +435,47 @@ pub fn reader_pane() -> impl Piece {
                 view.active.get(),
                 view.extracted.get(),
                 day::locale().get(),
+                crate::site_browser::incognito(),
+                st.article.with(|a| {
+                    a.as_ref()
+                        .map(|a| crate::reader_options::options(Some(a.feed_id)))
+                }),
             )
         },
         move |_| {
+            let original = st.article.get_untracked();
+            let key = original.as_ref().map(|a| {
+                format!(
+                    "{}:{:?}:{:?}:{:?}:{}",
+                    a.id,
+                    a.url,
+                    day::locale().get_untracked(),
+                    crate::reader_options::options(Some(a.feed_id)).inline,
+                    crate::site_browser::incognito()
+                )
+            });
+            let inline_live = original
+                .as_ref()
+                .is_some_and(|a| crate::reader_options::options(Some(a.feed_id)).inline);
+            if inline_live && *rendered.borrow() == key && view.ready.get_untracked() {
+                view.show_inline_content(st);
+                return;
+            }
+            *rendered.borrow_mut() = key;
             view.ready.set(false);
-            let doc = view
-                .article(st.article.get_untracked())
-                .and_then(|a| render_to_file(&path, &a));
-            url.set(doc.unwrap_or_default());
+            let inline = original
+                .as_ref()
+                .is_some_and(|a| crate::reader_options::options(Some(a.feed_id)).inline);
+            let article = if inline {
+                original
+            } else {
+                view.article(original)
+            };
+            let doc = article
+                .as_ref()
+                .map(|a| document(a, !inline && view.active.get_untracked()))
+                .unwrap_or_default();
+            *content.write().unwrap_or_else(|e| e.into_inner()) = doc.into_bytes();
             go.notify();
         },
     );
@@ -381,7 +496,23 @@ pub fn reader_pane() -> impl Piece {
         ),
         when(
             move || st.article.get().is_some(),
-            move || reader_body(url, go, view),
+            move || {
+                let provider = provider.clone();
+                each(
+                    items(
+                        move || {
+                            st.article.with(|a| {
+                                a.as_ref()
+                                    .map(|a| crate::site_browser::profile(a.feed_id).storage_key())
+                                    .into_iter()
+                                    .collect::<Vec<_>>()
+                            })
+                        },
+                        |key| key.clone(),
+                    ),
+                    move |_| reader_body(provider.clone(), go, view),
+                )
+            },
         ),
     ))
     .background(move || palette().bg)

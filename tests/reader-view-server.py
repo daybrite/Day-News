@@ -1,23 +1,24 @@
 """Synthetic RSS/publication fixture for dayscript/reader-view.yaml. No external network."""
 import json
 import time
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-PORT = 28761
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 28761
 BASE = f"http://127.0.0.1:{PORT}"
 
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/feed.json":
+        if self.path in ("/feed.json", "/long-feed.json"):
             body = json.dumps({
                 "version": "https://jsonfeed.org/version/1.1",
                 "title": "Reader View Fixtures",
                 "items": [
                     {"id": name, "url": f"{BASE}/{name}", "title": name,
                      "date_published": f"2026-09-{30-i:02}T12:00:00Z",
-                     "content_html": f"<p>RSS excerpt for {name}.</p><a href='/reference'>Fixture reference</a>"}
-                    for i, name in enumerate(["complete", "slow", "denied"])
+                     "content_html": f"<p>RSS excerpt for {name}.</p><a href='/reference'>Fixture reference</a>" + ("<p>Long synthetic RSS preview paragraph for visibility testing.</p>" * 100 if self.path == "/long-feed.json" else "")}
+                    for i, name in enumerate(["complete", "slow", "denied"] if self.path == "/feed.json" else ["slow"])
                 ],
             }).encode()
             content_type = "application/feed+json"

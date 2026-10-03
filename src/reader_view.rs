@@ -15,6 +15,7 @@ pub struct ReaderView {
     pub error: Signal<Option<ExtractionError>>,
     pub extracted: Signal<Option<(u64, ExtractedArticle)>>,
     task: Signal<Rc<Cell<Option<day::TaskHandle>>>>,
+    auto_article: Signal<Option<u64>>,
 }
 
 impl Ambient for ReaderView {
@@ -28,6 +29,7 @@ impl Ambient for ReaderView {
             error: Signal::new(None),
             extracted: Signal::new(None),
             task: Signal::new(pending.clone()),
+            auto_article: Signal::new(None),
         };
         let scene = daynews_core::scene();
         // The displayed snapshot stays visible while the next database read is pending.
@@ -41,12 +43,57 @@ impl Ambient for ReaderView {
             },
             move |_, _| {
                 state.cancel();
+                state.auto_article.set(None);
                 state.active.set(false);
                 state.error.set(None);
                 state.extracted.set(None);
                 state.ready.set(false);
             },
         );
+        watch(
+            move || {
+                (
+                    state.ready.get(),
+                    scene.article.with(|a| {
+                        a.as_ref()
+                            .map(|a| (a.id, crate::reader_options::options(Some(a.feed_id))))
+                    }),
+                )
+            },
+            move |(ready, article), _| {
+                let Some((id, options)) = article else {
+                    return;
+                };
+                if !options.auto {
+                    state.auto_article.set(None);
+                }
+                if *ready && day_piece_webview::eval_support() == Support::Native {
+                    let enabled = options.auto && state.auto_article.get_untracked() != Some(*id);
+                    let task = day::task(async move {
+                        let _ = state.engine.eval(format!(r#"(() => {{
+                            window.readerAutoObserver?.disconnect();
+                            const button = document.getElementById('reader-load-full');
+                            if (!{enabled} || !button) return;
+                            window.readerAutoObserver = new IntersectionObserver(entries => {{
+                                if (entries.some(entry => entry.isIntersecting && entry.intersectionRect.height > 0 && entry.intersectionRect.width > 0)) {{
+                                    window.readerAutoObserver.disconnect();
+                                    document.getElementById('reader-auto-link')?.click();
+                                }}
+                            }});
+                            window.readerAutoObserver.observe(button);
+                        }})()"#)).await;
+                    });
+                    day::reactive::Scope::current().on_cleanup(move || task.abort());
+                }
+            },
+        );
+        watch(crate::site_browser::incognito, move |_, _| {
+            state.cancel();
+            state.extracted.set(None);
+            state.active.set(false);
+            state.auto_article.set(None);
+            state.ready.set(false);
+        });
         // Signals are already disposed when scope cleanup runs. Keep only the cancellation
         // cell alive here; never read or write window signals during disposal.
         day::reactive::Scope::current().on_cleanup(move || {
@@ -68,6 +115,43 @@ impl ReaderView {
             task.abort();
         }
         self.loading.set(false);
+    }
+
+    /// Only a visible load bar may initiate automatic network work.
+    pub fn auto_load(self, scene: daynews_core::NewsScene) {
+        let Some(article) = scene.article.get_untracked() else {
+            return;
+        };
+        if self.ready.get_untracked()
+            && scene.selected.get_untracked() == Some(article.id)
+            && crate::reader_options::options(Some(article.feed_id)).auto
+            && self.auto_article.get_untracked() != Some(article.id)
+            && !self.active.get_untracked()
+            && !self.loading.get_untracked()
+            && self.error.get_untracked().is_none()
+        {
+            self.auto_article.set(Some(article.id));
+            self.toggle(scene);
+        }
+    }
+
+    /// Explicit bar choices also become this feed's automatic-loading preference.
+    pub fn toggle_from_bar(self, scene: daynews_core::NewsScene) {
+        let Some(article) = scene.article.get_untracked() else {
+            return;
+        };
+        if self.loading.get_untracked() {
+            return;
+        }
+        let auto = !self.active.get_untracked();
+        day::reactive::batch(|| {
+            self.toggle(scene);
+            crate::reader_options::OptionBinding {
+                feed: Some(article.feed_id),
+                auto: true,
+            }
+            .write(auto);
+        });
     }
 
     pub fn toggle(self, scene: daynews_core::NewsScene) {
@@ -160,6 +244,29 @@ impl ReaderView {
             }
         }
         Some(article)
+    }
+
+    /// Insert sanitized full content below the RSS preview in this same document.
+    pub fn show_inline_content(self, scene: daynews_core::NewsScene) {
+        let Some(article) = scene.article.get_untracked() else {
+            return;
+        };
+        if !crate::reader_options::options(Some(article.feed_id)).inline {
+            return;
+        }
+        let active = self.active.get_untracked();
+        let html = self
+            .extracted
+            .get_untracked()
+            .filter(|(id, _)| *id == article.id)
+            .map(|(_, content)| content.content)
+            .unwrap_or_default();
+        let html = serde_json::to_string(&html).unwrap();
+        let task = day::task(async move {
+            let _ = self.engine.eval(format!("(() => {{ const slot = document.getElementById('reader-full-slot'); if (!slot) return; const x = scrollX, y = scrollY; if ({active}) {{ window.readerAutoObserver?.disconnect(); if (!slot.dataset.loaded) {{ slot.innerHTML = {html}; slot.dataset.loaded = 'true'; }} }} slot.hidden = !{active}; window.scrollTo(x, y); }})()")).await;
+        });
+        // Evaluation is keyed to the current web document and a replaced document drops it.
+        day::reactive::Scope::current().on_cleanup(move || task.abort());
     }
 
     pub fn status(self) -> String {

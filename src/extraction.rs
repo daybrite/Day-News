@@ -55,14 +55,57 @@ impl ArticleExtractor for LocalReadability {
     fn extract<'a>(&'a self, url: &'a str) -> ExtractionFuture<'a> {
         Box::pin(async move {
             let url = web_url(url).ok_or(ExtractionError::InvalidUrl)?;
-            let response = day_part_http::fetch_future(
-                day_part_http::Request::get(url.as_str())
+            // Follow each hop ourselves so cookie eligibility is recalculated for its URL;
+            // credentials must never be forwarded blindly to a redirect destination.
+            let client = day_part_http::Client::builder()
+                .redirects(day_part_http::Redirects::Never)
+                .cookies(day_part_http::Cookies::Off)
+                .cache(day_part_http::Cache::Off)
+                .build();
+            let mut target = url.clone();
+            let mut response = None;
+            for _ in 0..=10 {
+                let cookies = self
+                    .engine
+                    .cookie_header(target.as_str())
+                    .await
+                    .unwrap_or_default();
+                let mut request = day_part_http::Request::get(target.as_str())
                     .header("Accept", "text/html, application/xhtml+xml;q=0.9")
                     .header("User-Agent", concat!("DayNews/", env!("CARGO_PKG_VERSION")))
-                    .timeout(Duration::from_secs(25)),
-            )
-            .await
-            .map_err(|_| ExtractionError::Network)?;
+                    .timeout(Duration::from_secs(25));
+                if !cookies.is_empty() {
+                    request = request.header("Cookie", &cookies);
+                }
+                let received = client
+                    .fetch_future(request)
+                    .await
+                    .map_err(|_| ExtractionError::Network)?;
+                for (_, cookie) in received
+                    .headers
+                    .iter()
+                    .filter(|(key, _)| key.eq_ignore_ascii_case("set-cookie"))
+                {
+                    let _ = self.engine.set_cookie(target.as_str(), cookie).await;
+                }
+                if matches!(received.status, 301 | 302 | 303 | 307 | 308) {
+                    let location = received
+                        .headers
+                        .iter()
+                        .find(|(key, _)| key.eq_ignore_ascii_case("location"))
+                        .map(|(_, value)| value);
+                    if let Some(location) = location {
+                        let next = target
+                            .join(location)
+                            .map_err(|_| ExtractionError::InvalidUrl)?;
+                        target = web_url(next.as_str()).ok_or(ExtractionError::InvalidUrl)?;
+                        continue;
+                    }
+                }
+                response = Some(received);
+                break;
+            }
+            let response = response.ok_or(ExtractionError::Network)?;
             let (html, base) = decode_page(response, url.as_str())?;
             let script = extraction_script(&html, &base)?;
             let reply = self

@@ -293,7 +293,7 @@ pub fn stylesheet(style: &ReaderStyle, dark: bool) -> String {
         )
     };
     format!(
-        ":root {{ color-scheme: {scheme}; }}\na, .src {{ color: {accent}; }}\nhtml, body {{ background: {bg}; color: {fg}; }}\nbody {{ font-family: {family}; font-size: calc(1rem * {factor}); }}\n.by, .when, blockquote {{ color: {muted}; }}\n.rule, hr, blockquote {{ border-color: {rule}; }}\npre, #reader-link-tooltip {{ background: {alt}; }} #reader-link-tooltip {{ color: {fg}; border-color: {rule}; }}",
+        ":root {{ color-scheme: {scheme}; }}\na, .src, #reader-load-full {{ color: {accent}; }}\nhtml, body {{ background: {bg}; color: {fg}; }}\nbody {{ font-family: {family}; font-size: calc(1rem * {factor}); }}\n.by, .when, blockquote {{ color: {muted}; }}\n.rule, hr, blockquote {{ border-color: {rule}; }}\n#reader-load-full {{ border-color: {rule}; background: linear-gradient(color-mix(in srgb, {alt} 80%, {bg}), {alt}); }} .reader-load-label {{ text-shadow: 0 1px 0 color-mix(in srgb, {bg} 75%, transparent); }}\npre, #reader-link-tooltip {{ background: {alt}; }} #reader-link-tooltip {{ color: {fg}; border-color: {rule}; }}",
         scheme = if dark { "dark" } else { "light" },
         accent = css_color(p.accent),
         bg = css_color(background),

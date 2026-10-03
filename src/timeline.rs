@@ -545,6 +545,11 @@ fn timeline_rows(
                         daynews_core::open_article(id);
                     }
                 })
+                .on_selection(|keys| {
+                    if keys.is_empty() {
+                        crate::site_browser::show_dashboard();
+                    }
+                })
                 // Two-way: app-driven selection (Next Unread, the reader's restore) syncs into
                 // the native list without re-emitting.
                 .selected_rows(move || {

@@ -14,10 +14,12 @@ mod feed_list;
 mod format;
 mod menus;
 mod reader;
+mod reader_options;
 mod reader_styles;
 mod reader_view;
 mod refresh_schedule;
 mod settings;
+mod site_browser;
 mod subscriptions;
 mod theme;
 mod timeline;
@@ -160,7 +162,11 @@ const OPENING_SECTION: &str = "today";
 /// One window's contents. Called again for each File ▸ New Window.
 fn build_shell() -> impl Piece {
     // Each window owns its scope, search and selection; the store and badges stay shared.
-    daynews_core::NewsScene::scoped(|sc| reader_view::ReaderView::scoped(move |_| shell_body(sc)))
+    daynews_core::NewsScene::scoped(|sc| {
+        reader_view::ReaderView::scoped(move |_| {
+            site_browser::Browser::scoped(move |_| shell_body(sc))
+        })
+    })
 }
 
 fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
@@ -186,7 +192,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     let inline_settings =
         day_core::capability(day_spec::Cap::AppMenu) == day_spec::Support::Unsupported;
 
-    let navigation = nav(section)
+    let navigation = nav(site_browser::FeedSelection { section, scene: sc })
         .style(NavStyle::Sidebar)
         .retain_selection_when(move |key: &Option<String>| {
             matches!(key.as_deref().and_then(scope_for_key), Some(Scope::Feed(id))
@@ -343,7 +349,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     } else {
         navigation
     };
-    navigation.id("nav")
+    column((navigation.id("nav").grow(), site_browser::browser_cover())).grow()
 }
 
 /// The reader as a destination. The timeline is no longer in here; it is the nav's

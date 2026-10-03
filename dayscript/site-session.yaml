@@ -1,0 +1,60 @@
+# Start tests/site-session-server.py. Use a fresh isolated data directory.
+name: site-session
+description: Shared HttpOnly login, authenticated full article, dashboard reselection and forgetting site data.
+flow:
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28764/feed.json' }
+  - pause: { secs: 2 }
+  - toolbar: { item: feed-overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: dashboard-site-preview }
+  - tap: { id: dashboard-site-forget }
+  - assert_text: { id: dashboard-site-status, key: site_data_cleared, timeout_secs: 20 }
+  - tap: { id: dashboard-site-preview }
+  - wait_for: { id: site-browser-web }
+  - pause: { secs: 1 }
+  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed out' }
+  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-login").click(); "login"', text: 'login' }
+  - pause: { secs: 1 }
+  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in' }
+  - web_eval: { id: site-browser-web, script: 'localStorage.getItem("fixture-login")', text: 'saved' }
+  - web_eval: { id: site-browser-web, script: 'document.cookie.includes("session=")', text: 'false' }
+  - screenshot: site-preview-login
+  - tap: { id: site-browser-back }
+  - pause: { secs: 0.5 }
+  - tap: { id: site-browser-forward }
+  - pause: { secs: 0.5 }
+  - tap: { id: site-browser-close }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.querySelector("#reader-load-full kbd") === null', text: 'true' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).visibility', text: 'hidden' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "load"', text: 'load' }
+  - pause: { secs: 2 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }
+  - screenshot: authenticated-inline-reader
+  - select: { id: timeline, index: -1 }
+  - wait_for: { id: dashboard-site-preview }
+  - assert_missing: { id: reader-web }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - tap: { id: "sidebar:item:feed:4345234357225265956" }
+  - wait_for: { id: dashboard-site-preview }
+  - assert_missing: { id: reader-web }
+  - tap: { id: dashboard-site-forget }
+  - pause: { secs: 2 }
+  - assert_text: { id: dashboard-site-status, key: site_data_cleared }
+  - tap: { id: dashboard-site-preview }
+  - wait_for: { id: site-browser-web }
+  - pause: { secs: 1 }
+  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed out' }
+  - web_eval: { id: site-browser-web, script: 'localStorage.getItem("fixture-login")', text: 'null' }
+  - web_eval: { id: site-browser-web, script: 'indexedDB.databases().then(d=>window.fixtureDatabases=d.length); "check"', text: 'check' }
+  - pause: { secs: 0.5 }
+  - web_eval: { id: site-browser-web, script: 'window.fixtureDatabases', text: '0' }
+  - screenshot: site-session-forgotten
+  - tap: { id: site-browser-close }
+  - dialog_mode: { mode: native }

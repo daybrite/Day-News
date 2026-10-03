@@ -1,0 +1,78 @@
+# Start tests/reader-view-server.py; use an isolated DAY_NEWS_DATA_DIR.
+name: day-news-inline-reader
+description: Inline full content, automatic loading, and independent per-feed preferences.
+flow:
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28761/feed.json' }
+  - pause: { secs: 2 }
+  - toolbar: { item: feed-overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: feed-inline-reader }
+  - toggle: { id: feed-inline-reader, value: true }
+  - toggle: { id: feed-auto-reader, value: false }
+  - screenshot: inline-reader-feed-settings
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'Boolean(document.getElementById("reader-load-full"))', text: 'true' }
+  - screenshot: inline-reader-load-bar
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
+  - web_eval: { id: reader-web, script: 'window.originalScrollY = scrollY; window.sameReaderDocument = "preserved"; document.getElementById("reader-load-full").click(); "clicked"', text: 'clicked' }
+  - pause: { secs: 2 }
+  - web_eval: { id: reader-web, script: 'window.sameReaderDocument', text: 'preserved' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-feed-content").textContent', contains: 'RSS excerpt for complete.' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Full publication content.' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getAttribute("aria-expanded")', text: 'true' }
+  - web_eval: { id: reader-web, script: 'Boolean(window.publisherScriptRan)', text: 'false' }
+  - web_eval: { id: reader-web, script: 'scrollY === window.originalScrollY', text: 'true' }
+  - screenshot: inline-reader-full
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").querySelector(".reader-load-label").textContent', text: 'Hide Full Article' }
+  - web_eval: { id: reader-web, script: 'document.querySelector("#reader-full-slot h2") === null', text: 'true' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "hidden"', text: 'hidden' }
+  - pause: { secs: 0.5 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'true' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getAttribute("aria-expanded")', text: 'false' }
+  - web_eval: { id: reader-web, script: 'window.sameReaderDocument', text: 'preserved' }
+  - screenshot: inline-reader-collapsed
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-auto-reader }
+  - assert_value: { id: feed-auto-reader, value: false }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "loaded"', text: 'loaded' }
+  - pause: { secs: 2 }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-auto-reader }
+  - assert_value: { id: feed-auto-reader, value: true }
+  - toggle: { id: feed-auto-reader, value: true }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 3 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Full publication content.' }
+  - web_eval: { id: reader-web, script: 'scrollY', text: '0' }
+  - screenshot: inline-reader-automatic
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-inline-reader }
+  - toggle: { id: feed-inline-reader, value: false }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 3 }
+  - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Full publication content.' }
+  - web_eval: { id: reader-web, script: 'document.body.textContent.includes("RSS excerpt for complete.")', text: 'false' }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-inline-reader }
+  - toggle: { id: feed-inline-reader, value: true }
+  - toggle: { id: feed-auto-reader, value: false }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'Boolean(document.getElementById("reader-load-full"))', text: 'true' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
+  - dialog_mode: { mode: native }

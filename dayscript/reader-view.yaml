@@ -7,12 +7,15 @@ flow:
   - assert_presented: {}
   - respond: { text: 'http://127.0.0.1:28761/feed.json' }
   - pause: { secs: 2 }
+  - toolbar: { item: feed-overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: feed-auto-reader }
+  - toggle: { id: feed-auto-reader, value: false }
   - navigate: { route: all }
   - wait_for: { id: article-row-0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - menu: { id: reader-view, only_on: [macos-appkit] }
-  - toolbar: { item: reader-view, on: true, only_on: [ios-uikit] }
+  - toolbar: { item: reader-view, on: true, skip_on: [macos-appkit] }
   - pause: { secs: 2 }
   - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Full publication content.' }
   - web_eval: { id: reader-web, script: 'Boolean(window.publisherScriptRan)', text: 'false' }

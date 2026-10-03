@@ -626,6 +626,18 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
             .spacing(8.0)
             .align(VAlign::Center)
             .grow_w(),
+            each(
+                items(
+                    move || read(data, |d| d.feed_id).into_iter().collect::<Vec<_>>(),
+                    |id| *id,
+                ),
+                |slot| {
+                    column((
+                        crate::reader_options::controls(Some(slot.get())),
+                        crate::site_browser::site_controls(slot.get()),
+                    ))
+                },
+            ),
             row((
                 label(move || {
                     if read(data, |d| {
@@ -937,7 +949,7 @@ fn regions(size: Size) -> [Rect; 6] {
     let gap = 10.0_f64.min(h / 50.0).min(w / 4.0);
     let hero = (if compact { 100.0_f64 } else { 112.0_f64 }).min(h * 0.2);
     let metrics = 62.0_f64.min(h * 0.12);
-    let footer = 94.0_f64.min(h * 0.18);
+    let footer = 232.0_f64.min(h * 0.42);
     let plot = (h - hero - metrics - footer - 4.0 * gap).max(0.0);
     let y = hero + metrics + 2.0 * gap;
     // Short windows need room for every publisher legend row below the activity plot.

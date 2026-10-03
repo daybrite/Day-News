@@ -211,6 +211,10 @@ pub(crate) fn unread_feeds_only() -> CommandHandle {
     .checked(|| crate::feed_list::FeedList::app().unread_only.get())
 }
 
+pub(crate) fn full_content_shortcut() -> Shortcut {
+    Shortcut::new("r").shift()
+}
+
 pub(crate) fn reader_view() -> CommandHandle {
     Command {
         id: "reader-view",
@@ -226,7 +230,7 @@ pub(crate) fn reader_view() -> CommandHandle {
     }
     .build()
     .icon(Symbol::Document)
-    .shortcut(Shortcut::new("r").shift())
+    .shortcut(full_content_shortcut())
     .checked(|| crate::reader_view::ReaderView::current().is_some_and(|view| view.active.get()))
     .enabled(|| {
         crate::reader_view::ReaderView::current().is_some_and(|view| {

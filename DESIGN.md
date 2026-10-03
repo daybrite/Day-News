@@ -9,11 +9,11 @@ Targets: `macos-appkit`, `macos-gtk`, `macos-qt`, `windows-xaml`, `ios-uikit`, `
 
 > `web-dom` builds and runs the whole shell, but a browser may only fetch feeds that send CORS
 > headers, and most publishers do not — so the web build reads what it is allowed to reach
-> rather than any URL you paste. Its article pane is also blank until the reader can hand the
-> web view HTML directly (see *Reader*). `harmony-arkui` joined when `day-piece-webview` grew
+> rather than any URL you paste. Its article pane uses the same-origin application resource
+> channel (see *Reader*). `harmony-arkui` joined when `day-piece-webview` grew
 > its ArkUI renderer — the app builds, installs, and runs in the collapsed phone layout on the
-> Oniro emulator. Whether ArkWeb serves the reader's `file://` document is not yet verified;
-> the walkthrough's `web_eval` check answers that on the CI emulator leg.
+> Oniro emulator. Reader resource-channel behavior is checked by the walkthrough's `web_eval`
+> assertions on the CI emulator leg.
 
 ## Crates
 
@@ -115,20 +115,15 @@ The synchronous database API is still used by the headless store tests and the w
 
 ## Reader
 
-The article pane is a native web view pointed at a `file://` document we generate per reader pane.
-Each pane reuses and cleans up its own temporary file, so windows showing the same article in
-different reading modes cannot overwrite one another's content.
-A `data:` URL would avoid the temp file, but Android's WebView refuses top-level `data:`
-navigations (API 30+) and every platform caps their length. Android needed one more thing:
-API 30 also turned `WebSettings.setAllowFileAccess` off, refusing even the app's own file, so
-day-piece-webview re-enables it for a web view the app itself pointed at a `file://` URL —
-the switches that would let a page read OTHER files stay off. The web build has no filesystem
-to write to at all, which is why its reader is blank until the piece grows a way to hand the
-view HTML directly. The document is self-contained — no
-external CSS or fonts — so it renders identically offline and leaks no reading activity to third
-parties. Feed HTML is sanitized at the parse boundary rather than trusting the renderer.
+The article pane uses a native WebView with a per-window application resource provider.
+The app renders its document on the UI thread and publishes an owned HTML snapshot; native
+resource callbacks read that snapshot without accessing reactive UI state. Every window has
+its own resource namespace. The browser resource channel serves the same document on web-dom
+without `file://` navigation, and resource-mode link handling dispatches reader actions across
+platforms. The document uses no external CSS or fonts. Feed HTML is sanitized at the parse
+boundary rather than trusting the renderer.
 
-### Reader View
+### Load Full Content
 
 `ArticleExtractor` (`src/extraction.rs`) returns an owned `ExtractedArticle` from an article URL.
 It is independent of selection, commands, database storage, and presentation; an authorized
@@ -149,8 +144,26 @@ it never writes over stored RSS content. Repeating it while loading cancels, whi
 after completion switches between the two versions without refetching. Changing article ID or
 URL cancels the task and clears the overlay. Window disposal cancels pending work. Errors leave
 the RSS version visible, with localized retry guidance. Reader styles and external-link handling
-are shared by both modes. Command-Shift-R belongs to Reader View; Refresh Feed no longer claims
+are shared by both modes. Command-Shift-R belongs to Load Full Content; Refresh Feed no longer claims
 that shortcut. A toolbar command exposes the same action on mobile.
+
+Reader documents are served by a per-window `ResourceProvider`, not temporary files. The
+provider only reads a thread-safe snapshot of HTML localized on the UI thread. Resource-mode
+link handling dispatches inline actions on all WebView hosts using the same contract as the
+piece demo; the reader does not depend on ordinary-document link interception support.
+
+Inline Reader Mode defaults to on. The RSS preview document contains a localized “Load Full Article” bar and a full-content slot. Activation goes through the WebView link policy and
+validates the selected article before starting extraction. Sanitized full content is appended
+in the same live document; the feed preview and document state remain intact. Turning inline
+mode off retains the replacement reader presentation. Auto-load Reader Mode defaults to off;
+when enabled, extraction starts when its load bar enters the viewport, once per
+article. Returning manually to the RSS preview does not immediately restart automatic loading.
+
+Preferences contain app-wide defaults. Each feed dashboard exposes independent inline and
+auto-load overrides, persisted by stable feed ID in Day preferences. Feeds without overrides
+inherit the defaults, and changes propagate across windows. Selection changes/disposal retain
+the cancellation and stale-response checks above. Dashboard chart space contracts to make
+room for the feed controls inside the fixed viewport.
 
 NetNewsWire uses signed Feedbin extraction requests with a client ID and secret; no unauthenticated
 or User-Agent-whitelist integration is provided. Feedbin access requires credentials authorized
@@ -451,3 +464,28 @@ Settings/Preferences menu command, and omit Settings from the sidebar. Toolkits 
 app menu retain the Settings destination in navigation. Walkthroughs open and close the
 registered `day.preferences` window on desktop and capture that window while testing its
 controls; browser and mobile walkthroughs navigate to the inline destination.
+
+The full-content control is a full-width themed section bar with a double-chevron symbol,
+a spinner visible only while downloading, and a localized label. Automatic extraction is
+gated by a WebView IntersectionObserver: no publication request starts until the bar
+enters the viewport. The native handler rechecks article identity and preferences and
+permits one automatic attempt per selection. Inline insertion retains the scroll offset
+and excludes the inserted slot from scroll anchoring.
+
+The inline bar remains above the extracted article and becomes “Hide Full Article”
+with upward chevrons when expanded. Hiding preserves the sanitized DOM for reopening
+without another request. Explicit bar activation persists a per-feed automatic-loading
+override: load enables it, hide disables it. Auto preference changes do not reload the
+preview document, and the bar exposes aria-expanded and aria-controls.
+
+
+Site previews use an interactive WebView cover with Back, Forward and an editable address.
+The per-origin WebProfile is shared with the inert reader host. Native HTTP extraction reads
+HttpOnly cookies from that profile for each redirect destination and writes Set-Cookie
+responses back to it; cookies are never blindly forwarded across origins. Forget Site creates
+a temporary administration view and awaits complete profile clearing before enabling preview.
+The Incognito Mode preference rebuilds reader hosts with an ephemeral profile, cancels pending
+extraction, closes site previews and disables per-feed reader/login/forget controls. Engines
+without real private stores render the safe text preview instead of loading persistent views.
+Reselecting the active sidebar feed clears the article and shows its dashboard. Empty native
+article selection has the same behavior.

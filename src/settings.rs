@@ -308,6 +308,8 @@ pub fn settings_page() -> impl Piece {
             ),
             list_preferences(),
             reader_preferences(),
+            crate::reader_options::controls(None),
+            crate::site_browser::privacy_control(),
             day_piece_settings::language_picker(LOCALE_KEY, crate::res::locales::ALL),
             browser_picker(),
             labeled(

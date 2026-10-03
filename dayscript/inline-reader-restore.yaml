@@ -1,0 +1,20 @@
+name: inline-reader-restore
+flow:
+  - navigate: { route: "feed:5547250833155562097" }
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 3 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Full publication content.' }
+  - toolbar: { item: reader-view, on: false }
+  - pause: { secs: 2 }
+  # A deliberate manual return to the preview must not immediately auto-load again.
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'true' }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-auto-reader }
+  - toggle: { id: feed-auto-reader, value: false }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'Boolean(document.getElementById("reader-load-full"))', text: 'true' }
+  - screenshot: inline-reader-restored

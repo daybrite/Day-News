@@ -111,13 +111,13 @@ settings_preview_lines_count = { $count ->
 
 settings_list_size = Text size
 settings_list_percent = { $value }%
-menu_reader_view = Reader View
+menu_reader_view = Load Full Content
 reader_view_loading = Loading full article…
-reader_view_network_error = Couldn’t load the full article. Try Reader View again or open the original website.
-reader_view_too_large = This page is too large for Reader View. Open the original website to read it.
+reader_view_network_error = Couldn’t load the full article. Try Load Full Content again or open the original website.
+reader_view_too_large = This page is too large for Load Full Content. Open the original website to read it.
 reader_view_no_content = No readable article was found. Open the original website to read it.
-reader_view_timeout = Loading the full article took too long. Try Reader View again.
-reader_view_unavailable = Reader View is unavailable. Open the original website to read the full article.
+reader_view_timeout = Loading the full article took too long. Try Load Full Content again.
+reader_view_unavailable = Load Full Content is unavailable. Open the original website to read the full article.
 show_unread_feeds_only = Show Only Unread Feeds
 
 menu_find_articles = Find Articles…
@@ -250,3 +250,21 @@ opml_filter = Subscription lists
 opml_import_failed = Import failed: { $error }
 opml_read_failed = Could not read the file: { $error }
 opml_exported = Exported subscriptions
+
+reader_inline_mode = Inline Reader Mode
+reader_auto_mode = Auto-load Reader Mode
+reader_load_full = Load Full Article
+reader_hide_full = Hide Full Article
+
+
+site_preview = Preview Site or Login
+site_forget = Forget all site information
+incognito_mode = Incognito Mode
+site_browser_back = Back
+site_browser_forward = Forward
+site_browser_close = Close
+site_browser_address = Website address
+site_data_cleared = Site information forgotten.
+site_data_failed = Could not clear site information. Please try again.
+site_private_unsupported = Private browsing is unavailable on this platform. Site browsing is disabled in Incognito Mode.
+site_browser_go = Go

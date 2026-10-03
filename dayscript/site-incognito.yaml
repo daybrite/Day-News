@@ -1,0 +1,24 @@
+# Follow site-session.yaml. Its fixture profile is empty and this script logs in again.
+name: site-incognito
+description: A saved persistent login is unavailable in private mode and restored afterward.
+flow:
+  - tap: { id: dashboard-site-preview }
+  - pause: { secs: 0.5 }
+  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-login").click(); "login"', text: 'login' }
+  - pause: { secs: 1 }
+  - tap: { id: site-browser-close }
+  - menu: { key: day-preferences }
+  - toggle: { id: incognito-mode-picker, value: true }
+  - screenshot: { name: incognito-settings, window: day.preferences }
+  - close_window: { window: day.preferences }
+  - screenshot: incognito-feed-dashboard
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 2 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
+  - menu: { key: day-preferences }
+  - toggle: { id: incognito-mode-picker, value: false }
+  - close_window: { window: day.preferences }
+  - select: { id: timeline, index: -1 }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 2 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }

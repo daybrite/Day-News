@@ -1,0 +1,19 @@
+# Run after logging in using tests/site-session-server.py, with the same application profile.
+name: site-session-restore
+description: Login cookies and browser storage persist across application restart.
+flow:
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - respond: { text: 'http://127.0.0.1:28764/feed.json' }
+  - pause: { secs: 2 }
+  - wait_for: { id: dashboard-site-preview }
+  - tap: { id: dashboard-site-preview }
+  - pause: { secs: 1 }
+  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in' }
+  - web_eval: { id: site-browser-web, script: 'localStorage.getItem("fixture-login")', text: 'saved' }
+  - tap: { id: site-browser-close }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 2 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }
+  - screenshot: site-login-restored
+  - dialog_mode: { mode: native }

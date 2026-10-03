@@ -130,7 +130,7 @@ day patch --local /path/to/day
 
 ## Inside the code
 
-**Reader View** (Article menu, **⌘⇧R** on macOS / **Ctrl+Shift+R** elsewhere) loads the
+**Load Full Content** (Article menu, **⌘⇧R** on macOS / **Ctrl+Shift+R** elsewhere) loads the
 publisher's full article into the current reader. The article toolbar exposes the same command
 on phones. Invoke it again to return to the RSS version, or while loading to cancel. Your
 reader typography and colors apply to both versions.
@@ -211,3 +211,17 @@ Network regressions: run `python3 tests/feed-refresh-server.py`, then launch aga
 `DAY_NEWS_DATA_DIR` with `--script dayscript/feed-refresh.yaml`. Relaunch the same library on
 macOS with `--script dayscript/feed-refresh-relaunch.yaml`; `/stats` on port 28762 should show
 additional 304s, no new icon downloads, and at most four active feed requests.
+
+
+Feed dashboards include **Preview Site or Login** and **Forget all site information**. The
+interactive preview shares its site's browser profile with full-article loading, including
+HttpOnly login cookies. Incognito Mode in Preferences uses private browser storage and disables
+per-feed login, forgetting and reader-option controls. On engines without private browsing,
+private requests are blocked and the stored article preview remains available. Platform
+capabilities and storage-location limitations are documented in
+[day-piece-webview](../day-piece-webview/docs/profiles.md).
+
+The local `tests/site-session-server.py` fixture and `dayscript/site-session.yaml` exercise
+shared login, authenticated reader loading, dashboard reselection, and complete cookie,
+localStorage and IndexedDB deletion. `site-incognito.yaml` can then be driven in the running
+app; `site-session-restore.yaml` verifies that its persistent login survives relaunch.

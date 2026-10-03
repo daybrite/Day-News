@@ -1,0 +1,30 @@
+# Start tests/reader-view-server.py 28762 with an isolated data directory.
+name: day-news-reader-visible-load
+description: Auto-load waits for visibility, shows progress, and preserves reading position.
+flow:
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28762/long-feed.json' }
+  - pause: { secs: 2 }
+  - toolbar: { item: feed-overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: feed-inline-reader }
+  - toggle: { id: feed-inline-reader, value: true }
+  - toggle: { id: feed-auto-reader, value: true }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 5 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getBoundingClientRect().top > innerHeight', text: 'true' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'false' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").scrollIntoView({block:"center"}); "scrolled"', text: 'scrolled' }
+  - pause: { secs: 0.5 }
+  - web_eval: { id: reader-web, script: 'window.originalScrollY = scrollY; document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'true' }
+  - web_eval: { id: reader-web, script: 'Boolean(document.querySelector("#reader-load-full kbd"))', text: 'false' }
+  - screenshot: reader-bar-downloading
+  - pause: { secs: 5 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Full publication content.' }
+  - web_eval: { id: reader-web, script: 'Math.abs(scrollY - window.originalScrollY) < 2', text: 'true' }
+  - screenshot: reader-bar-appended
+  - dialog_mode: { mode: native }
