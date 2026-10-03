@@ -222,9 +222,11 @@ fn activity_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
                         }))
                     };
                 })
-                .select(selection)
-                .snap(day_piece_charts::Snap::NearestX)
-                .guides(day_piece_charts::Guides::RULE)
+                .interact(
+                    day_piece_charts::Inspect::new(selection)
+                        .snap(day_piece_charts::Snap::NearestX)
+                        .guides(day_piece_charts::Guides::RULE),
+                )
                 .id("dashboard-activity-chart")
                 .grow(),
         ))
@@ -283,13 +285,15 @@ fn lengths_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
                     vec![0.0, max.div_ceil(2) as f64, max as f64]
                 });
             })
-            .select(selection)
-            .snap(day_piece_charts::Snap::NearestY)
-            .guides(day_piece_charts::Guides {
-                horizontal: true,
-                label: true,
-                ..day_piece_charts::Guides::NONE
-            })
+            .interact(
+                day_piece_charts::Inspect::new(selection)
+                    .snap(day_piece_charts::Snap::NearestY)
+                    .guides(day_piece_charts::Guides {
+                        horizontal: true,
+                        label: true,
+                        ..day_piece_charts::Guides::NONE
+                    }),
+            )
             .id("dashboard-length-chart")
             .grow(),
             label(move || {
@@ -380,9 +384,11 @@ fn habits_card(data: Data) -> AnyPiece {
             .animate_appearance()
             .legend(LegendPosition::Hidden)
             .label_size(9.0)
-            .select(selection)
-            .snap(day_piece_charts::Snap::NearestMark)
-            .guides(day_piece_charts::Guides::CROSSHAIR)
+            .interact(
+                day_piece_charts::Inspect::new(selection)
+                    .snap(day_piece_charts::Snap::NearestMark)
+                    .guides(day_piece_charts::Guides::CROSSHAIR),
+            )
             .id("dashboard-habits-chart")
             .grow(),
             label(move || {
@@ -420,7 +426,23 @@ fn habits_card(data: Data) -> AnyPiece {
     .any()
 }
 fn sources_card(data: Data) -> AnyPiece {
-    let highlighted = Signal::new(None);
+    let highlighted =
+        day_piece_charts::PointSelection::new().project(day_piece_charts::Projection::Series);
+    let links = day_piece_charts::Links::new().on_open(|target| {
+        if let Some(id) = target
+            .strip_prefix("feed:")
+            .and_then(|id| id.parse::<u64>().ok())
+        {
+            if crate::feed_list::FeedList::app()
+                .unread_only
+                .get_untracked()
+            {
+                crate::feed_list::toggle();
+            }
+            daynews_core::select_scope(Scope::Feed(id));
+            navigate(target);
+        }
+    });
     card(
         column((
             label(res::str::dashboard_sources())
@@ -435,9 +457,14 @@ fn sources_card(data: Data) -> AnyPiece {
                 sources(data)
                     .into_iter()
                     .map(|(id, _, n)| {
-                        sector(value("", n))
+                        let mark = sector(value("", n))
                             .by_series(value("", id.to_string()))
-                            .angular_inset(2.0)
+                            .angular_inset(2.0);
+                        if id == 0 {
+                            mark
+                        } else {
+                            mark.link(format!("feed:{id}"))
+                        }
                     })
                     .collect()
             })
@@ -445,7 +472,13 @@ fn sources_card(data: Data) -> AnyPiece {
             .animated()
             .animate_appearance()
             .legend(LegendPosition::Hidden)
-            .highlight_series(highlighted)
+            .condition(
+                highlighted.predicate(),
+                day_piece_charts::Visual::default(),
+                day_piece_charts::Visual::opacity(0.22),
+            )
+            .interact(highlighted.on(day_piece_charts::EventSource::Hover))
+            .interact(links.clone())
             .id("dashboard-publisher-chart")
             .grow(),
             day_piece_charts::legend(move || {
@@ -467,23 +500,9 @@ fn sources_card(data: Data) -> AnyPiece {
                     })
                     .collect()
             })
-            .highlight(highlighted)
+            .interact(highlighted.on(day_piece_charts::EventSource::Hover))
             .id_prefix("dashboard-publisher")
-            .on_link(|target| {
-                if let Some(id) = target
-                    .strip_prefix("feed:")
-                    .and_then(|id| id.parse::<u64>().ok())
-                {
-                    if crate::feed_list::FeedList::app()
-                        .unread_only
-                        .get_untracked()
-                    {
-                        crate::feed_list::toggle();
-                    }
-                    daynews_core::select_scope(Scope::Feed(id));
-                    navigate(target);
-                }
-            }),
+            .links(links),
         ))
         .spacing(3.0)
         .align(HAlign::Leading)

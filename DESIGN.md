@@ -375,9 +375,10 @@ Today shows local-hour arrivals; Unread emphasizes backlog age; Starred maps the
 collection over publication time. Smart-feed dashboards add a publisher donut and counts.
 Publisher legend links select their feed in the sidebar and navigate to its overview; hovering
 a link highlights its row and matching donut segment. Stable feed IDs keep identically named
-publishers separate. The shared day-piece-charts legend handles registered links, pointer
-cursors and hover emphasis. Publication plots offer date/count guides, length bars offer
-category/count guides, and heatmap cells annotate weekday, time and article count on hover
+publishers separate. The shared day-piece-charts interaction grammar binds the legend and donut to one
+series-projected point parameter. Conditional opacity provides hover emphasis; registered
+link handlers select a publisher from either surface, with pointer cursors on its hit target. Publication plots offer date/count guides, length bars offer
+category/count guides through composable Inspect bindings, and heatmap cells annotate weekday, time and article count on hover
 or touch. These readouts use the plotted metadata without further database queries.
 All plots describe the full selected scope, independently of the 500-row timeline window
 and search. Empty scopes display honest zeroes rather than synthetic chart data. The Feed
