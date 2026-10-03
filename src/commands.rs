@@ -29,6 +29,7 @@ pub(crate) fn mark_all_read() -> CommandHandle {
     }
     .build()
     .icon(Symbol::Check)
+    .shortcut(Shortcut::new("k"))
     .enabled(|| daynews_core::try_scene().is_some_and(|sc| sc.scope_unread.get() > 0))
 }
 
@@ -171,6 +172,34 @@ pub(crate) fn copy_link(url: &str) {
     });
 }
 
+pub(crate) fn dashboard() -> CommandHandle {
+    Command {
+        id: "feed-overview",
+        label: res::str::dashboard_show(),
+        action: || {
+            let scene = daynews_core::scene();
+            batch(|| {
+                scene.selected.set(None);
+                scene.article.set(None);
+                scene.reader_open.set(true);
+            });
+        },
+    }
+    .build()
+    .icon(Symbol::Info)
+}
+
+pub(crate) fn group_by_feeds() -> CommandHandle {
+    Command {
+        id: "group-by-feeds",
+        label: res::str::group_by_feeds(),
+        action: crate::feed_list::toggle_grouping,
+    }
+    .build()
+    .icon(Symbol::Filter)
+    .checked(|| daynews_core::state().group_by_feed.get())
+}
+
 pub(crate) fn unread_feeds_only() -> CommandHandle {
     Command {
         id: "unread-feeds-only",
@@ -178,7 +207,7 @@ pub(crate) fn unread_feeds_only() -> CommandHandle {
         action: crate::feed_list::toggle,
     }
     .build()
-    .icon(Symbol::Filter)
+    .image(res::vectors::unread_feeds_only)
     .checked(|| crate::feed_list::FeedList::app().unread_only.get())
 }
 

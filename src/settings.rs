@@ -290,6 +290,10 @@ pub fn settings_page() -> impl Piece {
                 .segmented()
                 .id("theme-picker"),
             ),
+            labeled(
+                crate::res::str::group_by_feeds(),
+                toggle(Grouping).id("group-by-feeds-picker"),
+            ),
             list_preferences(),
             reader_preferences(),
             day_piece_settings::language_picker(LOCALE_KEY, crate::res::locales::ALL),
@@ -298,6 +302,7 @@ pub fn settings_page() -> impl Piece {
                 crate::res::str::settings_refresh_feeds(),
                 picker(
                     [
+                        crate::res::str::settings_refresh_automatic().format(),
                         crate::res::str::settings_refresh_manual().format(),
                         crate::res::str::settings_refresh_30().format(),
                         crate::res::str::settings_refresh_60().format(),
@@ -309,6 +314,9 @@ pub fn settings_page() -> impl Piece {
                 )
                 .id("refresh-interval-picker"),
             ),
+            label(crate::res::str::settings_refresh_automatic_note())
+                .font(Font::Footnote)
+                .max_lines(3),
             labeled(
                 crate::res::str::settings_retention_label(),
                 picker(CHOICES.iter().map(|d| choice_label(*d)), selected).id("retention-picker"),
@@ -398,4 +406,20 @@ fn reader_preferences() -> impl Piece {
     .spacing(12.0)
     .align(HAlign::Leading)
     .grow_w()
+}
+
+#[derive(Clone, Copy)]
+struct Grouping;
+impl Binding<bool> for Grouping {
+    fn read(&self) -> bool {
+        daynews_core::state().group_by_feed.get()
+    }
+    fn peek(&self) -> bool {
+        daynews_core::state().group_by_feed.get_untracked()
+    }
+    fn write(&self, value: bool) {
+        if value != self.peek() {
+            crate::feed_list::toggle_grouping();
+        }
+    }
 }

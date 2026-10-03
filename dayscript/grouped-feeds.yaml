@@ -1,0 +1,35 @@
+# Run after seed-demo.yaml in an isolated store.
+name: day-news-grouped-feeds
+description: Group headings, floating title and persistent feed priority.
+flow:
+  - navigate: { route: settings }
+  - wait_for: { id: group-by-feeds-picker }
+  - toggle: { id: group-by-feeds-picker, value: true }
+  - select: { id: refresh-interval-picker, index: 0 }
+  - navigate: { route: all }
+  - wait_for: { id: floating-feed-name }
+  - screenshot: grouped-feeds
+  - navigate: { route: subscriptions }
+  - wait_for: { id: feed-order-list }
+  - tap: { id: feed-up-9105033381806695217 }
+  - pause: { secs: 1 }
+  - tap: { id: feed-up-9105033381806695217 }
+  - pause: { secs: 1 }
+  - reorder: { id: feed-order-list, from: 0, to: 1 }
+  - pause: { secs: 1 }
+  - reorder: { id: feed-order-list, from: 1, to: 0 }
+  - pause: { secs: 1 }
+  - navigate: { route: all }
+  - wait_for: { id: floating-feed-name }
+  - assert_text: { id: floating-feed-name, text: Kitchen Science }
+  - screenshot: reordered-feed-groups
+  - select: { id: timeline, index: 30 }
+  - pause: { secs: 1 }
+  - screenshot: floating-feed-header
+  - navigate: { route: settings }
+  - toggle: { id: group-by-feeds-picker, value: false }
+  - navigate: { route: subscriptions }
+  - tap: { id: feed-down-9105033381806695217 }
+  - pause: { secs: 1 }
+  - tap: { id: feed-down-9105033381806695217 }
+  - pause: { secs: 1 }

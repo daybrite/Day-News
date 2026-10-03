@@ -82,6 +82,7 @@ pub fn install() {
                 res::str::menu_feed().format(),
                 vec![
                     crate::commands::unread_feeds_only().menu_item(),
+                    crate::commands::group_by_feeds().menu_item(),
                     menu_separator(),
                     menu_item(res::str::menu_refresh_feed().format())
                         .action(|| with_selected_feed(daynews_core::refresh_feed)),
@@ -110,9 +111,7 @@ pub fn install() {
                             daynews_core::toggle_read(id);
                         }
                     }),
-                    menu_item(res::str::mark_all_read().format())
-                        .key("k")
-                        .action(|| daynews_core::mark_scope_read(true)),
+                    crate::commands::mark_all_read().menu_item(),
                     menu_separator(),
                     menu_item(res::str::menu_star().format())
                         .shortcut(Shortcut::new("l").shift())
@@ -199,6 +198,12 @@ pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
             .enabled(unread > 0)
             .action(move || daynews_core::mark_feed_read(feed, true)),
         menu_separator(),
+        menu_item(res::str::move_feed_up().format())
+            .id("feed-move-up")
+            .action(move || crate::feed_list::move_relative(feed, -1)),
+        menu_item(res::str::move_feed_down().format())
+            .id("feed-move-down")
+            .action(move || crate::feed_list::move_relative(feed, 1)),
         menu_item(res::str::unsubscribe().format()).action(move || daynews_core::unsubscribe(feed)),
     ]
 }

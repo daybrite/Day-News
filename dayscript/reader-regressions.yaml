@@ -54,6 +54,6 @@ flow:
   - toolbar: { item: star, on: false }
   - navigate: { route: all }
   - navigate: { route: unread }
-  - toolbar: { item: mark-all-read }
+  - menu: { id: mark-all-read }
   - pause: { secs: 1 }
   - assert_visible: { id: timeline-empty }

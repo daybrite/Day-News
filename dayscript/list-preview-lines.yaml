@@ -40,6 +40,6 @@ flow:
   - screenshot: { name: list-default-preview, only_on: [macos-appkit] }
   - swipe_row: { id: timeline, row: 0, edge: leading, key: mark_unread }
   - navigate: { route: unread }
-  - toolbar: { item: mark-all-read }
+  - menu: { id: mark-all-read }
   - assert_visible: { id: timeline-empty-row }
   - screenshot: { name: list-caught-up-row, only_on: [macos-appkit] }

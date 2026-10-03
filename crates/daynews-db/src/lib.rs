@@ -4,13 +4,17 @@
 //! articles (cascade), an article's body is its own row (so the timeline's window-faulting
 //! never loads bodies), tags cross articles through a join table, and search runs through
 //! generated FTS5 shadows over titles/authors/summaries and over bodies; one fetch reads
-//! both via a relation-crossing match. Nothing loads at open; the UI binds live queries and
+//! both via a relation-crossing match. Older stores backfill missing word counts once; otherwise
+//! open does not materialize articles. The UI binds live queries and
 //! the engine answers them.
 //!
 //! Identity is deterministic: a feed's id is a hash of its URL, an article's a hash of
 //! (feed URL, guid), a folder's/tag's a hash of its name. Subscribing twice, re-importing an
 //! OPML, or refetching a feed therefore cannot create duplicates (the id already exists),
 //! and read state survives every refresh because an existing article is never touched.
+
+pub mod dashboard;
+mod polling;
 
 use day_macros::Model;
 use day_model::{ModelId, Op};
@@ -44,6 +48,16 @@ pub struct Folder {
     pub feeds: Many<Feed>,
 }
 
+/// Durable metadata for revalidating one successfully imported representation.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FeedCache {
+    pub needs_publication_sample: bool,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+    pub body_hash: Option<String>,
+    pub retry_after: Option<i64>,
+}
+
 #[derive(Model, Clone, Default, PartialEq, Debug)]
 #[model(table = "feeds")]
 pub struct Feed {
@@ -63,6 +77,15 @@ pub struct Feed {
     /// HTTP validators belong to the last successfully stored representation.
     pub etag: Option<String>,
     pub last_modified: Option<String>,
+    /// SHA-256 of the last successfully imported raw feed body.
+    pub body_hash: Option<String>,
+    /// Origin-supplied Retry-After deadline, surviving app restarts.
+    pub retry_after: Option<i64>,
+    /// Only explicit publication dates, independent of article retention and read state.
+    pub publication_history: Option<String>,
+    #[model(index)]
+    pub next_poll_at: Option<i64>,
+    pub poll_failures: u32,
     /// Order within the folder (or among top-level feeds).
     pub position: f64,
     #[model(relation(target = Article, inverse = "feed", delete = "cascade"))]
@@ -83,6 +106,9 @@ pub struct Feed {
     )
 )]
 pub struct Article {
+    /// Estimated words in stored article text, computed once rather than reading bodies for charts.
+    #[model(index)]
+    pub word_count: Option<u32>,
     #[model(id)]
     pub id: u64,
     pub guid: String,
@@ -314,7 +340,32 @@ impl Db {
             traced(driver),
             schema![Folder, Feed, Article, ArticleBody, Tag],
         )?;
-        Ok(Db { container })
+        let db = Db { container };
+        db.backfill_word_counts()?;
+        Ok(db)
+    }
+
+    /// Migration: only missing metrics read bodies, in bounded batches on the database worker.
+    fn backfill_word_counts(&self) -> Result<(), DbError> {
+        loop {
+            let mut missing = Vec::new();
+            self.container.try_with_connection(|conn| conn.query(
+                "SELECT a.id, COALESCE(b.content_html, a.summary, '') FROM articles a LEFT JOIN article_bodies b ON b.id = a.id WHERE a.word_count IS NULL LIMIT 128", &[], &mut |row| {
+                    if let (Ok(id), Ok(text)) = (row.get(0).as_int(), row.get(1).as_text()) {
+                        missing.push((id as u64, dashboard::word_count(text)));
+                    }
+                }))?;
+            if missing.is_empty() {
+                break;
+            }
+            for (id, words) in missing {
+                if let Some(article) = self.container.try_get::<Article>(id)? {
+                    article.word_count().write(Some(words));
+                }
+            }
+            self.container.save()?;
+        }
+        Ok(())
     }
 
     // ---- feeds & folders ------------------------------------------------------------------
@@ -406,31 +457,81 @@ impl Db {
         };
         // Only overwrite the title when the feed supplied one, so a subscription
         // named by hand (or by its URL) is not blanked by a feed with an empty <title>.
-        if let Some(t) = title.filter(|t| !t.trim().is_empty()) {
+        if let Some(t) = title.filter(|t| !t.trim().is_empty())
+            && feed.title().peek() != t
+        {
             feed.title().write(t.to_string());
         }
-        feed.site_url().write(site_url.map(str::to_string));
-        feed.description().write(description.map(str::to_string));
-        feed.icon_url().write(icon_url.map(str::to_string));
-        feed.last_fetched_at().write(Some(now()));
-        feed.last_error().write(None);
+        let site_url = site_url.map(str::to_string);
+        if feed.site_url().peek() != site_url {
+            feed.site_url().write(site_url);
+        }
+        let description = description.map(str::to_string);
+        if feed.description().peek() != description {
+            feed.description().write(description);
+        }
+        let icon_url = icon_url.map(str::to_string);
+        if feed.icon_url().peek() != icon_url {
+            feed.icon_url().write(icon_url);
+        }
+        let checked = Some(now());
+        if feed.last_fetched_at().peek() != checked {
+            feed.last_fetched_at().write(checked);
+        }
+        if feed.last_error().peek().is_some() {
+            feed.last_error().write(None);
+        }
     }
 
     /// Record a failed refresh so the sidebar can show the feed as broken.
     pub fn set_feed_error(&self, id: u64, message: &str) {
         if let Some(feed) = self.container.get::<Feed>(id) {
-            feed.last_error().write(Some(message.to_string()));
-            feed.last_fetched_at().write(Some(now()));
+            let failures = feed.poll_failures().peek().saturating_add(1);
+            feed.poll_failures().write(failures);
+            let delay = (1800_i64 * (1_i64 << failures.min(6))).min(86400);
+            feed.next_poll_at().write(Some(
+                now()
+                    .saturating_add(delay)
+                    .max(feed.retry_after().peek().unwrap_or(0)),
+            ));
+            let error = Some(message.to_string());
+            if feed.last_error().peek() != error {
+                feed.last_error().write(error);
+            }
+            let checked = Some(now());
+            if feed.last_fetched_at().peek() != checked {
+                feed.last_fetched_at().write(checked);
+            }
         }
     }
 
     /// Finish a successful conditional check without rewriting article bodies or read state.
     pub fn feed_checked(&self, id: u64, etag: Option<String>, last_modified: Option<String>) {
+        self.set_feed_retry_after(id, None);
         if let Some(feed) = self.container.get::<Feed>(id) {
-            feed.etag().write(etag);
-            feed.last_modified().write(last_modified);
-            feed.last_fetched_at().write(Some(now()));
-            feed.last_error().write(None);
+            if feed.poll_failures().peek() != 0 {
+                feed.poll_failures().write(0);
+            }
+            let next = now().saturating_add(polling::interval(
+                feed.publication_history().peek().as_deref(),
+                now(),
+            ));
+            if feed.next_poll_at().peek() != Some(next) {
+                feed.next_poll_at().write(Some(next));
+            }
+            if feed.etag().peek() != etag {
+                feed.etag().write(etag);
+            }
+            if feed.last_modified().peek() != last_modified {
+                feed.last_modified().write(last_modified);
+            }
+            let checked = Some(now());
+            if feed.last_fetched_at().peek() != checked {
+                feed.last_fetched_at().write(checked);
+            }
+            if feed.last_error().peek().is_some() {
+                feed.last_error().write(None);
+            }
         }
     }
 
@@ -438,6 +539,84 @@ impl Db {
         self.container
             .get::<Feed>(id)
             .map(|feed| (feed.etag().peek(), feed.last_modified().peek()))
+    }
+
+    /// HTTP cache metadata is read together before a request.
+    pub fn feed_cache(&self, id: u64) -> Option<FeedCache> {
+        self.container.get::<Feed>(id).map(|feed| FeedCache {
+            needs_publication_sample: feed.publication_history().peek().is_none(),
+            etag: feed.etag().peek(),
+            last_modified: feed.last_modified().peek(),
+            body_hash: feed.body_hash().peek(),
+            retry_after: feed.retry_after().peek(),
+        })
+    }
+
+    pub fn set_feed_retry_after(&self, id: u64, until: Option<i64>) {
+        if let Some(feed) = self.container.get::<Feed>(id)
+            && feed.retry_after().peek() != until
+        {
+            feed.retry_after().write(until);
+        }
+    }
+
+    pub fn set_feed_body_hash(&self, id: u64, hash: Option<String>) {
+        if let Some(feed) = self.container.get::<Feed>(id)
+            && feed.body_hash().peek() != hash
+        {
+            feed.body_hash().write(hash);
+        }
+    }
+
+    pub fn record_publications(&self, id: u64, dates: impl IntoIterator<Item = i64>) {
+        if let Some(feed) = self.container.get::<Feed>(id) {
+            let previous = feed.publication_history().peek();
+            let history = polling::publication_history(previous.as_deref(), dates, now());
+            if previous.as_deref() != Some(&history) {
+                feed.publication_history().write(Some(history));
+            }
+        }
+    }
+
+    /// Only due subscriptions; publication sampling happens on import, never on every tick.
+    pub fn due_feeds(&self, at: i64) -> Result<Vec<(u64, String)>, day_persistence::DbError> {
+        Ok(self
+            .container
+            .query::<Feed>()
+            .filter(Feed::next_poll_at().is_null() | Feed::next_poll_at().le(Some(at)))
+            .sort(Feed::position().asc())
+            .sort(Feed::title().asc())
+            .live()
+            .try_collect()?
+            .into_iter()
+            .filter(|feed| feed.retry_after.is_none_or(|until| until <= at))
+            .map(|feed| (feed.id, feed.feed_url))
+            .collect())
+    }
+
+    /// Move one subscription in the shared global priority order. Keep folders intact.
+    pub fn move_feed(&self, id: u64, to: usize) -> Result<(), day_persistence::DbError> {
+        let mut feeds = self
+            .container
+            .query::<Feed>()
+            .sort(Feed::position().asc())
+            .sort(Feed::title().asc())
+            .live()
+            .try_collect()?;
+        let Some(from) = feeds.iter().position(|feed| feed.id == id) else {
+            return Ok(());
+        };
+        let feed = feeds.remove(from);
+        let to = to.min(feeds.len());
+        feeds.insert(to, feed);
+        for (index, feed) in feeds.into_iter().enumerate() {
+            if feed.position != index as f64
+                && let Some(row) = self.container.get::<Feed>(feed.id)
+            {
+                row.position().write(index as f64);
+            }
+        }
+        Ok(())
     }
 
     pub fn rename_feed(&self, id: u64, title: &str) {
@@ -475,12 +654,15 @@ impl Db {
         feed_url: &str,
         items: &[IncomingArticle],
     ) -> Result<usize, day_persistence::DbError> {
+        if items.is_empty() {
+            return Ok(0);
+        }
         let seen = now();
         let ids: Vec<u64> = items
             .iter()
             .map(|i| article_id(feed_url, &i.guid))
             .collect();
-        let existing: std::collections::HashSet<u64> = self
+        let mut existing: std::collections::HashSet<u64> = self
             .container
             .query::<Article>()
             .filter(Pred::IdIn(ids.clone()))
@@ -491,7 +673,7 @@ impl Db {
             .collect();
         let mut added = 0usize;
         for (item, id) in items.iter().zip(&ids) {
-            if existing.contains(id) {
+            if !existing.insert(*id) {
                 continue;
             }
             self.container.insert(Article {
@@ -506,6 +688,12 @@ impl Db {
                 published_at: item.published.unwrap_or(seen),
                 summary: item.summary.clone(),
                 first_seen_at: seen,
+                word_count: Some(dashboard::word_count(
+                    item.content_html
+                        .as_deref()
+                        .or(item.summary.as_deref())
+                        .unwrap_or(""),
+                )),
                 ..Default::default()
             });
             if let Some(html) = item.content_html.clone().filter(|h| !h.is_empty()) {

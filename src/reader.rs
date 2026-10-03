@@ -348,18 +348,7 @@ pub fn reader_pane() -> impl Piece {
         ),
         when(
             move || st.article.get().is_none(),
-            || {
-                column((
-                    spacer(),
-                    label(crate::res::str::reader_empty())
-                        .font(Font::Title3)
-                        .color(move || palette().text_muted)
-                        .id("reader-empty"),
-                    spacer(),
-                ))
-                .align(HAlign::Center)
-                .grow()
-            },
+            crate::dashboard::dashboard,
         ),
         when(
             move || st.article.get().is_some(),

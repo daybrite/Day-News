@@ -39,6 +39,43 @@ flow:
   - pause: { secs: 1 }
   - wait_for: { id: article-row-0, timeout_secs: 10 }
 
+  # Scope dashboards replace the empty reader. The overview command also opens the
+  # content page on compact platforms, whose article list is a separate navigation layer.
+  - navigate: { route: "feed:9105033381806695217" }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-habits-chart }
+  - assert_text: { id: dashboard-title, text: Kitchen Science }
+  - assert_visible: { id: dashboard-feed-link }
+  - assert_visible: { id: dashboard-refresh-now }
+  - tap: { id: dashboard-refresh-now }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-feed
+  - navigate: { route: unread }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-publisher-chart }
+  - assert_text: { id: dashboard-title, key: nav_all_unread }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-unread
+  - assert_missing: { id: dashboard-refresh-now }
+  - tap: { id: dashboard-publisher-9105033381806695217 }
+  - wait_for: { id: dashboard-habits-chart }
+  - assert_text: { id: dashboard-title, text: Kitchen Science }
+  - assert_visible: { id: dashboard-refresh-now }
+  - navigate: { route: unread }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-publisher-chart }
+  - pause: { secs: 1 } # Settle the incoming chart before selecting a value.
+  - tap: { id: dashboard-activity-chart, at: [200, 50] }
+  - screenshot: dashboard-unread-annotation
+  - navigate: { route: today }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-title }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-today
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+
   # Opening an article: the native list reports the selection, and selection opens; the
   # reader renders it in the web view (and marks it read). `select:` feeds the same event
   # the platform table emits for a click or an arrow step.
@@ -69,6 +106,9 @@ flow:
   - screenshot: keyboard-next
   - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1 }
+
+  # Normalize the selected fixture before verifying the state-dependent star offers.
+  - toolbar: { item: star, on: false }
 
   # Read/unread toggling: the row's leading swipe action, the toolbar toggle, and the
   # Article menu item all flip the same flag. Three toggles net one flip, leaving row 0
@@ -106,11 +146,8 @@ flow:
   # Mark-all-read empties the unread timeline specifically.
   - navigate: { route: unread }
   - pause: { secs: 1 }
-  # Mark All as Read is a toolbar item everywhere: every toolkit has somewhere to draw a
-  # contribution (docs/toolbars.md), HarmonyOS's being the title-bar menus, and the step drives
-  # the model, so the inline button the app keeps for a bar-less toolkit is never what is
-  # pressed here.
-  - toolbar: { item: mark-all-read }
+  # Bulk marking remains in the Article menu after its toolbar button was removed.
+  - menu: { id: mark-all-read }
   - pause: { secs: 1 }
   - assert_visible: { id: timeline-empty }
   - screenshot: all-read
@@ -165,8 +202,12 @@ flow:
   - assert_value: { id: refresh-interval-picker, value: 0 }
   - select: { id: refresh-interval-picker, index: 1 }
   - assert_value: { id: refresh-interval-picker, value: 1 }
-  - select: { id: refresh-interval-picker, index: 3 }
-  - assert_value: { id: refresh-interval-picker, value: 3 }
+  - select: { id: refresh-interval-picker, index: 2 }
+  - assert_value: { id: refresh-interval-picker, value: 2 }
+  - select: { id: refresh-interval-picker, index: 4 }
+  - assert_value: { id: refresh-interval-picker, value: 4 }
+  - select: { id: refresh-interval-picker, index: 0 }
+  - assert_value: { id: refresh-interval-picker, value: 0 }
   - screenshot: settings
 
   # The toolbar's sidebar toggle hides the pane and brings it back.
@@ -203,3 +244,20 @@ flow:
   - wait_for: { id: feeds-count }
   - assert_visible: { id: opml-export }
   - screenshot: subscriptions
+
+  # Capture a populated saved-story dashboard, then restore the temporary star.
+  - navigate: { route: all }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - toolbar: { item: star, on: true }
+  - navigate: { route: starred }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-publisher-chart }
+  - assert_text: { id: dashboard-title, key: nav_starred }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-starred
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: all }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - toolbar: { item: star, on: false }

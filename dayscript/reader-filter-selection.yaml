@@ -5,7 +5,7 @@ flow:
   - toolbar: { item: unread-feeds-only, on: false }
   - navigate: { route: 'feed:5756297993796914528' }
   - wait_for: { id: article-row-0 }
-  - toolbar: { item: mark-all-read }
+  - menu: { id: mark-all-read }
   - pause: { secs: 1 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }

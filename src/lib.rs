@@ -7,6 +7,7 @@
 use day::prelude::*;
 
 mod commands;
+mod dashboard;
 mod extraction;
 mod feed_icons;
 mod feed_list;
@@ -126,6 +127,9 @@ pub fn root() -> impl Piece {
                 .set(res::str::storage_error(error).format());
         }
     });
+    daynews_core::state()
+        .group_by_feed
+        .set(day::prefs::get("news.articles.group_by_feed").as_deref() != Some("false"));
     refresh_schedule::start();
     day::on_lifecycle(Lifecycle::WillTerminate, refresh_schedule::stop);
     feed_icons::init();

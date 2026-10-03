@@ -5,6 +5,8 @@ edition = "2024"
 license = "Apache-2.0"
 
 [dependencies]
+sha2 = "0.10"
+httpdate = "1"
 # Real-world syndication is four formats (RSS 2.0, RSS 1.0/RDF, Atom, JSON Feed) plus a long
 # tail of namespaced extensions and at least three date encodings, several of them written
 # wrong by popular publishers. Hand-rolling that is a bug farm; the 145-feed sample here spans

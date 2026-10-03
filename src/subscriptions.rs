@@ -106,10 +106,23 @@ pub fn subscriptions_page() -> impl Piece {
                     top: 18.0,
                     ..Default::default()
                 }),
-            each(
+            label(crate::res::str::feed_order_note())
+                .font(Font::Footnote)
+                .max_lines(3),
+            list(
                 items(move || st.feeds.get(), |f: &FeedRow| f.id.to_string()),
-                |slot| feed_row(slot.get()),
-            ),
+                feed_row,
+            )
+            .row_height(RowHeight::Uniform(76.0))
+            .reorderable(true)
+            .on_reorder(move |from, to| {
+                if let Some(feed) = st.feeds.get_untracked().get(from) {
+                    daynews_core::move_feed(feed.id, to);
+                }
+            })
+            .id("feed-order-list")
+            .height(480.0)
+            .grow_w(),
         ))
         .spacing(8.0)
         .align(HAlign::Leading)
@@ -120,18 +133,17 @@ pub fn subscriptions_page() -> impl Piece {
     .grow()
 }
 
-fn feed_row(f: FeedRow) -> impl Piece {
-    let id = f.id;
-    let has_error = f.has_error;
+fn feed_row(slot: ItemSlot<FeedRow, String>) -> impl Piece {
     row((
         column((
-            label(f.title.clone())
+            label(move || slot.field(|f| f.title.clone()))
                 .font(Font::Body)
                 .color(move || palette().text),
-            label(f.feed_url.clone())
+            label(move || slot.field(|f| f.feed_url.clone()))
                 .font(Font::Caption2)
+                .single_line()
                 .color(move || {
-                    if has_error {
+                    if slot.field(|f| f.has_error) {
                         palette().error
                     } else {
                         palette().text_muted
@@ -141,11 +153,31 @@ fn feed_row(f: FeedRow) -> impl Piece {
         .spacing(1.0)
         .align(HAlign::Leading)
         .grow_w(),
+        button(crate::res::str::move_feed_up())
+            .action(move || crate::feed_list::move_relative(slot.field(|f| f.id), -1))
+            .enabled(move || {
+                daynews_core::state().feeds.with(|feeds| {
+                    feeds
+                        .first()
+                        .is_some_and(|feed| feed.id != slot.field(|f| f.id))
+                })
+            })
+            .id_of(move || format!("feed-up-{}", slot.field(|f| f.id))),
+        button(crate::res::str::move_feed_down())
+            .action(move || crate::feed_list::move_relative(slot.field(|f| f.id), 1))
+            .enabled(move || {
+                daynews_core::state().feeds.with(|feeds| {
+                    feeds
+                        .last()
+                        .is_some_and(|feed| feed.id != slot.field(|f| f.id))
+                })
+            })
+            .id_of(move || format!("feed-down-{}", slot.field(|f| f.id))),
         button(crate::res::str::unsubscribe())
-            .action(move || daynews_core::unsubscribe(id))
-            .id_of(move || format!("unsub-{id}")),
+            .action(move || daynews_core::unsubscribe(slot.field(|f| f.id)))
+            .id_of(move || format!("unsub-{}", slot.field(|f| f.id))),
     ))
-    .spacing(10.0)
+    .spacing(8.0)
     .align(VAlign::Center)
     .padding(Insets::symmetric(0.0, 6.0))
     .grow_w()

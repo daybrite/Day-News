@@ -355,6 +355,7 @@ fn conditional_check_persists_validators_without_changing_articles() {
             url,
             &[item("one", "Fixture article", "Original body", 100)],
         );
+        db.set_feed_body_hash(f, Some("synthetic-fingerprint".into()));
         db.set_read(article_id(url, "one"), true);
         db.set_starred(article_id(url, "one"), true);
         db.feed_checked(
@@ -366,6 +367,10 @@ fn conditional_check_persists_validators_without_changing_articles() {
     }
     {
         let db = Db::open(&file).unwrap();
+        assert_eq!(
+            db.feed_cache(f).unwrap().body_hash.as_deref(),
+            Some("synthetic-fingerprint")
+        );
         let validators = db.feed_validators(f).unwrap();
         assert_eq!(validators.0.as_deref(), Some("W/\"revision-1\""));
         db.set_feed_error(f, "synthetic failure");
@@ -384,6 +389,278 @@ fn conditional_check_persists_validators_without_changing_articles() {
                 .last_error()
                 .peek()
                 .is_none()
+        );
+    }
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn identical_metadata_does_not_emit_redundant_field_writes() {
+    let db = Db::open_in_memory().unwrap();
+    let f = db.add_feed("https://fixture.example/no-op", "Fixture", None);
+    db.update_feed_metadata(
+        f,
+        Some("Fixture"),
+        Some("https://fixture.example"),
+        None,
+        None,
+    );
+    db.feed_checked(f, Some("\"tag\"".into()), None);
+    db.set_feed_body_hash(f, Some("synthetic-hash".into()));
+    db.container.save().unwrap();
+    let (_, changes) = day_model::record_changes(|| {
+        db.update_feed_metadata(
+            f,
+            Some("Fixture"),
+            Some("https://fixture.example"),
+            None,
+            None,
+        );
+        db.feed_checked(f, Some("\"tag\"".into()), None);
+        db.set_feed_body_hash(f, Some("synthetic-hash".into()));
+    });
+    // The timestamp may cross a second boundary; every other field must stay quiet.
+    assert!(
+        changes
+            .iter()
+            .all(|change| matches!(change.label, "last_fetched_at" | "next_poll_at"))
+    );
+}
+
+#[test]
+fn duplicate_feed_entries_are_inserted_once() {
+    let db = Db::open_in_memory().unwrap();
+    let url = "https://fixture.example/duplicates";
+    let f = db.add_feed(url, "Fixture", None);
+    assert_eq!(db.try_upsert_articles(f, url, &[]).unwrap(), 0);
+    let items = [
+        item("same", "First fixture", "first", 100),
+        item("same", "Second fixture", "second", 200),
+    ];
+    assert_eq!(db.try_upsert_articles(f, url, &items).unwrap(), 1);
+    assert_eq!(
+        db.body(article_id(url, "same")).as_deref(),
+        Some("<p>first</p>")
+    );
+}
+
+#[test]
+fn retry_deadline_survives_reopen_and_success_clears_it() {
+    let root = std::env::temp_dir().join(format!("day-news-retry-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let file = root.join("store.sqlite");
+    let id;
+    {
+        let db = Db::open(&file).unwrap();
+        id = db.add_feed("https://fixture.example/busy", "Fixture", None);
+        db.set_feed_retry_after(id, Some(2_000_000_000));
+        db.container.save().unwrap();
+    }
+    {
+        let db = Db::open(&file).unwrap();
+        assert_eq!(db.feed_cache(id).unwrap().retry_after, Some(2_000_000_000));
+        db.feed_checked(id, None, None);
+        assert_eq!(db.feed_cache(id).unwrap().retry_after, None);
+    }
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn adaptive_due_times_priority_and_failure_backoff_are_durable() {
+    let db = Db::open_in_memory().unwrap();
+    let now = daynews_time::now_unix();
+    let fast = db.add_feed("https://fixture.example/fast", "Fast", None);
+    let slow = db.add_feed("https://fixture.example/monthly", "Monthly", None);
+    db.record_publications(fast, (0..12).map(|i| now - i * 4 * 3600));
+    db.record_publications(slow, (0..12).map(|i| now - i * 30 * 86400));
+    db.feed_checked(fast, None, None);
+    db.feed_checked(slow, None, None);
+    let fast_due = db
+        .container
+        .get::<daynews_db::Feed>(fast)
+        .unwrap()
+        .next_poll_at()
+        .peek()
+        .unwrap();
+    let slow_due = db
+        .container
+        .get::<daynews_db::Feed>(slow)
+        .unwrap()
+        .next_poll_at()
+        .peek()
+        .unwrap();
+    assert!((1800..=1802).contains(&(fast_due - now)));
+    assert!((86400..=86402).contains(&(slow_due - now)));
+    assert!(db.due_feeds(now).unwrap().is_empty());
+    assert_eq!(
+        db.due_feeds(fast_due)
+            .unwrap()
+            .iter()
+            .map(|f| f.0)
+            .collect::<Vec<_>>(),
+        vec![fast]
+    );
+    db.move_feed(slow, 0).unwrap();
+    assert_eq!(
+        db.due_feeds(slow_due)
+            .unwrap()
+            .iter()
+            .map(|f| f.0)
+            .collect::<Vec<_>>(),
+        vec![slow, fast]
+    );
+    db.set_feed_error(fast, "synthetic failure");
+    let row = db.container.get::<daynews_db::Feed>(fast).unwrap();
+    assert_eq!(row.poll_failures().peek(), 1);
+    assert!(row.next_poll_at().peek().unwrap() >= now + 3600);
+    db.feed_checked(fast, None, None);
+    assert_eq!(row.poll_failures().peek(), 0);
+}
+
+#[test]
+fn adaptive_history_and_reordered_priority_survive_reopen() {
+    let root = std::env::temp_dir().join(format!("daynews-polling-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    let file = root.join("store.sqlite");
+    let (fast, slow);
+    {
+        let db = Db::open(&file).unwrap();
+        fast = db.add_feed("https://fixture.example/persist-fast", "Fast", None);
+        slow = db.add_feed("https://fixture.example/persist-slow", "Slow", None);
+        assert!(db.feed_cache(fast).unwrap().needs_publication_sample);
+        db.record_publications(fast, [daynews_time::now_unix()]);
+        db.record_publications(slow, []);
+        db.feed_checked(fast, Some("fixture-etag".into()), None);
+        db.feed_checked(slow, None, None);
+        db.move_feed(slow, 0).unwrap();
+        db.container.save().unwrap();
+    }
+    {
+        let db = Db::open(&file).unwrap();
+        assert!(!db.feed_cache(fast).unwrap().needs_publication_sample);
+        assert!(!db.feed_cache(slow).unwrap().needs_publication_sample);
+        assert_eq!(
+            db.feed_cache(fast).unwrap().etag.as_deref(),
+            Some("fixture-etag")
+        );
+        assert!(db.due_feeds(daynews_time::now_unix()).unwrap().is_empty());
+        assert_eq!(
+            db.due_feeds(i64::MAX)
+                .unwrap()
+                .iter()
+                .map(|f| f.0)
+                .collect::<Vec<_>>(),
+            vec![slow, fast]
+        );
+    }
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn dashboards_measure_full_scopes_and_reuse_article_metrics_on_feed_checks() {
+    use daynews_db::dashboard::DashboardCache;
+    let db = Db::open_in_memory().unwrap();
+    let now = daynews_time::now_unix();
+    let url = "https://fixture.example/dashboard";
+    let feed = db.add_feed(url, "Dashboard fixture", None);
+    let other = db.add_feed("https://fixture.example/other", "Other fixture", None);
+    db.upsert_articles(
+        feed,
+        url,
+        &[
+            item("one", "Short story", "one two three", now),
+            item(
+                "two",
+                "Longer story",
+                &"fixture word ".repeat(200),
+                now - 86400 * 9,
+            ),
+        ],
+    );
+    db.upsert_articles(
+        other,
+        "https://fixture.example/other",
+        &[item("three", "Other story", "hello fixture", now)],
+    );
+    db.set_starred(article_id(url, "one"), true);
+    let mut cache = DashboardCache::default();
+    let first = db
+        .dashboard_cached(Scope::Feed(feed), now, &mut cache)
+        .unwrap();
+    assert_eq!(first.feed_id, Some(feed));
+    assert_eq!(first.total, 2);
+    assert_eq!(first.words, 403);
+    assert_eq!(first.authors, 1);
+    assert_eq!(first.lengths, [1, 0, 1, 0, 0]);
+    assert_eq!(first.days.iter().map(|s| s.1).sum::<u64>(), 2);
+    assert_eq!(first.habits.iter().flatten().sum::<u64>(), 2);
+    assert_eq!(first.sources, vec![(feed, "Dashboard fixture".into(), 2)]);
+    db.record_publications(feed, [now - 60, now - 86400 * 9]);
+    db.feed_checked(feed, None, None);
+    let checked = db
+        .dashboard_cached(Scope::Feed(feed), now, &mut cache)
+        .unwrap();
+    assert_eq!(checked.words, first.words);
+    assert!(checked.feeds[0].next.is_some());
+    db.set_read(article_id(url, "one"), true);
+    let read = db
+        .dashboard_cached(Scope::Feed(feed), now, &mut cache)
+        .unwrap();
+    assert_eq!(
+        read.unread, 1,
+        "cached aggregates invalidate on an article edit"
+    );
+    assert_eq!(db.dashboard(Scope::Unread, now).unwrap().total, 2);
+    assert_eq!(db.dashboard(Scope::Starred, now).unwrap().total, 1);
+    assert_eq!(db.dashboard(Scope::Today, now).unwrap().total, 2);
+    assert_eq!(db.dashboard(Scope::All, now).unwrap().total, 3);
+    assert_eq!(
+        db.dashboard(Scope::Today, now)
+            .unwrap()
+            .hourly
+            .iter()
+            .sum::<u64>(),
+        2
+    );
+}
+
+#[test]
+fn word_count_migration_is_persistent_and_only_processes_missing_metrics() {
+    let root = std::env::temp_dir().join(format!(
+        "daynews-dashboard-migration-{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    let path = root.join("store.sqlite");
+    let id;
+    {
+        let db = Db::open(&path).unwrap();
+        let url = "https://fixture.example/migration";
+        let feed = db.add_feed(url, "Fixture", None);
+        db.upsert_articles(feed, url, &[item("one", "Fixture", "one two three", 100)]);
+        id = article_id(url, "one");
+        db.container
+            .get::<Article>(id)
+            .unwrap()
+            .word_count()
+            .write(None);
+        db.container.save().unwrap();
+    }
+    {
+        let db = Db::open(&path).unwrap();
+        assert_eq!(
+            db.container.get::<Article>(id).unwrap().word_count().peek(),
+            Some(3)
+        );
+        assert_eq!(db.dashboard(Scope::All, 200).unwrap().words, 3);
+    }
+    {
+        let db = Db::open(&path).unwrap();
+        assert_eq!(
+            db.container.get::<Article>(id).unwrap().word_count().peek(),
+            Some(3)
         );
     }
     std::fs::remove_dir_all(root).unwrap();

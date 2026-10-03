@@ -254,11 +254,20 @@ is why the timeline pins a uniform pitch and why a wrapped title can clip its fo
 
 ### Feed refresh and sidebar identity
 
-`daynews-feed::fetch_conditional` returns either a parsed feed with replacement HTTP
-validators or `NotModified` with merged validators. `daynews-core` stores those validators on
+`daynews-feed::fetch_cached_with_progress` returns either a parsed feed with replacement HTTP
+validators and a SHA-256 fingerprint, or `NotModified`. A 304 merges supplied validators with
+stored ones; a byte-identical 200 skips parsing, sanitization and article existence queries,
+but still replaces validators (and clears ones absent from that 200). This avoids stale
+validators when a publisher changes ETag/Last-Modified without changing feed bytes. `daynews-core` stores those validators on
 `Feed` alongside the articles, using nullable columns for existing libraries. 304 updates the
 last-check timestamp and clears errors without touching bodies/read/star state. Failed HTTP
-or parsing attempts never advance validators. The shared HTTP client reuses connections;
+or parsing attempts never advance validators or fingerprints. The fingerprint is persisted
+atomically with successful article imports, and nullable fields migrate existing libraries.
+Equal metadata values do not emit redundant model writes. Empty imports skip their existence
+query; duplicate GUIDs within one response are inserted once. HTTP 429/503 with a valid
+Retry-After (seconds or HTTP date) persists a deadline; automatic and manual feed checks skip
+that origin until the deadline expires, including across restarts. A successful check clears
+it. This is per subscription, not a host-wide circuit breaker. The shared HTTP client reuses connections;
 native parsing and sanitization use worker threads. Four shared permits bound all feed
 requests, while an in-flight ID set prevents overlapping subscription/manual refreshes.
 Deleted subscriptions are checked before requests and before storing results. RAII clears
@@ -318,3 +327,105 @@ inside the user action for browser permissions. It is available in Article and t
 reader toolbar. Article context menus are built when summoned, show state-appropriate actions,
 and snapshot the clicked row's ID and URL so recycled cells cannot retarget an open menu.
 Clipboard failures use a localized alert. Missing/blank URLs disable link commands.
+
+Refresh cache regressions live in `crates/daynews-feed/tests/conditional.rs` (real loopback
+requests with validator rotation on identical 200 and 304), the feed crate's response tests,
+and `crates/daynews-db/tests/store.rs` (durability and unchanged-field writes). Run
+`dayscript/conditional-cache.yaml` against `tests/feed-refresh-server.py` with an isolated
+`DAY_NEWS_DATA_DIR`; `/stats` verifies request counts and the busy-origin pause.
+
+Conditional requests save response bodies, not the request itself. Servers without validators
+still transfer bodies, although equal fingerprints avoid repeat imports. Last-check metadata
+is still durably recorded and native worker observations may recompute unchanged projections.
+The current policy does not yet skip automatic polls based on HTTP freshness or adapt the
+interval to a feed's publishing frequency. Web cross-origin validators require the publisher
+(or proxy) to expose ETag/Last-Modified through CORS and allow conditional request headers.
+
+### Adaptive refresh and feed groups
+
+Refresh Feeds now defaults to Automatic; existing explicitly chosen intervals remain intact.
+A minute tick queries indexed per-feed deadlines, not articles. Successful imports retain
+32 distinct valid publication dates independently of article retention. The median of the
+last eight publication gaps determines cadence; recent frequent feeds poll every 30 minutes,
+daily feeds about every four hours, and weekly/monthly or stale feeds at most daily. Missing
+dates default to two hours. Quiet feeds gradually slow, new publications accelerate polling,
+and failures back off exponentially (one hour initially, capped at a day). Retry-After remains
+a minimum delay for both automatic and manual requests. Deadlines and samples survive restart.
+Existing caches without samples receive one unconditional download to initialize the policy,
+then resume conditional requests and unchanged-body shortcuts.
+
+Group by Feeds is a persisted preference, also available in the Feed menu and desktop list
+toolbar. The existing bounded result window is stably sorted by subscription priority, with
+chronological articles inside each group. A name/icon header marks each group and an overlay
+follows the native list's first-visible-row signal. Uniform recycling rows reserve header
+space; headers do not add selectable records or change article indexes.
+
+Subscriptions exposes native list reordering and localized Move Up/Down controls on every
+platform. Moves persist contiguous positions without changing folders. Sidebar order, group
+order and the bounded four-request refresh queue share that priority. Native drag support
+remains toolkit-dependent; the explicit controls work wherever dragging is unavailable.
+Regression coverage lives in daynews-db polling/store tests and the grouped-feed DayScript.
+
+### Scope dashboards
+
+An unselected reader is a native viewport-sized dashboard built from day-piece-charts.
+Individual feeds show publication rhythm, estimated word-count distribution, weekday/hour
+publishing habits, contributor counts, reading time, saved/read share and source metadata.
+Today shows local-hour arrivals; Unread emphasizes backlog age; Starred maps the saved
+collection over publication time. Smart-feed dashboards add a publisher donut and counts.
+Publisher legend links select their feed in the sidebar and navigate to its overview; hovering
+a link highlights its row and matching donut segment. Stable feed IDs keep identically named
+publishers separate. The shared day-piece-charts legend handles registered links, pointer
+cursors and hover emphasis. Publication plots offer date/count guides, length bars offer
+category/count guides, and heatmap cells annotate weekday, time and article count on hover
+or touch. These readouts use the plotted metadata without further database queries.
+All plots describe the full selected scope, independently of the 500-row timeline window
+and search. Empty scopes display honest zeroes rather than synthetic chart data. The Feed
+overview toolbar action makes dashboards reachable on compact navigation stacks and lets
+a reader return from an article to its overview. Selecting an article disposes the dashboard.
+
+Native dashboard projections live on the existing database worker; browser projections use
+the existing OPFS transport. Word counts are computed at article import and backfilled once
+for older rows in batches of 128, with an indexed nullable metric. Charts never fetch bodies.
+A per-dashboard cache keyed by article-store version, scope and local day reuses article
+aggregates when a conditional feed check changes only scheduling metadata. Feed deadlines
+continue to update. The dashboard owns a scope-lifetime one-second clock for countdown text;
+ordinary countdown ticks perform no SQL or HTTP work. A local-midnight change refreshes
+the projection once so Today and age bins stay current. Publication bins use host-local
+time, and axes, numbers,
+units, headings and countdown components use generated localized accessors. Reading time
+is an estimate at 240 words/minute, measured from stored article text, not a downloaded full
+web page; HTML markup and scripts are excluded from the word estimate.
+
+The layout divides the offered content bounds among header, metrics, three flexible chart
+cards and forecast. It has no scroll container, and layout never writes reactive state.
+Length distributions use horizontal bars to keep bucket labels readable in narrow panes;
+day-piece-charts thins colliding axis labels against measured text bounds. Charts use its
+built-in spring transitions for initial appearance and incoming metadata, growing bars,
+areas and wedges from their baselines and blending heat-map colors. Countdown ticks do not
+restart chart transitions. Walkthrough captures wait for the entrance to settle. Very small panes
+necessarily compress chart detail. Vector glyphs use generated resources
+and theme tint; charts use Day's common canvas implementation and light/dark chrome.
+Group by Feeds defaults on when no preference is present; explicit off remains respected.
+Floating group headings use a translucent theme-tinted surface, rounded border and a tinted
+vector fallback when the publication has no icon.
+
+Refresh Now appears on individual feed dashboards and refreshes only the feed identity
+stored in that dashboard projection. Smart-feed overviews do not offer this single-source action. The button disables while a refresh is active and the
+forecast updates from the resulting stored scheduling metadata. Card borders use nested
+background layers, not foreground canvases, so native mouse hit testing reaches controls
+and interactive charts. DayScript taps dispatch actions directly and do not test occlusion.
+
+Refresh forecasts use the exact adaptive interval function and persisted next-poll / retry
+deadlines. Fixed timers expose their next tick; manual mode reports that no check is scheduled.
+A due check reads as waiting for the scheduler rather than a negative countdown, and active
+refreshes read as checking. Forecasts describe an estimate while the app is running, not an
+OS background wake-up guarantee. Regression coverage: dashboard word-count, scope/cache and
+migration tests in daynews-db, layout tests in src/dashboard.rs, plus dayscript/dashboards.yaml
+and the dashboard captures in the main walkthrough.
+
+Refresh and Show Only Unread Feeds share the leading sidebar toolbar group. The unread
+filter uses Google Material Symbols’ Apache-2.0 mark_email_unread vector, separately from
+the article-grouping filter. Bulk Mark All as Read remains in the Article menu with its
+shortcut, rather than occupying the toolbar. Walkthrough bulk-marking steps use its
+shared command id through the menu model.

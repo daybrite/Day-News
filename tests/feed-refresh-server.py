@@ -48,6 +48,24 @@ class Handler(BaseHTTPRequestHandler):
             with LOCK:
                 body = json.dumps(dict(STATS, hits=dict(HITS))).encode()
             self.send(200, body, "application/json")
+        elif self.path == "/cache/rotating":
+            with LOCK:
+                hit = HITS[self.path]
+            current = 'W/"cache-one"' if hit == 1 else 'W/"cache-two"'
+            condition = self.headers.get("If-None-Match")
+            unchanged = hit > 2 and condition == current
+            with LOCK:
+                STATS["unchanged" if unchanged else "modified"] += 1
+                expected = None if hit == 1 else 'W/"cache-one"' if hit == 2 else current
+                STATS["invalid_conditions"] += int(condition != expected)
+            body = json.dumps({"version": "https://jsonfeed.org/version/1.1",
+                "title": "Synthetic rotating cache fixture", "icon": f"{BASE}/icon/1.png",
+                "items": [{"id": "cache-fixture", "title": "Synthetic stable cache article",
+                    "content_html": "<p>Stable original body.</p>"}]}).encode()
+            self.send(304 if unchanged else 200, body, "application/feed+json",
+                [("ETag", current), ("Last-Modified", MODIFIED)])
+        elif self.path == "/cache/busy":
+            self.send(429, b"Synthetic busy origin", "text/plain", [("Retry-After", "3600")])
         elif self.path.startswith("/progress/"):
             mode = self.path.rsplit("/", 1)[1]
             # Delay headers to exercise connecting, then drip a valid feed. The second feed

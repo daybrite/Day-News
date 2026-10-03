@@ -40,6 +40,7 @@ fn row_for(
     preview_lines: usize,
     scale: f64,
     sc: daynews_core::NewsScene,
+    grouped: bool,
 ) -> impl Piece {
     let id = move || slot.field(|a| a.id);
     let read = move || slot.field(|a| a.is_read);
@@ -56,7 +57,7 @@ fn row_for(
     };
     let sub_color = move || palette().text_muted;
 
-    row((
+    let article = row((
         // The dot rides at the title's optical center rather than the row's: a three-line row
         // would otherwise float it down beside the summary. The gutter keeps its width whether
         // or not a dot is drawn, so every title starts on the same x.
@@ -198,6 +199,110 @@ fn row_for(
             .unwrap_or(usize::MAX);
         format!("article-row-{pos}")
     })
+    .grow_w();
+    column((
+        when(
+            move || {
+                grouped
+                    && sc.articles.with(|rows| {
+                        rows.iter()
+                            .position(|row| row.id == id())
+                            .is_some_and(|index| {
+                                index == 0 || rows[index - 1].feed_id != rows[index].feed_id
+                            })
+                    })
+            },
+            move || {
+                feed_header(
+                    move || slot.field(|a| (a.feed_id, a.feed_title.clone())),
+                    false,
+                )
+            },
+        ),
+        article,
+    ))
+    .spacing(0.0)
+    .align(HAlign::Leading)
+    .grow_w()
+}
+
+fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool) -> impl Piece {
+    row((
+        each(
+            items(
+                move || {
+                    vec![crate::feed_icons::paths().with(|icons| icons.get(&feed().0).cloned())]
+                },
+                |path| path.clone(),
+            ),
+            |slot| {
+                if let Some(path) = slot.get() {
+                    image(path).decorative().frame(20.0, 20.0).any()
+                } else {
+                    vector(crate::res::vectors::dashboard_feed)
+                        .tint(move || palette().accent)
+                        .decorative()
+                        .frame(20.0, 20.0)
+                        .any()
+                }
+            },
+        ),
+        label(move || feed().1)
+            .font(Font::Footnote)
+            .weight(FontWeight::Semibold)
+            .single_line()
+            .id_of(move || {
+                if floating {
+                    "floating-feed-name".to_owned()
+                } else {
+                    format!("feed-group-name-{}", feed().0)
+                }
+            })
+            .grow_w(),
+    ))
+    .spacing(8.0)
+    .align(VAlign::Center)
+    .padding(Insets::symmetric(12.0, 4.0))
+    .height(32.0)
+    .background(move || {
+        if floating {
+            let bg = palette().bg;
+            let tint = palette().accent;
+            Color::rgba(
+                bg.r * 0.91 + tint.r * 0.09,
+                bg.g * 0.91 + tint.g * 0.09,
+                bg.b * 0.91 + tint.b * 0.09,
+                0.92,
+            )
+        } else {
+            palette().bg_alt
+        }
+    })
+    .corner_radius(if floating { 8.0 } else { 0.0 })
+    .overlay(canvas(move |draw, size| {
+        if floating {
+            draw.stroke(
+                Shape::RoundedRect(
+                    Rect::new(
+                        0.5,
+                        0.5,
+                        (size.width - 1.0).max(0.0),
+                        (size.height - 1.0).max(0.0),
+                    ),
+                    8.0,
+                ),
+                palette().accent.with_alpha(0.38),
+                1.0,
+            );
+        }
+    }))
+    .id_of(move || {
+        if floating {
+            "floating-feed-group".to_owned()
+        } else {
+            format!("feed-group-{}", feed().0)
+        }
+    })
     .grow_w()
 }
 
@@ -332,17 +437,18 @@ pub fn timeline_pane() -> impl Piece {
         // restored from the scene's stable article ID by the existing two-way binding.
         each(
             items(
-                || {
+                move || {
                     vec![(
                         crate::settings::preview_lines().get(),
                         crate::settings::list_scale().get(),
+                        st.group_by_feed.get(),
                     )]
                 },
                 |style| *style,
             ),
             move |slot| {
-                let (lines, percent) = slot.get();
-                timeline_rows(lines, percent as f64 / 100.0, sc)
+                let (lines, percent, grouped) = slot.get();
+                timeline_rows(lines, percent as f64 / 100.0, sc, grouped)
             },
         ),
     ))
@@ -351,7 +457,12 @@ pub fn timeline_pane() -> impl Piece {
     .grow()
 }
 
-fn timeline_rows(preview_lines: usize, scale: f64, sc: daynews_core::NewsScene) -> impl Piece {
+fn timeline_rows(
+    preview_lines: usize,
+    scale: f64,
+    sc: daynews_core::NewsScene,
+    grouped: bool,
+) -> impl Piece {
     column((
         when(
             move || sc.articles.with(|a| a.is_empty()),
@@ -410,84 +521,116 @@ fn timeline_rows(preview_lines: usize, scale: f64, sc: daynews_core::NewsScene) 
             // arrow keys, and the swipe actions where the toolkit has them
             // (Cap::ListSwipeActions; the context menu and the Article menu carry the same
             // commands everywhere else).
-            list(
+            let first_visible = Signal::new(0usize);
+            let timeline = list(
                 items(
                     move || sc.articles.get(),
                     |a: &ArticleSummary| a.id.to_string(),
                 ),
-                move |slot| row_for(slot, preview_lines, scale, sc),
-            )
-            .row_height(RowHeight::Uniform(row_height(preview_lines, scale)))
-            // Selection reads as it moves (NetNewsWire): a click or a native arrow step both
-            // land here and open the row.
-            .on_select(|key: String| {
-                if let Ok(id) = key.parse::<u64>() {
-                    daynews_core::open_article(id);
-                }
-            })
-            // Two-way: app-driven selection (Next Unread, the reader's restore) syncs into
-            // the native list without re-emitting.
-            .selected_rows(move || {
-                let sel = sc.selected.get();
-                sc.articles
-                    .with(|a| sel.and_then(|id| a.iter().position(|x| x.id == id)))
-                    .into_iter()
-                    .collect()
-            })
-            .scroll_to_row(jump)
-            .focused(sc.timeline_focused)
-            // The left (leading) swipe action toggles read/unread. The offer is
-            // pulled at gesture time, so the button names the flip it would make.
-            .swipe_leading(move |i| {
-                let Some((id, read)) = sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_read)))
-                else {
-                    return Vec::new();
-                };
-                let text = if read {
-                    crate::res::str::mark_unread()
-                } else {
-                    crate::res::str::mark_read()
-                };
-                // The glyph speaks the dot language: marking read removes the dot (an
-                // outlined circle), marking unread restores it (filled).
-                let symbol = if read {
-                    Symbol::CircleFilled
-                } else {
-                    Symbol::Circle
-                };
-                vec![
-                    swipe_action(text.format())
-                        .symbol(symbol)
-                        .tint(palette().accent)
-                        .action(move || daynews_core::set_read(id, !read)),
-                ]
-            })
-            // The right (trailing) swipe action stars, in the star's own warm tint.
-            .swipe_trailing(move |i| {
-                let Some((id, starred)) =
-                    sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_starred)))
-                else {
-                    return Vec::new();
-                };
-                let text = if starred {
-                    crate::res::str::unstar()
-                } else {
-                    crate::res::str::star()
-                };
-                vec![
-                    swipe_action(text.format())
-                        .symbol(Symbol::Star)
-                        .tint(palette().star)
-                        .action(move || daynews_core::set_starred(id, !starred)),
-                ]
-            })
-            // The host draws the row separators, at the row boundary, aligned with the
-            // native selection, and stationary while a swipe slides the row past them.
-            .separators(true)
-            // `.id` on the list itself (not a wrapper): `select:`/`swipe_row:` steps resolve
-            // the id's node and expect the list driver right there.
-            .id("timeline")
-            .grow()
+                move |slot| row_for(slot, preview_lines, scale, sc, grouped),
+            );
+            let timeline = if grouped {
+                timeline.first_visible_row(first_visible)
+            } else {
+                timeline
+            };
+            timeline
+                .row_height(RowHeight::Uniform(
+                    row_height(preview_lines, scale) + if grouped { 32.0 } else { 0.0 },
+                ))
+                // Selection reads as it moves (NetNewsWire): a click or a native arrow step both
+                // land here and open the row.
+                .on_select(|key: String| {
+                    if let Ok(id) = key.parse::<u64>() {
+                        daynews_core::open_article(id);
+                    }
+                })
+                // Two-way: app-driven selection (Next Unread, the reader's restore) syncs into
+                // the native list without re-emitting.
+                .selected_rows(move || {
+                    let sel = sc.selected.get();
+                    sc.articles
+                        .with(|a| sel.and_then(|id| a.iter().position(|x| x.id == id)))
+                        .into_iter()
+                        .collect()
+                })
+                .scroll_to_row(jump)
+                .focused(sc.timeline_focused)
+                // The left (leading) swipe action toggles read/unread. The offer is
+                // pulled at gesture time, so the button names the flip it would make.
+                .swipe_leading(move |i| {
+                    let Some((id, read)) =
+                        sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_read)))
+                    else {
+                        return Vec::new();
+                    };
+                    let text = if read {
+                        crate::res::str::mark_unread()
+                    } else {
+                        crate::res::str::mark_read()
+                    };
+                    // The glyph speaks the dot language: marking read removes the dot (an
+                    // outlined circle), marking unread restores it (filled).
+                    let symbol = if read {
+                        Symbol::CircleFilled
+                    } else {
+                        Symbol::Circle
+                    };
+                    vec![
+                        swipe_action(text.format())
+                            .symbol(symbol)
+                            .tint(palette().accent)
+                            .action(move || daynews_core::set_read(id, !read)),
+                    ]
+                })
+                // The right (trailing) swipe action stars, in the star's own warm tint.
+                .swipe_trailing(move |i| {
+                    let Some((id, starred)) =
+                        sc.articles.with(|a| a.get(i).map(|x| (x.id, x.is_starred)))
+                    else {
+                        return Vec::new();
+                    };
+                    let text = if starred {
+                        crate::res::str::unstar()
+                    } else {
+                        crate::res::str::star()
+                    };
+                    vec![
+                        swipe_action(text.format())
+                            .symbol(Symbol::Star)
+                            .tint(palette().star)
+                            .action(move || daynews_core::set_starred(id, !starred)),
+                    ]
+                })
+                // The host draws the row separators, at the row boundary, aligned with the
+                // native selection, and stationary while a swipe slides the row past them.
+                .separators(true)
+                // `.id` on the list itself (not a wrapper): `select:`/`swipe_row:` steps resolve
+                // the id's node and expect the list driver right there.
+                .id("timeline")
+                .overlay_aligned(
+                    Alignment::TopLeading,
+                    when(
+                        move || grouped && !sc.articles.with(|rows| rows.is_empty()),
+                        move || {
+                            feed_header(
+                                move || {
+                                    sc.articles.with(|rows| {
+                                        rows.get(
+                                            first_visible.get().min(rows.len().saturating_sub(1)),
+                                        )
+                                        .map(|article| {
+                                            (article.feed_id, article.feed_title.clone())
+                                        })
+                                        .unwrap_or_default()
+                                    })
+                                },
+                                true,
+                            )
+                        },
+                    ),
+                )
+                .grow()
         },
     ))
     .grow()

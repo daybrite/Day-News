@@ -1,0 +1,73 @@
+# Run after seed-demo.yaml. Dashboard graphics use only real stored article metadata.
+name: day-news-dashboards
+description: Feed and smart-feed dashboards, refresh forecast, themes and returning to reading.
+flow:
+  - navigate: { route: settings }
+  - toggle: { id: group-by-feeds-picker, value: true }
+  - select: { id: refresh-interval-picker, index: 0 }
+  - select: { id: theme-picker, index: 0, only_on: [macos-appkit, ios-uikit] }
+  - navigate: { route: 'feed:9105033381806695217' }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-habits-chart }
+  - assert_text: { id: dashboard-title, text: Kitchen Science }
+  - assert_visible: { id: dashboard-feed-link }
+  - assert_visible: { id: dashboard-refresh-now }
+  - tap: { id: dashboard-refresh-now }
+  - assert_visible: { id: dashboard-activity-chart }
+  - assert_visible: { id: dashboard-length-chart }
+  - assert_visible: { id: dashboard-refresh-countdown }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-feed-light
+  - pause: { secs: 2 }
+  - screenshot: dashboard-feed-countdown
+  - navigate: { route: unread }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-publisher-chart }
+  - assert_text: { id: dashboard-title, key: nav_all_unread }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-unread
+  - assert_missing: { id: dashboard-refresh-now }
+  - tap: { id: dashboard-publisher-9105033381806695217 }
+  - wait_for: { id: dashboard-habits-chart }
+  - assert_text: { id: dashboard-title, text: Kitchen Science }
+  - assert_visible: { id: dashboard-refresh-now }
+  - navigate: { route: unread }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-publisher-chart }
+  - pause: { secs: 1 } # Settle the incoming chart before selecting a value.
+  - tap: { id: dashboard-activity-chart, at: [200, 50] }
+  - screenshot: dashboard-unread-annotation
+  - navigate: { route: today }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-title }
+  - assert_text: { id: dashboard-title, key: nav_today }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-today
+  - navigate: { route: all }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - toolbar: { item: star, on: true }
+  - navigate: { route: starred }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-title }
+  - assert_text: { id: dashboard-title, key: nav_starred }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-starred
+  - navigate: { route: settings }
+  - select: { id: theme-picker, index: 1, only_on: [macos-appkit, ios-uikit] }
+  - navigate: { route: 'feed:9105033381806695217' }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-habits-chart }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-feed-dark
+  - navigate: { route: settings }
+  - select: { id: theme-picker, index: 2, only_on: [macos-appkit, ios-uikit] }
+  - navigate: { route: all }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-publisher-chart }
+  - pause: { secs: 1 } # Let the chart entrance settle before capturing.
+  - screenshot: dashboard-library
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - assert_missing: { id: feed-dashboard }
+  - toolbar: { item: star, on: false }

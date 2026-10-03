@@ -103,6 +103,7 @@ pub use daynews_opml as opml;
 #[derive(Clone, Copy)]
 pub struct SheetsState {
     pub feeds: Signal<Vec<FeedRow>>,
+    pub group_by_feed: Signal<bool>,
     pub folders: Signal<Vec<FolderRow>>,
     pub tags: Signal<Vec<TagRow>>,
     /// `Some((done, total))` while a refresh runs: the progress NetNewsWire shows in its bar.
@@ -190,6 +191,7 @@ impl Ambient for SheetsState {
     fn create() -> Self {
         SheetsState {
             feeds: Signal::new(Vec::new()),
+            group_by_feed: Signal::new(true),
             folders: Signal::new(Vec::new()),
             tags: Signal::new(Vec::new()),
             refresh_progress: Signal::new(None),
@@ -278,7 +280,17 @@ fn wire_scene(sc: NewsScene) {
     // Timeline rows: ids from the query, fields read tracked so an edit to a visible row
     // (a star, a read dot) rebuilds exactly this list. The closure holds `timeline`.
     Effect::new(move || {
-        let rows = build_summaries(&timeline);
+        let mut rows = build_summaries(&timeline);
+        if state().group_by_feed.get() {
+            let order: HashMap<_, _> = state()
+                .feeds
+                .get()
+                .iter()
+                .enumerate()
+                .map(|(i, f)| (f.id, i))
+                .collect();
+            rows.sort_by_key(|a| order.get(&a.feed_id).copied().unwrap_or(usize::MAX));
+        }
         sc.articles.set(rows);
     });
 
@@ -804,6 +816,21 @@ pub fn refresh_feed(feed: u64) {
     });
 }
 
+pub fn refresh_due() {
+    if state().refresh_progress.get_untracked().is_some() {
+        return;
+    }
+    if let Some(Ok(feeds)) = with_db(|db| db.due_feeds(daynews_time::now_unix())) {
+        start_refresh(feeds);
+    }
+}
+
+pub fn move_feed(feed: u64, to: usize) {
+    with_db(|db| {
+        let _ = db.move_feed(feed, to);
+    });
+}
+
 // ---- refreshing -----------------------------------------------------------------------------
 
 /// Refresh up to four subscriptions concurrently. A slow server does not hold up every
@@ -820,7 +847,12 @@ pub fn refresh_all() {
         .iter()
         .map(|f| (f.id, f.feed_url.clone()))
         .collect();
-    if feeds.is_empty() {
+    start_refresh(feeds);
+}
+
+fn start_refresh(feeds: Vec<(u64, String)>) {
+    let st = state();
+    if feeds.is_empty() || st.refresh_progress.get_untracked().is_some() {
         return;
     }
     let total = feeds.len();
@@ -928,40 +960,65 @@ async fn refresh_one(id: u64, url: String) -> bool {
     )
     .await;
     drop(waiting);
-    let Some((etag, last_modified)) = with_db(|d| d.feed_validators(id)).flatten() else {
+    let Some(daynews_db::FeedCache {
+        etag,
+        last_modified,
+        body_hash,
+        retry_after,
+        needs_publication_sample,
+    }) = with_db(|d| d.feed_cache(id)).flatten()
+    else {
         return true;
     };
+    if retry_after.is_some_and(|until| {
+        until > (daynews_time::now_epoch_ms() / 1000).min(i64::MAX as u64) as i64
+    }) {
+        return false;
+    }
     active.update(|ids| {
         ids.insert(id, None);
     });
-    let validators = daynews_feed::CacheValidators {
-        etag,
-        last_modified,
+    let validators = if needs_publication_sample {
+        daynews_feed::CacheValidators::default()
+    } else {
+        daynews_feed::CacheValidators {
+            etag,
+            last_modified,
+        }
     };
     let result = if url.starts_with("asset:") {
         fetch_feed(&url)
             .await
-            .map(|feed| daynews_feed::FeedUpdate::Modified(feed, Default::default()))
+            .map(|feed| daynews_feed::FeedUpdate::Modified(feed, Default::default(), None))
     } else {
         let mut last = None;
         let mut last_update = 0;
-        daynews_feed::fetch_conditional_with_progress(&url, &validators, |received, total| {
-            let fraction = total
-                .filter(|n| *n > 0)
-                .map(|n| (received as f64 / n as f64).clamp(0.0, 1.0));
-            let now = daynews_time::now_epoch_ms();
-            if fraction != last
-                && (fraction.is_some() != last.is_some()
-                    || fraction == Some(1.0)
-                    || now.saturating_sub(last_update) >= 100)
-            {
-                active.update(|values| {
-                    values.insert(id, fraction);
-                });
-                last = fraction;
-                last_update = now;
-            }
-        })
+        daynews_feed::fetch_cached_with_progress(
+            &url,
+            &validators,
+            if needs_publication_sample {
+                None
+            } else {
+                body_hash.as_deref()
+            },
+            |received, total| {
+                let fraction = total
+                    .filter(|n| *n > 0)
+                    .map(|n| (received as f64 / n as f64).clamp(0.0, 1.0));
+                let now = daynews_time::now_epoch_ms();
+                if fraction != last
+                    && (fraction.is_some() != last.is_some()
+                        || fraction == Some(1.0)
+                        || now.saturating_sub(last_update) >= 100)
+                {
+                    active.update(|values| {
+                        values.insert(id, fraction);
+                    });
+                    last = fraction;
+                    last_update = now;
+                }
+            },
+        )
         .await
     };
     batch(|| match result {
@@ -969,7 +1026,7 @@ async fn refresh_one(id: u64, url: String) -> bool {
             with_db(|d| d.feed_checked(id, validators.etag, validators.last_modified));
             true
         }
-        Ok(daynews_feed::FeedUpdate::Modified(parsed, validators)) => {
+        Ok(daynews_feed::FeedUpdate::Modified(parsed, validators, body_hash)) => {
             let items: Vec<IncomingArticle> = parsed
                 .items
                 .into_iter()
@@ -989,6 +1046,15 @@ async fn refresh_one(id: u64, url: String) -> bool {
                 })
                 .collect();
             with_db(|d| {
+                // Keep cache metadata unchanged if the checked import fails.
+                if d.feed_cache(id).is_none() {
+                    return true;
+                }
+                if let Err(error) = d.try_upsert_articles(id, &url, &items) {
+                    d.set_feed_error(id, &error.to_string());
+                    return false;
+                }
+                d.record_publications(id, items.iter().filter_map(|item| item.published));
                 d.update_feed_metadata(
                     id,
                     parsed.title.as_deref(),
@@ -996,16 +1062,21 @@ async fn refresh_one(id: u64, url: String) -> bool {
                     parsed.description.as_deref(),
                     parsed.icon_url.as_deref(),
                 );
-                // Unsubscribing while the request was in flight must not insert orphan articles.
-                if d.feed_validators(id).is_some() {
-                    d.upsert_articles(id, &url, &items);
-                    d.feed_checked(id, validators.etag, validators.last_modified);
-                }
-            });
-            true
+                d.set_feed_body_hash(id, body_hash);
+                d.feed_checked(id, validators.etag, validators.last_modified);
+                true
+            })
+            .unwrap_or(false)
         }
         Err(e) => {
-            with_db(|d| d.set_feed_error(id, &e.to_string()));
+            with_db(|d| {
+                let until = match &e {
+                    daynews_feed::FeedError::RetryAfter { until, .. } => Some(*until),
+                    _ => None,
+                };
+                d.set_feed_retry_after(id, until);
+                d.set_feed_error(id, &e.to_string());
+            });
             false
         }
     })
@@ -1171,6 +1242,31 @@ fn android_files_dir() -> Option<PathBuf> {
 /// call site below reads the same.
 fn store_with<R>(f: impl FnOnce(&Store) -> R) -> R {
     f(&store())
+}
+
+pub fn watch_dashboard(
+    scope: Signal<Scope>,
+    local_day: Signal<i64>,
+    output: Signal<Option<daynews_db::dashboard::Dashboard>>,
+) {
+    let st = state();
+    let sc = scene();
+    let cache = RefCell::new(daynews_db::dashboard::DashboardCache::default());
+    Effect::new(move || {
+        let scope = scope.get();
+        let _ = local_day.get();
+        let _ = (
+            st.feeds.get(),
+            st.total_unread.get(),
+            st.total_starred.get(),
+            sc.articles.get(),
+        );
+        if let Some(Ok(snapshot)) = with_db(|db| {
+            db.dashboard_cached(scope, daynews_time::now_unix(), &mut cache.borrow_mut())
+        }) {
+            output.set_if_changed(Some(snapshot));
+        }
+    });
 }
 
 #[cfg(test)]

@@ -138,3 +138,99 @@ settings_refresh_60 = Every Hour
 settings_refresh_120 = Every 2 Hours
 settings_refresh_240 = Every 4 Hours
 settings_refresh_480 = Every 8 Hours
+
+settings_refresh_automatic = Automatic
+settings_refresh_automatic_note = Automatic checks each feed based on how often and how recently it publishes, from every 30 minutes to once a day.
+group_by_feeds = Group by Feeds
+move_feed_up = Move Feed Up
+move_feed_down = Move Feed Down
+feed_order_note = Reorder feeds to set refresh priority and article group order. Drag feeds or use Move Feed Up and Move Feed Down.
+
+# Dashboards. Numbers, dates, chart axes and countdown digits follow the active locale.
+dashboard_overview = FEED INTELLIGENCE
+dashboard_today_eyebrow = YOUR DAY IN STORIES
+dashboard_unread_eyebrow = YOUR READING HORIZON
+dashboard_starred_eyebrow = YOUR PERSONAL COLLECTION
+dashboard_library_eyebrow = THE BIG PICTURE
+dashboard_feed_intro = A portrait of this publication, built from the articles in your library.
+dashboard_today_intro = What arrived today, who published it, and how much there is to explore.
+dashboard_unread_intro = See the shape of your backlog and find room for your next good read.
+dashboard_starred_intro = The stories you kept: a map of your interests, publishers and reading time.
+dashboard_library_intro = Your publications, their rhythms, and the stories they bring together.
+dashboard_articles = Articles
+dashboard_unread = Unread
+dashboard_reading = Reading time
+dashboard_publishers = Publishers
+dashboard_read = Read
+dashboard_number = { NUMBER($value, maximumFractionDigits: 0) }
+dashboard_minutes = { NUMBER($value, maximumFractionDigits: 0) } min
+dashboard_percent = { NUMBER($value, maximumFractionDigits: 0) }%
+dashboard_words = { NUMBER($value, maximumFractionDigits: 0) } words on average
+dashboard_authors = { $count ->
+    [one] One contributing author
+   *[other] { NUMBER($count) } contributing authors
+    }
+dashboard_activity = Publication rhythm
+dashboard_activity_today = Arrivals by hour
+dashboard_activity_unread = Age of your unread stories
+dashboard_activity_starred = When your saved stories were published
+dashboard_activity_note = { DATETIME($start, dateStyle: "medium", timeStyle: "none") } – { DATETIME($end, dateStyle: "medium", timeStyle: "none") } · articles by publication date
+dashboard_today_note = Today, in your local time
+dashboard_unread_note = Recent discoveries and stories waiting a little longer
+dashboard_lengths = Story lengths
+dashboard_lengths_note = Estimated words · stored article text
+dashboard_sources = Publisher mix
+dashboard_sources_note = Where these stories come from
+dashboard_chart_date = { DATETIME($when, dateStyle: "medium", timeStyle: "none") }
+dashboard_chart_hour = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: 0) }:00
+dashboard_chart_count = Articles
+dashboard_chart_words = Words
+dashboard_short = <100
+dashboard_medium = 100–299
+dashboard_long = 300–699
+dashboard_deep = 700–1,499
+dashboard_very_long = 1,500+
+dashboard_age_today = <1 day
+dashboard_age_week = 1–6 days
+dashboard_age_month = 1–4 weeks
+dashboard_age_quarter = 1–3 months
+dashboard_age_old = 3+ months
+dashboard_other = Other publishers
+dashboard_empty = No stories here yet
+dashboard_empty_note = Your dashboard will take shape as articles arrive.
+dashboard_loading = Gathering your feed insights…
+dashboard_automatic = AUTOMATIC REFRESH
+dashboard_every_minutes = Every { NUMBER($minutes) } minutes
+dashboard_every_hours = Every { NUMBER($hours) } hours
+dashboard_daily = Once a day
+dashboard_interval_range = { $fast } – { $slow }
+dashboard_next = Next check: { DATETIME($when, dateStyle: "medium", timeStyle: "medium") }
+dashboard_countdown = { NUMBER($hours, minimumIntegerDigits: 2, useGrouping: 0) }:{ NUMBER($minutes, minimumIntegerDigits: 2, useGrouping: 0) }:{ NUMBER($seconds, minimumIntegerDigits: 2, useGrouping: 0) }
+dashboard_due = Due now · waiting for the next scheduler tick
+dashboard_refreshing = Checking feeds now…
+dashboard_manual = Manual refresh is selected. Automatic would use this cadence.
+dashboard_fixed = A fixed refresh interval is selected. Automatic would use this cadence.
+dashboard_no_schedule = Subscribe to a feed to see its refresh forecast.
+dashboard_backoff = Some feeds are backing off after an error or an origin-requested delay.
+dashboard_policy = Based on recent publication cadence and recency; quiet feeds are checked less often.
+dashboard_last_story = Latest story: { DATETIME($when, dateStyle: "medium", timeStyle: "short") }
+dashboard_show = Feed overview
+dashboard_habits = Publishing habits
+dashboard_habits_note = Local weekday and hour · brighter means more stories
+dashboard_mon = Mon
+dashboard_tue = Tue
+dashboard_wed = Wed
+dashboard_thu = Thu
+dashboard_fri = Fri
+dashboard_sat = Sat
+dashboard_sun = Sun
+dashboard_checked = Last checked: { DATETIME($when, dateStyle: "medium", timeStyle: "short") }
+dashboard_read_share = { NUMBER($percent, maximumFractionDigits: 0) }% read · { NUMBER($count) } starred
+dashboard_contributors = Named authors
+
+dashboard_refresh_now = Refresh Now
+
+dashboard_cell_annotation = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: 0) }:00 · { $count ->
+    [one] 1 article
+   *[other] { NUMBER($count, maximumFractionDigits: 0) } articles
+    }

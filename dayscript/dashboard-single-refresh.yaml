@@ -1,0 +1,29 @@
+# Run tests/feed-refresh-server.py first in a fresh DAY_NEWS_DATA_DIR.
+# Compare /stats before/after the final tap: only /feed/1 should gain one request.
+name: day-news-dashboard-single-refresh
+description: Refresh Now targets the displayed source and preserves conditional requests.
+flow:
+  - navigate: { route: settings }
+  - select: { id: refresh-interval-picker, index: 1 }
+  - navigate: { route: subscriptions }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/1' }
+  - tap: { id: subscribe-add }
+  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/2' }
+  - tap: { id: subscribe-add }
+  - pause: { secs: 4 }
+  - navigate: { route: 'feed:8512098384262059532' }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-refresh-now }
+  - pause: { secs: 1 }
+  - tap: { id: dashboard-refresh-now }
+  - pause: { secs: 3 }
+  - screenshot: dashboard-single-refresh
+  - navigate: { route: all }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-publisher-chart }
+  - assert_missing: { id: dashboard-refresh-now }
+  - tap: { id: dashboard-publisher-8512098384262059532 }
+  - wait_for: { id: dashboard-habits-chart }
+  - assert_visible: { id: dashboard-refresh-now }
+  - navigate: { route: settings }
+  - select: { id: refresh-interval-picker, index: 0 }

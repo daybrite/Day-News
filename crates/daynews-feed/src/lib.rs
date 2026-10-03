@@ -76,6 +76,11 @@ pub enum FeedError {
     Http(HttpError),
     /// A non-2xx response; the feed may have moved or be gone.
     Status(u16),
+    /// A busy origin asked us not to poll again until this Unix timestamp.
+    RetryAfter {
+        status: u16,
+        until: i64,
+    },
     /// The bytes did not parse as any syndication format we understand.
     Parse(String),
 }
@@ -84,7 +89,9 @@ impl std::fmt::Display for FeedError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FeedError::Http(e) => write!(f, "network error: {e:?}"),
-            FeedError::Status(s) => write!(f, "server returned HTTP {s}"),
+            FeedError::Status(s) | FeedError::RetryAfter { status: s, .. } => {
+                write!(f, "server returned HTTP {s}")
+            }
             FeedError::Parse(e) => write!(f, "could not parse feed: {e}"),
         }
     }
@@ -116,18 +123,25 @@ pub async fn fetch(url: &str) -> Result<ParsedFeed, FeedError> {
 /// is not a usable base (the web build fetches bundled `asset:` feeds as relative same-origin
 /// URLs, and URL resolution inside the parser needs an absolute base).
 pub async fn fetch_with_base(fetch_url: &str, base_url: &str) -> Result<ParsedFeed, FeedError> {
-    match fetch_conditional_with_base(fetch_url, base_url, &CacheValidators::default(), |_, _| {})
-        .await?
+    match fetch_conditional_with_base(
+        fetch_url,
+        base_url,
+        &CacheValidators::default(),
+        None,
+        |_, _| {},
+    )
+    .await?
     {
-        FeedUpdate::Modified(feed, _) => Ok(feed),
+        FeedUpdate::Modified(feed, _, _) => Ok(feed),
         FeedUpdate::NotModified(_) => Err(FeedError::Status(304)),
     }
 }
 
 pub use day_part_http::CacheValidators;
 
+#[derive(Debug)]
 pub enum FeedUpdate {
-    Modified(ParsedFeed, CacheValidators),
+    Modified(ParsedFeed, CacheValidators, Option<String>),
     NotModified(CacheValidators),
 }
 
@@ -137,7 +151,7 @@ pub async fn fetch_conditional(
     url: &str,
     validators: &CacheValidators,
 ) -> Result<FeedUpdate, FeedError> {
-    fetch_conditional_with_base(url, url, validators, |_, _| {}).await
+    fetch_conditional_with_base(url, url, validators, None, |_, _| {}).await
 }
 
 pub async fn fetch_conditional_with_progress(
@@ -145,13 +159,26 @@ pub async fn fetch_conditional_with_progress(
     validators: &CacheValidators,
     progress: impl FnMut(u64, Option<u64>),
 ) -> Result<FeedUpdate, FeedError> {
-    fetch_conditional_with_base(url, url, validators, progress).await
+    fetch_conditional_with_base(url, url, validators, None, progress).await
+}
+
+/// Revalidate a persisted representation and skip parsing byte-identical 200 responses.
+/// Store the returned fingerprint atomically with the articles and validators. Validators
+/// from an unchanged body still replace the old values, including clearing absent headers.
+pub async fn fetch_cached_with_progress(
+    url: &str,
+    validators: &CacheValidators,
+    fingerprint: Option<&str>,
+    progress: impl FnMut(u64, Option<u64>),
+) -> Result<FeedUpdate, FeedError> {
+    fetch_conditional_with_base(url, url, validators, fingerprint, progress).await
 }
 
 async fn fetch_conditional_with_base(
     fetch_url: &str,
     base_url: &str,
     validators: &CacheValidators,
+    fingerprint: Option<&str>,
     progress: impl FnMut(u64, Option<u64>),
 ) -> Result<FeedUpdate, FeedError> {
     let req = day_part_http::Request::get(fetch_url)
@@ -169,9 +196,10 @@ async fn fetch_conditional_with_base(
             .await
             .map_err(FeedError::Http)?;
     if response.status != 200 {
-        return process_response(response, base_url, validators);
+        return process_response(response, base_url, validators, fingerprint);
     }
     let validators = validators.clone();
+    let fingerprint = fingerprint.map(str::to_owned);
     let base = base_url.to_string();
     // Feed parsing and HTML sanitization must not stall the reader while several feeds finish.
     #[cfg(not(target_arch = "wasm32"))]
@@ -179,14 +207,21 @@ async fn fetch_conditional_with_base(
         let (tx, rx) = day_async::oneshot();
         std::thread::Builder::new()
             .name("feed-parse".into())
-            .spawn(move || tx.send(process_response(response, &base, &validators)))
+            .spawn(move || {
+                tx.send(process_response(
+                    response,
+                    &base,
+                    &validators,
+                    fingerprint.as_deref(),
+                ))
+            })
             .map_err(|e| FeedError::Http(HttpError::Io(e.to_string())))?;
         rx.await
             .map_err(|_| FeedError::Http(HttpError::Cancelled))?
     }
     #[cfg(target_arch = "wasm32")]
     {
-        process_response(response, &base, &validators)
+        process_response(response, &base, &validators, fingerprint.as_deref())
     }
 }
 
@@ -194,6 +229,7 @@ fn process_response(
     response: day_part_http::Response,
     base_url: &str,
     validators: &CacheValidators,
+    fingerprint: Option<&str>,
 ) -> Result<FeedUpdate, FeedError> {
     if response.status == 304 {
         return if validators.is_empty() {
@@ -202,13 +238,48 @@ fn process_response(
             Ok(FeedUpdate::NotModified(validators.updated(&response)))
         };
     }
+    if matches!(response.status, 429 | 503) {
+        let now = (daynews_time::now_epoch_ms() / 1000).min(i64::MAX as u64) as i64;
+        if let Some(until) = response
+            .header("retry-after")
+            .and_then(|value| retry_after(value, now))
+        {
+            return Err(FeedError::RetryAfter {
+                status: response.status,
+                until,
+            });
+        }
+    }
     if response.status != 200 {
         return Err(FeedError::Status(response.status));
     }
     let updated = validators.updated(&response);
+    use sha2::{Digest, Sha256};
+    let hash = format!("{:x}", Sha256::digest(&response.body));
+    if fingerprint == Some(hash.as_str()) {
+        return Ok(FeedUpdate::NotModified(updated));
+    }
     // Keep the subscription URL as the identity base for ID-less entries across redirects.
     let base = base_url;
-    Ok(FeedUpdate::Modified(parse(&response.body, base)?, updated))
+    Ok(FeedUpdate::Modified(
+        parse(&response.body, base)?,
+        updated,
+        Some(hash),
+    ))
+}
+
+fn retry_after(value: &str, now: i64) -> Option<i64> {
+    let value = value.trim();
+    if !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit()) {
+        return value
+            .parse::<u64>()
+            .ok()
+            .map(|seconds| now.saturating_add(seconds.min(i64::MAX as u64) as i64));
+    }
+    httpdate::parse_http_date(value)
+        .ok()
+        .and_then(|date| date.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|elapsed| (elapsed.as_secs().min(i64::MAX as u64) as i64).max(now))
 }
 
 /// Identifies us to publishers; several block requests with no agent string.
@@ -552,14 +623,111 @@ mod refresh_tests {
             process_response(
                 response(),
                 "https://fixture.example/feed",
-                &CacheValidators::default()
+                &CacheValidators::default(),
+                None
             ),
             Err(FeedError::Status(304))
         ));
-        match process_response(response(), "https://fixture.example/feed", &validators).unwrap() {
+        match process_response(
+            response(),
+            "https://fixture.example/feed",
+            &validators,
+            None,
+        )
+        .unwrap()
+        {
             FeedUpdate::NotModified(next) => assert_eq!(next, validators),
             _ => panic!("304 must preserve the stored representation"),
         }
+    }
+
+    #[test]
+    fn retry_after_accepts_seconds_and_dates_but_not_invalid_values() {
+        let now = 1_000;
+        assert_eq!(retry_after("120", now), Some(1_120));
+        assert_eq!(retry_after("0", now), Some(now));
+        assert_eq!(
+            retry_after("Thu, 01 Jan 1970 00:20:00 GMT", now),
+            Some(1_200)
+        );
+        assert_eq!(retry_after("Thu, 01 Jan 1970 00:00:00 GMT", now), Some(now));
+        for value in ["-1", "+120", "1.5", "tomorrow", ""] {
+            assert_eq!(retry_after(value, now), None);
+        }
+        let error = process_response(
+            Response::new(429, vec![("Retry-After".into(), "120".into())], vec![]),
+            "https://fixture.example/feed",
+            &CacheValidators::default(),
+            None,
+        )
+        .unwrap_err();
+        assert!(matches!(error, FeedError::RetryAfter { status: 429, .. }));
+    }
+
+    #[test]
+    fn identical_200_skips_import_but_rotates_and_clears_validators() {
+        let url = "https://fixture.example/feed";
+        let body =
+            br#"{"version":"https://jsonfeed.org/version/1.1","title":"Fixture","items":[]}"#;
+        let old = CacheValidators {
+            etag: Some("W/\"old\"".into()),
+            last_modified: Some("Wed, 30 Sep 2026 10:00:00 GMT".into()),
+        };
+        let first =
+            process_response(Response::new(200, vec![], body.to_vec()), url, &old, None).unwrap();
+        let FeedUpdate::Modified(_, _, Some(hash)) = first else {
+            panic!("must import first body")
+        };
+        let response = Response::new(
+            200,
+            vec![
+                ("ETag".into(), "W/\"new\"".into()),
+                (
+                    "Last-Modified".into(),
+                    "Thu, 01 Oct 2026 10:00:00 GMT".into(),
+                ),
+            ],
+            body.to_vec(),
+        );
+        let FeedUpdate::NotModified(next) =
+            process_response(response, url, &old, Some(&hash)).unwrap()
+        else {
+            panic!("identical 200 must not parse or import")
+        };
+        assert_eq!(next.etag.as_deref(), Some("W/\"new\""));
+        assert_eq!(
+            next.last_modified.as_deref(),
+            Some("Thu, 01 Oct 2026 10:00:00 GMT")
+        );
+        let request = day_part_http::Request::get(url).conditional(&next);
+        assert!(
+            request
+                .headers()
+                .iter()
+                .any(|(key, value)| key == "If-None-Match" && value == "W/\"new\"")
+        );
+        let FeedUpdate::NotModified(cleared) = process_response(
+            Response::new(200, vec![], body.to_vec()),
+            url,
+            &next,
+            Some(&hash),
+        )
+        .unwrap() else {
+            panic!("identical body must still update validators")
+        };
+        assert!(cleared.is_empty());
+        // Content changes must import even when the origin incorrectly reuses its ETag.
+        let changed = br#"{"version":"https://jsonfeed.org/version/1.1","title":"Changed fixture","items":[]}"#;
+        assert!(matches!(
+            process_response(
+                Response::new(200, vec![], changed.to_vec()),
+                url,
+                &next,
+                Some(&hash)
+            )
+            .unwrap(),
+            FeedUpdate::Modified(_, _, Some(_))
+        ));
     }
 
     #[test]
@@ -571,8 +739,8 @@ mod refresh_tests {
         let json =
             br#"{"version":"https://jsonfeed.org/version/1.1","title":"Fixture","items":[]}"#;
         let response = Response::new(200, vec![], json.to_vec());
-        match process_response(response, "https://fixture.example/feed", &previous).unwrap() {
-            FeedUpdate::Modified(feed, next) => {
+        match process_response(response, "https://fixture.example/feed", &previous, None).unwrap() {
+            FeedUpdate::Modified(feed, next, _) => {
                 assert_eq!(feed.title.as_deref(), Some("Fixture"));
                 assert!(next.is_empty());
             }
@@ -582,7 +750,8 @@ mod refresh_tests {
             process_response(
                 Response::new(200, vec![], b"invalid".to_vec()),
                 "https://fixture.example/feed",
-                &previous
+                &previous,
+                None
             )
             .is_err()
         );
@@ -590,7 +759,8 @@ mod refresh_tests {
             process_response(
                 Response::new(503, vec![], vec![]),
                 "https://fixture.example/feed",
-                &previous
+                &previous,
+                None
             ),
             Err(FeedError::Status(503))
         ));
