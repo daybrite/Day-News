@@ -1,33 +1,16 @@
-# A dayscript check (https://daybrite.dev/docs/dayscript): drives the running app by
-# element id and route, on any target. Run it with:
-#
-#     day launch -p macos-appkit --script dayscript/smoke.yaml
-#
+# Network-free smoke check against the real Day News navigation, with or without feeds.
+name: day-news-smoke
+description: Library overview and preferences mount without any subscriptions.
 flow:
-  # The nav host mounts immediately on every platform (a section's content only mounts once
-  # selected; desktop auto-selects the first section, mobile starts at the list).
   - wait_for: { id: nav }
-
-  # Home: the counter is a signal; tapping writes it, the label reads it.
-  - navigate: { route: home }
-  - assert_visible: { id: home-title }
-  - tap: { id: inc }
-  - assert_text: { id: count, text: "1" }
-
-  # Each section is addressable by its typed route's key.
-  - navigate: { route: controls }
-  - assert_route: { route: controls }
-  - assert_visible: { id: controls-title }
-
-  - navigate: { route: canvas }
-  - assert_visible: { id: canvas-dial }
-
-  # The stack: push a typed item, check the full route, pop natively.
-  - navigate: { route: items }
-  - tap: { id: item-1 }
-  - assert_route: { route: items/item-1 }
-  - assert_visible: { id: item-detail }
-  - nav_back:
-  - assert_route: { route: items }
-
+  - navigate: { route: all }
+  - assert_route: { route: all }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: dashboard-title }
+  - assert_text: { id: dashboard-title, key: nav_all_articles }
   - screenshot: smoke
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: language-picker }
+  - assert_visible: { id: refresh-interval-picker }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }

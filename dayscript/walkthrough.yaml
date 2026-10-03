@@ -1,6 +1,7 @@
 # Day News walkthrough: the reader loop end to end against the imported subscriptions.
 #
 #     day launch -p macos-appkit --script dayscript/walkthrough.yaml
+# Short-window regression: add --capture-size 2048x1400@2 (1024x700 points).
 #
 # CONTRACT: expects the store to already hold subscriptions with articles (run
 # dayscript/seed-demo.yaml first, as CI does). Written to be re-runnable: it reads from
@@ -9,6 +10,7 @@
 name: day-news-walkthrough
 description: Sidebar, timeline, reader, search, and read/unread marking.
 flow:
+  - dialog_mode: { mode: scripted }
   - wait_for: { id: nav }
   # The user's persisted unread-only filter must not hide the feed this script later edits.
   - toolbar: { item: unread-feeds-only, on: false }
@@ -42,6 +44,12 @@ flow:
   # Scope dashboards replace the empty reader. The overview command also opens the
   # content page on compact platforms, whose article list is a separate navigation layer.
   - navigate: { route: "feed:9105033381806695217" }
+  # Keep the publisher link available even when a prior walkthrough marked every story read.
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - toolbar: { item: read, on: false }
+  - pause: { secs: 1 }
   - toolbar: { item: feed-overview }
   - wait_for: { id: dashboard-habits-chart }
   - assert_text: { id: dashboard-title, text: Kitchen Science }
@@ -179,7 +187,8 @@ flow:
   - assert_visible: { id: timeline-empty, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
   # Settings: display controls share persistent bindings and reset to the shipped defaults.
-  - navigate: { route: settings }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: retention-picker }
   - assert_visible: { id: theme-picker, only_on: [macos-appkit, ios-uikit] }
   - assert_visible: { id: language-picker }
@@ -208,7 +217,10 @@ flow:
   - assert_value: { id: refresh-interval-picker, value: 4 }
   - select: { id: refresh-interval-picker, index: 0 }
   - assert_value: { id: refresh-interval-picker, value: 0 }
-  - screenshot: settings
+  - screenshot: { name: settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - screenshot: { name: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
 
   # The toolbar's sidebar toggle hides the pane and brings it back.
   - toolbar: { item: day.sidebar-toggle, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
@@ -222,6 +234,7 @@ flow:
   # drives the app menu, which the phones do not have, so they skip this block. Kitchen Science
   # refreshes from the bundle, so no network is involved. Its route id is the URL's deterministic
   # hash (daynews_db::feed_id("asset:demo/kitchen-science.xml")).
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: "feed:9105033381806695217", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: article-row-0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - menu: { key: menu_refresh_feed, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
@@ -230,22 +243,25 @@ flow:
   - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - menu: { key: unsubscribe, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - navigate: { route: subscriptions, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: feeds-count, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 6 }, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   # Subscribe again, so the screenshots below and the next run see all seven feeds.
-  - input: { id: subscribe-url, text: "asset:demo/kitchen-science.xml", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: subscribe-add, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: new-feed, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_presented: { skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - respond: { text: "asset:demo/kitchen-science.xml", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 2, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 7 }, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
-  # Subscriptions page: feed list and the OPML controls.
-  - navigate: { route: subscriptions }
+  # Subscription import/export lives in Settings.
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: feeds-count }
   - assert_visible: { id: opml-export }
-  - screenshot: subscriptions
+  - screenshot: { name: subscription-settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - screenshot: { name: subscription-settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
 
   # Capture a populated saved-story dashboard, then restore the temporary star.
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: all }
   - select: { id: timeline, index: 0 }
   - wait_for: { id: reader-web }
@@ -261,3 +277,4 @@ flow:
   - select: { id: timeline, index: 0 }
   - wait_for: { id: reader-web }
   - toolbar: { item: star, on: false }
+  - dialog_mode: { mode: native }

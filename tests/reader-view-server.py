@@ -16,7 +16,7 @@ class Handler(BaseHTTPRequestHandler):
                 "items": [
                     {"id": name, "url": f"{BASE}/{name}", "title": name,
                      "date_published": f"2026-09-{30-i:02}T12:00:00Z",
-                     "content_html": f"<p>RSS excerpt for {name}.</p>"}
+                     "content_html": f"<p>RSS excerpt for {name}.</p><a href='/reference'>Fixture reference</a>"}
                     for i, name in enumerate(["complete", "slow", "denied"])
                 ],
             }).encode()

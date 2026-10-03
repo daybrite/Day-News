@@ -1,11 +1,13 @@
 # Start tests/feed-refresh-server.py and use an isolated DAY_NEWS_DATA_DIR.
 name: day-news-feed-progress
 flow:
-  - navigate: { route: subscriptions }
-  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/progress/known' }
-  - tap: { id: subscribe-add }
-  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/progress/unknown' }
-  - tap: { id: subscribe-add }
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28762/progress/known' }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28762/progress/unknown' }
   - pause: { secs: 9 }
   - navigate: { route: all }
   - nav_back: { native: true, only_on: [ios-uikit] }
@@ -17,3 +19,4 @@ flow:
   - screenshot: feed-progress-downloading
   - pause: { secs: 4 }
   - screenshot: feed-progress-finished
+  - dialog_mode: { mode: native }

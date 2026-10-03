@@ -6,31 +6,38 @@
 name: day-news-seed
 description: Subscribe to a few representative feeds and let them refresh.
 flow:
+  - dialog_mode: { mode: scripted }
   - wait_for: { id: nav, timeout_secs: 30 }
-  - navigate: { route: subscriptions }
-  - wait_for: { id: subscribe-url, timeout_secs: 20 }
-  - input: { id: subscribe-url, text: "https://www.nasa.gov/feed/" }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: "https://www.nasa.gov/feed/" }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://www.quantamagazine.org/feed/" }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: "https://www.quantamagazine.org/feed/" }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://www.sciencedaily.com/rss/all.xml" }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: "https://www.sciencedaily.com/rss/all.xml" }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://www.merriam-webster.com/wotd/feed/rss2" }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: "https://www.merriam-webster.com/wotd/feed/rss2" }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://users.rust-lang.org/c/announcements/6.rss" }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: "https://users.rust-lang.org/c/announcements/6.rss" }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://blog.rust-lang.org/feed.xml" }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: "https://blog.rust-lang.org/feed.xml" }
   - pause: { secs: 2 }
-  - input: { id: subscribe-url, text: "https://social.rust-lang.org/@rust.rss" }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: "https://social.rust-lang.org/@rust.rss" }
   - pause: { secs: 4 }
   - assert_text: { id: feeds-count, text: "7 feeds" }
   - navigate: { route: unread }
   - pause: { secs: 3 }
   - screenshot: seeded
+  - dialog_mode: { mode: native }

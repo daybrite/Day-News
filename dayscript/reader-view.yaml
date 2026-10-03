@@ -2,9 +2,10 @@
 name: day-news-reader-view
 description: Local full-text extraction, cached toggling, selection cancellation, and errors.
 flow:
-  - navigate: { route: subscriptions }
-  - input: { id: subscribe-url, text: 'http://127.0.0.1:28761/feed.json' }
-  - tap: { id: subscribe-add }
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28761/feed.json' }
   - pause: { secs: 2 }
   - navigate: { route: all }
   - wait_for: { id: article-row-0 }
@@ -15,10 +16,14 @@ flow:
   - pause: { secs: 2 }
   - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Full publication content.' }
   - web_eval: { id: reader-web, script: 'Boolean(window.publisherScriptRan)', text: 'false' }
+  - web_eval: { id: reader-web, script: "(() => { const a = document.querySelector('a[href$=\"/reference\"]'); a.dispatchEvent(new PointerEvent('pointermove', {bubbles: true, pointerType: 'mouse', clientX: 100, clientY: 150})); return document.getElementById('reader-link-tooltip').textContent; })()", text: 'http://127.0.0.1:28761/reference' }
+  - screenshot: reader-full-link-tooltip
   - screenshot: reader-view-full-article
   - toolbar: { item: reader-view, on: false }
   - pause: { secs: 1 }
   - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'RSS excerpt for complete.' }
+  - web_eval: { id: reader-web, script: "(() => { const a = document.querySelector('a[href$=\"/reference\"]'); a.dispatchEvent(new PointerEvent('pointermove', {bubbles: true, pointerType: 'mouse', clientX: 100, clientY: 150})); return document.getElementById('reader-link-tooltip').textContent; })()", text: 'http://127.0.0.1:28761/reference' }
+  - screenshot: reader-feed-link-tooltip
   - toolbar: { item: reader-view, on: true }
   - pause: { secs: 1 }
   - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Full publication content.' }
@@ -40,3 +45,4 @@ flow:
   - assert_text: { id: reader-view-status, key: reader_view_network_error }
   - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'RSS excerpt for denied.' }
   - screenshot: reader-view-error
+  - dialog_mode: { mode: native }

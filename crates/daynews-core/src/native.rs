@@ -825,6 +825,37 @@ pub fn subscribe(url: &str) {
         }
     });
 }
+/// Subscribe after discovery, retaining the original validators and body hash without refetching.
+pub async fn subscribe_discovered(
+    url: String,
+    update: daynews_feed::FeedUpdate,
+) -> Result<u64, String> {
+    let worker = ready_worker().await.map_err(|e| e.to_string())?;
+    let copy = url.clone();
+    let id = worker
+        .write(move |container| {
+            Ok(Db {
+                container: container.clone(),
+            }
+            .add_feed(&copy, &fallback_title(&copy), None))
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+    if !apply_update(worker.clone(), id, url, Ok(update)).await {
+        return Err("subscription import failed".into());
+    }
+    update_undo(&worker).await;
+    Ok(id)
+}
+/// Fixture subscriptions use the same awaitable import, preserving bundled localization.
+pub async fn subscribe_asset(url: String) -> Result<u64, String> {
+    let parsed = fetch_feed(&url).await.map_err(|e| e.to_string())?;
+    subscribe_discovered(
+        url,
+        daynews_feed::FeedUpdate::Modified(parsed, Default::default(), None),
+    )
+    .await
+}
 pub fn unsubscribe(feed: u64) {
     edit(move |db| {
         db.container.delete::<daynews_db::Feed>(feed)?;
@@ -1116,6 +1147,15 @@ async fn refresh_one(id: u64, url: String) -> bool {
         )
         .await
     };
+    apply_update(worker, id, url, result).await
+}
+
+async fn apply_update(
+    worker: DatabaseWorker,
+    id: u64,
+    url: String,
+    result: Result<daynews_feed::FeedUpdate, daynews_feed::FeedError>,
+) -> bool {
     let applied = worker
         .write(move |container| {
             day_model::with_author("feed-refresh", || {

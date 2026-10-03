@@ -274,6 +274,18 @@ pub fn settings_page() -> impl Piece {
 
     scroll(
         column((
+            row((
+                button(crate::res::str::opml_import())
+                    .action(crate::subscriptions::import_opml)
+                    .id("opml-import"),
+                button(crate::res::str::opml_export())
+                    .action(crate::subscriptions::export_opml)
+                    .id("opml-export"),
+            ))
+            .spacing(8.0),
+            label(move || daynews_core::state().status.get())
+                .font(Font::Footnote)
+                .id("status"),
             label(crate::res::str::settings_heading())
                 .font(Font::Headline)
                 .color(move || palette().text),

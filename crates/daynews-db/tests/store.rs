@@ -615,6 +615,19 @@ fn dashboards_measure_full_scopes_and_reuse_article_metrics_on_feed_checks() {
     assert_eq!(db.dashboard(Scope::Starred, now).unwrap().total, 1);
     assert_eq!(db.dashboard(Scope::Today, now).unwrap().total, 2);
     assert_eq!(db.dashboard(Scope::All, now).unwrap().total, 3);
+    let tag = db.add_tag("Fixture dashboard tag");
+    db.set_tagged(article_id(url, "one"), tag, true);
+    db.set_tagged(
+        article_id("https://fixture.example/other", "three"),
+        tag,
+        true,
+    );
+    let tagged = db.dashboard(Scope::Tag(tag), now).unwrap();
+    assert_eq!(tagged.total, 2);
+    assert_eq!(tagged.words, 5);
+    assert_eq!(tagged.sources.len(), 2);
+    db.set_tagged(article_id(url, "one"), tag, false);
+    assert_eq!(db.dashboard(Scope::Tag(tag), now).unwrap().total, 1);
     assert_eq!(
         db.dashboard(Scope::Today, now)
             .unwrap()

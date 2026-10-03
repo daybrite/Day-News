@@ -2,11 +2,19 @@
 name: day-news-dashboards
 description: Feed and smart-feed dashboards, refresh forecast, themes and returning to reading.
 flow:
-  - navigate: { route: settings }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - toggle: { id: group-by-feeds-picker, value: true }
   - select: { id: refresh-interval-picker, index: 0 }
   - select: { id: theme-picker, index: 0, only_on: [macos-appkit, ios-uikit] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: 'feed:9105033381806695217' }
+  # Keep the publisher link available even when a prior walkthrough marked every story read.
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - toolbar: { item: read, on: false }
+  - pause: { secs: 1 }
   - toolbar: { item: feed-overview }
   - wait_for: { id: dashboard-habits-chart }
   - assert_text: { id: dashboard-title, text: Kitchen Science }
@@ -53,15 +61,19 @@ flow:
   - assert_text: { id: dashboard-title, key: nav_starred }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-starred
-  - navigate: { route: settings }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - select: { id: theme-picker, index: 1, only_on: [macos-appkit, ios-uikit] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: 'feed:9105033381806695217' }
   - toolbar: { item: feed-overview }
   - wait_for: { id: dashboard-habits-chart }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-feed-dark
-  - navigate: { route: settings }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - select: { id: theme-picker, index: 2, only_on: [macos-appkit, ios-uikit] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: all }
   - toolbar: { item: feed-overview }
   - wait_for: { id: dashboard-publisher-chart }

@@ -14,7 +14,6 @@ use daynews_db::Scope;
 pub const ROUTE_TODAY: &str = "today";
 pub const ROUTE_UNREAD: &str = "unread";
 pub const ROUTE_STARRED: &str = "starred";
-pub const ROUTE_SUBSCRIPTIONS: &str = "subscriptions";
 
 /// Install the app menu. Reactive so the Go menu's enablement follows the unread count.
 pub fn install() {
@@ -27,19 +26,10 @@ pub fn install() {
                 vec![
                     menu_item(res::str::menu_new_feed().format())
                         .key("n")
-                        .action(|| {
-                            // The subscriptions page owns the URL field; focus follows the user.
-                            if daynews_core::try_scene().is_some() {
-                                navigate(ROUTE_SUBSCRIPTIONS);
-                                crate::subscriptions::focus_url_field();
-                            }
-                        }),
+                        .action(crate::subscriptions::begin_new_feed),
                     menu_item(res::str::menu_new_folder().format())
                         .shortcut(Shortcut::new("n").shift())
-                        .action(|| {
-                            navigate(ROUTE_SUBSCRIPTIONS);
-                            crate::subscriptions::begin_new_folder();
-                        }),
+                        .action(crate::subscriptions::begin_new_folder),
                     // No platform has a native "new window" nav, so this lowers to the
                     // builder registered with `register_new_window` (see `root`).
                     menu_role(MenuRole::NewWindow),
@@ -215,6 +205,6 @@ mod tests {
         super::go(super::ROUTE_UNREAD, daynews_db::Scope::Unread);
         super::set_open_read(true);
         super::set_open_starred(true);
-        crate::subscriptions::focus_url_field();
+        crate::subscriptions::begin_new_feed();
     }
 }

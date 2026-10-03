@@ -30,8 +30,10 @@ flow:
   - pause: { secs: 1 }
   - screenshot: menu-next-unread
 
-  # File ▸ New Feed focuses the subscribe field on the subscriptions page.
+  # File ▸ New Feed opens an attached URL prompt.
+  - dialog_mode: { mode: native }
   - menu: { key: menu_new_feed, path: [menu_file] }
   - wait_idle:
-  - assert_route: { route: subscriptions }
+  - assert_presented: {}
   - screenshot: menu-new-feed
+  - respond: { dismiss: true }

@@ -51,6 +51,7 @@ day-piece-colorpicker = { git = "https://github.com/daybrite/day.git" }
 day-piece-settings = { git = "https://github.com/daybrite/day.git" }
 day = { git = "https://github.com/daybrite/day.git", features = ["persistence"] }
 day-piece-webview = { git = "https://github.com/daybrite/day-piece-webview.git" }
+daynews-feed = { path = "crates/daynews-feed" }
 daynews-core = { path = "crates/daynews-core" }
 daynews-time = { path = "crates/daynews-time" }
 daynews-db = { path = "crates/daynews-db" }

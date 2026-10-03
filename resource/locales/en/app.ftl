@@ -3,7 +3,6 @@ app_title = Day News
 nav_all_unread = All Unread
 nav_all_articles = All Articles
 nav_starred = Starred
-nav_subscriptions = Subscriptions
 timeline_empty = No articles
 timeline_empty_unread = All caught up
 reader_empty = Select an article
@@ -24,7 +23,11 @@ unsubscribe = Unsubscribe
 opml_heading = Subscriptions file
 opml_import = Import OPML…
 opml_export = Export OPML…
-feeds_count = { $count } feeds
+feeds_count =
+    { $count ->
+        [one] { $count } feed
+       *[other] { $count } feeds
+    }
 nav_today = Today
 nav_smart_feeds = Smart Feeds
 nav_feeds_section = Feeds
@@ -182,7 +185,7 @@ dashboard_lengths_note = Estimated words · stored article text
 dashboard_sources = Publisher mix
 dashboard_sources_note = Where these stories come from
 dashboard_chart_date = { DATETIME($when, dateStyle: "medium", timeStyle: "none") }
-dashboard_chart_hour = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: 0) }:00
+dashboard_chart_hour = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: "false") }:00
 dashboard_chart_count = Articles
 dashboard_chart_words = Words
 dashboard_short = <100
@@ -205,7 +208,7 @@ dashboard_every_hours = Every { NUMBER($hours) } hours
 dashboard_daily = Once a day
 dashboard_interval_range = { $fast } – { $slow }
 dashboard_next = Next check: { DATETIME($when, dateStyle: "medium", timeStyle: "medium") }
-dashboard_countdown = { NUMBER($hours, minimumIntegerDigits: 2, useGrouping: 0) }:{ NUMBER($minutes, minimumIntegerDigits: 2, useGrouping: 0) }:{ NUMBER($seconds, minimumIntegerDigits: 2, useGrouping: 0) }
+dashboard_countdown = { NUMBER($hours, minimumIntegerDigits: 2, useGrouping: "false") }:{ NUMBER($minutes, minimumIntegerDigits: 2, useGrouping: "false") }:{ NUMBER($seconds, minimumIntegerDigits: 2, useGrouping: "false") }
 dashboard_due = Due now · waiting for the next scheduler tick
 dashboard_refreshing = Checking feeds now…
 dashboard_manual = Manual refresh is selected. Automatic would use this cadence.
@@ -230,7 +233,20 @@ dashboard_contributors = Named authors
 
 dashboard_refresh_now = Refresh Now
 
-dashboard_cell_annotation = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: 0) }:00 · { $count ->
+dashboard_cell_annotation = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: "false") }:00 · { $count ->
     [one] 1 article
    *[other] { NUMBER($count, maximumFractionDigits: 0) } articles
     }
+
+subscribe_invalid = Enter a valid website or feed URL
+subscribe_missing = No feed found
+subscribe_missing_note = This website does not advertise an RSS, Atom, or JSON feed.
+subscribe_choose = Choose a feed
+subscribe_choose_note = This website offers several feeds. Select the one you want to follow.
+subscribe_candidate = { $title } — { $url }
+subscribe_failed = Could not subscribe to this feed. Check the URL and try again.
+cancel_action = Cancel
+opml_filter = Subscription lists
+opml_import_failed = Import failed: { $error }
+opml_read_failed = Could not read the file: { $error }
+opml_exported = Exported subscriptions

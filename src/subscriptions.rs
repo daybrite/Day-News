@@ -1,32 +1,155 @@
 //! Managing subscriptions: add by URL, import/export OPML, and per-feed actions.
 
-use crate::theme::palette;
 use day::prelude::*;
-use daynews_core::FeedRow;
 
-/// Focus for the "add a subscription" field, so File ▸ New Feed can put the cursor there.
-/// Per window (docs/state.md): the command should focus the field in the window the user is
-/// looking at, not in whichever window happened to build first.
-#[derive(Clone, Copy)]
-pub(crate) struct UrlFocus(Signal<bool>);
-
-impl Ambient for UrlFocus {
-    fn create() -> Self {
-        UrlFocus(Signal::new(false))
+fn subscription_url(input: &str) -> Option<String> {
+    let input = input.trim();
+    // A bare hostname with a port can parse as an opaque URL scheme. Preserve that input
+    // convenience while rejecting actual non-web protocols and embedded credentials.
+    let bare_port = input.split_once(':').is_some_and(|(_, rest)| {
+        rest.split('/')
+            .next()
+            .is_some_and(|port| port.parse::<u16>().is_ok())
+    });
+    if url::Url::parse(input).is_ok()
+        && daynews_feed::discovery::web_url(input).is_none()
+        && !bare_port
+    {
+        return None;
     }
+    daynews_feed::discovery::web_url(&daynews_core::normalize_feed_url(input))
+        .map(|u| u.to_string())
 }
 
-fn url_focus() -> Signal<bool> {
-    UrlFocus::try_ambient()
-        .or_else(UrlFocus::focused)
-        .expect("no window is open")
-        .0
+/// Open the URL prompt in the initiating window. Clipboard access starts in the user gesture.
+pub fn begin_new_feed() {
+    if daynews_core::try_scene().is_none() {
+        return;
+    }
+    let clipboard = day::clipboard::read(&["text/plain", "text/uri-list"]);
+    day::task(async move {
+        let initial = clipboard
+            .await
+            .ok()
+            .flatten()
+            .and_then(|r| String::from_utf8(r.bytes.as_ref().clone()).ok())
+            .and_then(|s| daynews_feed::discovery::web_url(s.trim()).map(|u| u.to_string()))
+            .unwrap_or_default();
+        let Some(input) = prompt(crate::res::str::menu_new_feed())
+            .placeholder(crate::res::str::subscribe_placeholder())
+            .initial(initial)
+            .ok_label(crate::res::str::subscribe_action())
+            .await
+        else {
+            return;
+        };
+        let input = input.trim();
+        if input.is_empty() {
+            return;
+        }
+        let result = if input.starts_with("asset:") {
+            // Deterministic app-owned fixtures used by dayscript, never a clipboard candidate.
+            daynews_core::subscribe_asset(input.to_owned()).await
+        } else {
+            let Some(normalized) = subscription_url(input) else {
+                alert(crate::res::str::subscribe_invalid()).await;
+                return;
+            };
+            let resolved = match daynews_feed::discovery::discover(&normalized).await {
+                Ok(daynews_feed::discovery::Discovery::Feed { url, update }) => Some((url, update)),
+                Ok(daynews_feed::discovery::Discovery::Candidates(options)) => {
+                    if options.is_empty() {
+                        alert(crate::res::str::subscribe_missing())
+                            .message(crate::res::str::subscribe_missing_note())
+                            .await;
+                        return;
+                    }
+                    let chosen = if options.len() == 1 {
+                        Some(options[0].url.clone())
+                    } else {
+                        let mut dialog = Alert::new(crate::res::str::subscribe_choose())
+                            .message(crate::res::str::subscribe_choose_note());
+                        for option in options {
+                            let label = option
+                                .title
+                                .as_deref()
+                                .map(|title| {
+                                    crate::res::str::subscribe_candidate(title, option.url.as_str())
+                                        .format()
+                                })
+                                .unwrap_or_else(|| option.url.clone());
+                            dialog = dialog.button(label, option.url);
+                        }
+                        dialog.cancel(crate::res::str::cancel_action()).await
+                    };
+                    let Some(url) = chosen else {
+                        return;
+                    };
+                    // Resolve and validate only the chosen candidate. Other feeds incur no requests.
+                    match daynews_feed::discovery::discover(&url).await {
+                        Ok(daynews_feed::discovery::Discovery::Feed { url, update }) => {
+                            Some((url, update))
+                        }
+                        _ => {
+                            alert(crate::res::str::subscribe_failed()).await;
+                            return;
+                        }
+                    }
+                }
+                Err(_) => {
+                    alert(crate::res::str::subscribe_failed()).await;
+                    return;
+                }
+            };
+            let Some((url, update)) = resolved else {
+                return;
+            };
+            daynews_core::subscribe_discovered(url, update).await
+        };
+        match result {
+            Ok(feed) => select_subscribed_feed(feed).await,
+            Err(_) => {
+                alert(crate::res::str::subscribe_failed()).await;
+            }
+        }
+    });
 }
 
-/// File ▸ New Feed: put the cursor in the URL field (the page may have just mounted).
-pub fn focus_url_field() {
-    if let Some(focus) = UrlFocus::try_ambient().or_else(UrlFocus::focused) {
-        focus.0.set(true);
+/// Wait for the committed feed projection and its native sidebar bindings to settle.
+/// This also makes an empty source visible when the unread-only filter was active.
+async fn select_subscribed_feed(feed: u64) {
+    let st = daynews_core::state();
+    let scene = daynews_core::scene();
+    scene.search.set(String::new());
+    let (tx, rx) = day_async::oneshot();
+    let sender = std::cell::RefCell::new(Some(tx));
+    let ready = day::reactive::Scope::child();
+    ready.enter(|| {
+        day::reactive::batch(|| {
+            day::reactive::Effect::new(move || {
+                if let Some(unread) = st
+                    .feeds
+                    .with(|feeds| feeds.iter().find(|f| f.id == feed).map(|f| f.unread))
+                {
+                    if unread == 0
+                        && crate::feed_list::FeedList::app()
+                            .unread_only
+                            .get_untracked()
+                    {
+                        crate::feed_list::toggle();
+                    }
+                    if let Some(tx) = sender.borrow_mut().take() {
+                        day::reactive::at_turn_end(move || tx.send(()));
+                    }
+                }
+            })
+        })
+    });
+    let visible = rx.await.is_ok();
+    ready.dispose();
+    if visible {
+        navigate(&format!("feed:{feed}"));
+        daynews_core::select_scope(daynews_db::Scope::Feed(feed));
     }
 }
 
@@ -45,149 +168,11 @@ pub fn begin_new_folder() {
     });
 }
 
-pub fn subscriptions_page() -> impl Piece {
-    let st = daynews_core::state();
-    let entry = Signal::new(String::new());
-    let add = move || {
-        let url = entry.get_untracked();
-        if !url.trim().is_empty() {
-            daynews_core::subscribe(&url);
-            entry.set(String::new());
-        }
-    };
-
-    scroll(
-        column((
-            label(crate::res::str::subscribe_heading())
-                .font(Font::Headline)
-                .color(move || palette().text),
-            row((
-                text_field(entry)
-                    .placeholder(crate::res::str::subscribe_placeholder())
-                    .focused(url_focus())
-                    .id("subscribe-url")
-                    .grow_w(),
-                button(crate::res::str::subscribe_action())
-                    .action(add)
-                    .prominent()
-                    .id("subscribe-add"),
-            ))
-            .spacing(8.0)
-            .align(VAlign::Center)
-            .grow_w(),
-            label(crate::res::str::opml_heading())
-                .font(Font::Headline)
-                .color(move || palette().text)
-                .padding(Insets {
-                    top: 18.0,
-                    ..Default::default()
-                }),
-            row((
-                button(crate::res::str::opml_import())
-                    .action(import_opml)
-                    .id("opml-import"),
-                button(crate::res::str::opml_export())
-                    .action(export_opml)
-                    .id("opml-export"),
-            ))
-            .spacing(8.0)
-            .align(VAlign::Center),
-            label(move || st.status.get())
-                .font(Font::Footnote)
-                .color(move || palette().text_muted)
-                .id("status"),
-            label(move || crate::res::str::feeds_count(st.feeds.with(|f| f.len()) as f64).format())
-                .font(Font::Headline)
-                .color(move || palette().text)
-                // `.id()` before `.padding()`: a decorator returns a wrapper node, so an id applied
-                // after one lands on the wrapper, which has no text for assertions to read.
-                .id("feeds-count")
-                .padding(Insets {
-                    top: 18.0,
-                    ..Default::default()
-                }),
-            label(crate::res::str::feed_order_note())
-                .font(Font::Footnote)
-                .max_lines(3),
-            list(
-                items(move || st.feeds.get(), |f: &FeedRow| f.id.to_string()),
-                feed_row,
-            )
-            .row_height(RowHeight::Uniform(76.0))
-            .reorderable(true)
-            .on_reorder(move |from, to| {
-                if let Some(feed) = st.feeds.get_untracked().get(from) {
-                    daynews_core::move_feed(feed.id, to);
-                }
-            })
-            .id("feed-order-list")
-            .height(480.0)
-            .grow_w(),
-        ))
-        .spacing(8.0)
-        .align(HAlign::Leading)
-        .padding(18.0)
-        .grow_w(),
-    )
-    .background(move || palette().bg)
-    .grow()
-}
-
-fn feed_row(slot: ItemSlot<FeedRow, String>) -> impl Piece {
-    row((
-        column((
-            label(move || slot.field(|f| f.title.clone()))
-                .font(Font::Body)
-                .color(move || palette().text),
-            label(move || slot.field(|f| f.feed_url.clone()))
-                .font(Font::Caption2)
-                .single_line()
-                .color(move || {
-                    if slot.field(|f| f.has_error) {
-                        palette().error
-                    } else {
-                        palette().text_muted
-                    }
-                }),
-        ))
-        .spacing(1.0)
-        .align(HAlign::Leading)
-        .grow_w(),
-        button(crate::res::str::move_feed_up())
-            .action(move || crate::feed_list::move_relative(slot.field(|f| f.id), -1))
-            .enabled(move || {
-                daynews_core::state().feeds.with(|feeds| {
-                    feeds
-                        .first()
-                        .is_some_and(|feed| feed.id != slot.field(|f| f.id))
-                })
-            })
-            .id_of(move || format!("feed-up-{}", slot.field(|f| f.id))),
-        button(crate::res::str::move_feed_down())
-            .action(move || crate::feed_list::move_relative(slot.field(|f| f.id), 1))
-            .enabled(move || {
-                daynews_core::state().feeds.with(|feeds| {
-                    feeds
-                        .last()
-                        .is_some_and(|feed| feed.id != slot.field(|f| f.id))
-                })
-            })
-            .id_of(move || format!("feed-down-{}", slot.field(|f| f.id))),
-        button(crate::res::str::unsubscribe())
-            .action(move || daynews_core::unsubscribe(slot.field(|f| f.id)))
-            .id_of(move || format!("unsub-{}", slot.field(|f| f.id))),
-    ))
-    .spacing(8.0)
-    .align(VAlign::Center)
-    .padding(Insets::symmetric(0.0, 6.0))
-    .grow_w()
-}
-
 /// Import: pick an `.opml` file and merge its subscriptions in.
 pub fn import_opml() {
     day::task(async {
         let Some(url) = open_file()
-            .filter("Subscription lists", &["opml", "xml"])
+            .filter(crate::res::str::opml_filter().format(), &["opml", "xml"])
             .await
         else {
             return;
@@ -198,7 +183,7 @@ pub fn import_opml() {
                 if let Err(e) = daynews_core::import_opml(&text).await {
                     daynews_core::state()
                         .status
-                        .set(format!("Import failed: {e}"));
+                        .set(crate::res::str::opml_import_failed(e.as_str()).format());
                 } else {
                     // Newly imported feeds have no articles yet; fetch them straight away so the
                     // app is useful immediately after an import.
@@ -207,7 +192,7 @@ pub fn import_opml() {
             }
             Err(e) => daynews_core::state()
                 .status
-                .set(format!("Could not read the file: {e}")),
+                .set(crate::res::str::opml_read_failed(e.to_string()).format()),
         }
     });
 }
@@ -220,11 +205,37 @@ pub fn export_opml() {
         // shape that works on the sandboxed platforms (the app never gets a writable path).
         let saved = save_file(text.into_bytes())
             .suggested_name("Day-News-Subscriptions.opml")
-            .filter("Subscription lists", &["opml"])
+            .filter(crate::res::str::opml_filter().format(), &["opml"])
             .await;
         daynews_core::state().status.set(match saved {
-            Some(_) => "Exported subscriptions".into(),
+            Some(_) => crate::res::str::opml_exported().format(),
             None => String::new(),
         });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn subscription_input_accepts_bare_hosts_and_rejects_non_web_urls() {
+        for input in [
+            "https://fixture.example/feed",
+            "fixture.example/feed",
+            "localhost:28763/feed",
+            "http://127.0.0.1:28763/feed",
+        ] {
+            assert!(super::subscription_url(input).is_some(), "{input}");
+        }
+        for input in [
+            "file:///tmp/feed",
+            "file:/tmp/feed",
+            "ftp://fixture.example/feed",
+            "javascript:alert(1)",
+            "https://user:pass@fixture.example/feed",
+            "not a URL",
+            "",
+        ] {
+            assert!(super::subscription_url(input).is_none(), "{input}");
+        }
+    }
 }

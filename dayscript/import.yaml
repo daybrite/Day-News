@@ -14,7 +14,8 @@ name: day-news-import
 description: Import an OPML file through the real file picker and refresh every feed.
 flow:
   - wait_for: { id: nav }
-  - navigate: { route: subscriptions }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: opml-import }
   - tap: { id: opml-import }
   - pause: { secs: 1 }
@@ -22,4 +23,6 @@ flow:
       { path: "${project}/crates/daynews-opml/tests/data/daynews.opml" }
   - pause: { secs: 2 }
   - assert_text: { id: feeds-count, text: "7 feeds" }
-  - screenshot: imported
+  - screenshot: { name: imported, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - screenshot: { name: imported, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }

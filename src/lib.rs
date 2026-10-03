@@ -1,6 +1,6 @@
 //! Day News: a feed reader built on [Day](https://daybrite.dev), modeled on NetNewsWire.
 //!
-//! Three panes on a desktop (subscriptions, timeline, article) and a push-navigation stack on a
+//! Three panes on a desktop (feed sidebar, timeline, article) and a push-navigation stack on a
 //! phone, from one `root()`. Everything the UI shows is a reactive signal published by
 //! `daynews-core`; the crates underneath own feed parsing, OPML and the SQLite store.
 
@@ -160,12 +160,7 @@ const OPENING_SECTION: &str = "today";
 /// One window's contents. Called again for each File ▸ New Window.
 fn build_shell() -> impl Piece {
     // Each window owns its scope, search and selection; the store and badges stay shared.
-    daynews_core::NewsScene::scoped(|sc| {
-        // File ▸ New Feed focuses the field in the window the user is looking at.
-        reader_view::ReaderView::scoped(move |_| {
-            subscriptions::UrlFocus::scoped(move |_focus| shell_body(sc))
-        })
-    })
+    daynews_core::NewsScene::scoped(|sc| reader_view::ReaderView::scoped(move |_| shell_body(sc)))
 }
 
 fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
@@ -188,13 +183,47 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         },
     );
 
-    nav(section)
+    let inline_settings =
+        day_core::capability(day_spec::Cap::AppMenu) == day_spec::Support::Unsupported;
+
+    let navigation = nav(section)
         .style(NavStyle::Sidebar)
         .retain_selection_when(move |key: &Option<String>| {
             matches!(key.as_deref().and_then(scope_for_key), Some(Scope::Feed(id))
                 if st.feeds.with_untracked(|feeds| feeds.iter().any(|feed| feed.id == id)))
         })
         .title(res::str::app_title())
+        .header(move || {
+            label(move || res::str::feeds_count(st.feeds.with(|feeds| feeds.len()) as f64).format())
+                .font(Font::Caption)
+                .id("feeds-count")
+                .padding(Insets::symmetric(12.0, 4.0))
+        })
+        .reorder_items(
+            |key: &Option<String>| key.as_deref().is_some_and(|k| k.starts_with("feed:")),
+            |from, to| {
+                let Some(feed) = from
+                    .as_deref()
+                    .and_then(|k| k.strip_prefix("feed:"))
+                    .and_then(|k| k.parse::<u64>().ok())
+                else {
+                    return;
+                };
+                let Some(target) = to
+                    .as_deref()
+                    .and_then(|k| k.strip_prefix("feed:"))
+                    .and_then(|k| k.parse::<u64>().ok())
+                else {
+                    return;
+                };
+                if let Some(index) = daynews_core::state()
+                    .feeds
+                    .with_untracked(|rows| rows.iter().position(|f| f.id == target))
+                {
+                    daynews_core::move_feed(feed, index);
+                }
+            },
+        )
         // Refresh and Mark All as Read act on the scope this list has chosen, so they ride this
         // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root
         // list's bar when it collapses. The article's commands are on the reader.
@@ -219,9 +248,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
         // whole detail area.
         .content_list(timeline::timeline_pane)
         .content_list_width(400.0)
-        .content_list_for(|k: &Option<String>| {
-            !matches!(k.as_deref(), Some("subscriptions") | Some("settings"))
-        })
+        .content_list_for(|k: &Option<String>| !matches!(k.as_deref(), Some("settings")))
         .detail_visible(sc.reader_open)
         // Smart feeds: Today, All Unread and Starred, in NetNewsWire's order, under their own
         // header. Counts are real badges: right-aligned and de-emphasized by the toolkit.
@@ -304,23 +331,19 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
             },
         )
         .destination(|key: &Option<String>| match key.as_deref() {
-            Some("subscriptions") => {
-                Either::Left(Either::Left(subscriptions::subscriptions_page()))
-            }
-            Some("settings") => Either::Left(Either::Right(settings::settings_page())),
+            Some("settings") => Either::Left(settings::settings_page()),
             _ => Either::Right(reader_dest()),
-        })
-        .item(
-            "subscriptions".to_string(),
-            res::str::nav_subscriptions(),
-            subscriptions::subscriptions_page,
-        )
-        .item(
+        });
+    let navigation = if inline_settings {
+        navigation.item(
             "settings".to_string(),
             res::str::nav_settings(),
             settings::settings_page,
         )
-        .id("nav")
+    } else {
+        navigation
+    };
+    navigation.id("nav")
 }
 
 /// The reader as a destination. The timeline is no longer in here; it is the nav's

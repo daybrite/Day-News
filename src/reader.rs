@@ -119,6 +119,11 @@ fn document_with_style(
   .when {{ color: {muted}; font-size: 0.74em; letter-spacing: 0.06em; text-transform: uppercase;
            margin: 0 0 22px; }}
   a {{ color: {accent}; }}
+  #reader-link-tooltip {{ position: fixed; z-index: 2147483647; pointer-events: none;
+    max-width: min(680px, calc(100vw - 16px)); padding: 7px 10px;
+    background: {alt}; color: {fg}; border: 1px solid {rule}; border-radius: 6px;
+    box-shadow: 0 3px 12px #0003; font: 12px/1.4 system-ui, sans-serif;
+    overflow-wrap: anywhere; }}
   /* Feed HTML is arbitrary: keep media inside the pane rather than forcing a sideways scroll. */
   img, video, iframe, table {{ max-width: 100%; }}
   img, video {{ height: auto; }}
@@ -144,6 +149,30 @@ fn document_with_style(
 <h1 class="t" id="reader-title">{title}</h1>
 <p class="when">{when}</p>
 {body}
+<div id="reader-link-tooltip" role="tooltip" hidden></div>
+<script>
+(() => {{
+  const tooltip = document.getElementById('reader-link-tooltip');
+  const hide = () => {{ tooltip.hidden = true; tooltip.textContent = ''; }};
+  document.addEventListener('pointermove', event => {{
+    if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {{ hide(); return; }}
+    const link = event.target.closest && event.target.closest('a[href]');
+    if (!link) {{ hide(); return; }}
+    tooltip.textContent = link.href;
+    tooltip.hidden = false;
+    const box = tooltip.getBoundingClientRect();
+    const x = Math.max(8, Math.min(event.clientX + 12, innerWidth - box.width - 8));
+    let y = event.clientY + 18;
+    if (y + box.height > innerHeight - 8) y = Math.max(8, event.clientY - box.height - 10);
+    tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
+  }});
+  document.addEventListener('pointerleave', hide);
+  document.addEventListener('scroll', hide, true);
+  document.addEventListener('click', hide, true);
+  document.addEventListener('keydown', hide);
+  window.addEventListener('blur', hide);
+}})();
+</script>
 </body></html>"#,
         display_style = crate::reader_styles::stylesheet(style, dark),
         scheme = if dark { "dark" } else { "light" },

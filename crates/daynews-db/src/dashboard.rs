@@ -117,7 +117,7 @@ impl Db {
                 vec![Value::Int(id as i64)],
             ),
             Scope::Tag(id) => (
-                "a.id IN (SELECT article FROM article_tags WHERE tag = ?)",
+                "a.id IN (SELECT article_id FROM article_tags WHERE tag_id = ?)",
                 vec![Value::Int(id as i64)],
             ),
         };

@@ -3,11 +3,13 @@
 name: day-news-conditional-cache
 description: Identical 200 rotates validators, following 304 avoids imports, Retry-After suppresses polls.
 flow:
-  - navigate: { route: subscriptions }
-  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/cache/rotating' }
-  - tap: { id: subscribe-add }
-  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/cache/busy' }
-  - tap: { id: subscribe-add }
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28762/cache/rotating' }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28762/cache/busy' }
   - pause: { secs: 2 }
   - navigate: { route: all }
   - wait_for: { id: article-row-0 }
@@ -21,3 +23,4 @@ flow:
   - pause: { secs: 1 }
   - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'Stable original body.', only_on: [macos-appkit] }
   - screenshot: conditional-cache
+  - dialog_mode: { mode: native }

@@ -10,7 +10,6 @@ pub struct Palette {
     pub accent: Color,
     pub rule: Color,
     pub unread_dot: Color,
-    pub error: Color,
     /// The star affordances: the row's glyph and the leading swipe action's fill. Warm, so
     /// starring reads apart from the blue read/unread actions.
     pub star: Color,
@@ -24,7 +23,6 @@ const LIGHT: Palette = Palette {
     accent: Color::hex(0x2F6FDE),
     rule: Color::hex(0xE2E2E6),
     unread_dot: Color::hex(0x2F6FDE),
-    error: Color::hex(0xC0392B),
     star: Color::hex(0xE8940A),
 };
 
@@ -36,7 +34,6 @@ const DARK: Palette = Palette {
     accent: Color::hex(0x4C8DFF),
     rule: Color::hex(0x33363A),
     unread_dot: Color::hex(0x4C8DFF),
-    error: Color::hex(0xFF6B5E),
     star: Color::hex(0xF0A62E),
 };
 

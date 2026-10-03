@@ -2,22 +2,16 @@
 name: day-news-grouped-feeds
 description: Group headings, floating title and persistent feed priority.
 flow:
-  - navigate: { route: settings }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: group-by-feeds-picker }
   - toggle: { id: group-by-feeds-picker, value: true }
   - select: { id: refresh-interval-picker, index: 0 }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: all }
   - wait_for: { id: floating-feed-name }
   - screenshot: grouped-feeds
-  - navigate: { route: subscriptions }
-  - wait_for: { id: feed-order-list }
-  - tap: { id: feed-up-9105033381806695217 }
-  - pause: { secs: 1 }
-  - tap: { id: feed-up-9105033381806695217 }
-  - pause: { secs: 1 }
-  - reorder: { id: feed-order-list, from: 0, to: 1 }
-  - pause: { secs: 1 }
-  - reorder: { id: feed-order-list, from: 1, to: 0 }
+  - reorder: { id: nav-reorder-list, from: 8, to: 6 }
   - pause: { secs: 1 }
   - navigate: { route: all }
   - wait_for: { id: floating-feed-name }
@@ -26,10 +20,9 @@ flow:
   - select: { id: timeline, index: 30 }
   - pause: { secs: 1 }
   - screenshot: floating-feed-header
-  - navigate: { route: settings }
+  - reorder: { id: nav-reorder-list, from: 6, to: 8 }
+  - pause: { secs: 1 }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - toggle: { id: group-by-feeds-picker, value: false }
-  - navigate: { route: subscriptions }
-  - tap: { id: feed-down-9105033381806695217 }
-  - pause: { secs: 1 }
-  - tap: { id: feed-down-9105033381806695217 }
-  - pause: { secs: 1 }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }

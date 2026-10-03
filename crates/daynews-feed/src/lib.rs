@@ -4,6 +4,7 @@
 //! the app depends on (which field becomes the title, how an article's stable identity is
 //! derived, which body wins) lives here rather than being spread through the UI.
 
+pub mod discovery;
 pub use day_part_http::HttpError;
 
 /// A feed as we store it: channel metadata plus its current items.

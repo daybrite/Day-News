@@ -439,8 +439,14 @@ fn sources_card(data: Data) -> AnyPiece {
             {
                 crate::feed_list::toggle();
             }
-            daynews_core::select_scope(Scope::Feed(id));
-            navigate(target);
+            // Changing scopes closes the compact reader. A publisher link opens the
+            // target overview, so restore the detail layer after navigation settles.
+            let scene = daynews_core::scene();
+            batch(|| {
+                daynews_core::select_scope(Scope::Feed(id));
+                navigate(target);
+                day::reactive::at_turn_end(move || scene.reader_open.set(true));
+            });
         }
     });
     card(
@@ -453,56 +459,60 @@ fn sources_card(data: Data) -> AnyPiece {
                 .font(Font::Caption)
                 .color(move || palette().text_muted)
                 .single_line(),
-            chart(move || {
-                sources(data)
-                    .into_iter()
-                    .map(|(id, _, n)| {
-                        let mark = sector(value("", n))
-                            .by_series(value("", id.to_string()))
-                            .angular_inset(2.0);
-                        if id == 0 {
-                            mark
-                        } else {
-                            mark.link(format!("feed:{id}"))
-                        }
-                    })
-                    .collect()
-            })
-            .coordinate(Coordinate::donut(0.68))
-            .animated()
-            .animate_appearance()
-            .legend(LegendPosition::Hidden)
-            .condition(
-                highlighted.predicate(),
-                day_piece_charts::Visual::default(),
-                day_piece_charts::Visual::opacity(0.22),
-            )
-            .interact(highlighted.on(day_piece_charts::EventSource::Hover))
-            .interact(links.clone())
-            .id("dashboard-publisher-chart")
+            PublisherPieces(vec![
+                chart(move || {
+                    sources(data)
+                        .into_iter()
+                        .map(|(id, _, n)| {
+                            let mark = sector(value("", n))
+                                .by_series(value("", id.to_string()))
+                                .angular_inset(2.0);
+                            if id == 0 {
+                                mark
+                            } else {
+                                mark.link(format!("feed:{id}"))
+                            }
+                        })
+                        .collect()
+                })
+                .coordinate(Coordinate::donut(0.68))
+                .animated()
+                .animate_appearance()
+                .legend(LegendPosition::Hidden)
+                .condition(
+                    highlighted.predicate(),
+                    day_piece_charts::Visual::default(),
+                    day_piece_charts::Visual::opacity(0.22),
+                )
+                .interact(highlighted.on(day_piece_charts::EventSource::Hover))
+                .interact(links.clone())
+                .id("dashboard-publisher-chart")
+                .any(),
+                day_piece_charts::legend(move || {
+                    sources(data)
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, (id, name, n))| {
+                            let entry = day_piece_charts::LegendEntry::new(
+                                id.to_string(),
+                                name,
+                                day_piece_charts::categorical(i),
+                            )
+                            .detail(res::str::dashboard_number(n as f64).format());
+                            if id == 0 {
+                                entry
+                            } else {
+                                entry.link(format!("feed:{id}"))
+                            }
+                        })
+                        .collect()
+                })
+                .interact(highlighted.on(day_piece_charts::EventSource::Hover))
+                .id_prefix("dashboard-publisher")
+                .links(links)
+                .any(),
+            ])
             .grow(),
-            day_piece_charts::legend(move || {
-                sources(data)
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, (id, name, n))| {
-                        let entry = day_piece_charts::LegendEntry::new(
-                            id.to_string(),
-                            name,
-                            day_piece_charts::categorical(i),
-                        )
-                        .detail(res::str::dashboard_number(n as f64).format());
-                        if id == 0 {
-                            entry
-                        } else {
-                            entry.link(format!("feed:{id}"))
-                        }
-                    })
-                    .collect()
-            })
-            .interact(highlighted.on(day_piece_charts::EventSource::Hover))
-            .id_prefix("dashboard-publisher")
-            .links(links),
         ))
         .spacing(3.0)
         .align(HAlign::Leading)
@@ -873,6 +883,52 @@ impl Piece for DashboardPieces {
         node
     }
 }
+// Reserve chart space independently of the legend's intrinsic height. In short
+// windows a vertical stack otherwise lets its five legend rows consume the donut.
+struct PublisherPieces(Vec<AnyPiece>);
+impl Piece for PublisherPieces {
+    fn build(self, cx: &mut BuildCx) -> day::RNode {
+        let node = cx.native(
+            day_spec::kinds::CONTAINER,
+            &day_spec::props::ContainerProps {
+                clips: true,
+                ..Default::default()
+            },
+            Rc::new(PublisherLayout),
+            Flex::default(),
+            Boundary::No,
+        );
+        cx.under(node, |cx| {
+            for child in self.0 {
+                child.build(cx);
+            }
+        });
+        node
+    }
+}
+struct PublisherLayout;
+fn publisher_regions(size: Size) -> [Rect; 2] {
+    let gap = 8.0_f64.min(size.width / 4.0);
+    let plot = (size.width - gap) * 0.38;
+    [
+        Rect::new(0.0, 0.0, plot, size.height),
+        Rect::new(plot + gap, 0.0, size.width - plot - gap, size.height),
+    ]
+}
+impl Layout for PublisherLayout {
+    fn measure(&self, cx: &mut dyn LayoutOps, children: &[day::RNode], p: Proposal) -> Size {
+        let size = Size::new(p.width.unwrap_or(240.0), p.height.unwrap_or(150.0));
+        for (&child, rect) in children.iter().zip(publisher_regions(size)) {
+            cx.measure_child(child, Proposal::exact(rect.size));
+        }
+        size
+    }
+    fn place(&self, cx: &mut dyn LayoutOps, children: &[day::RNode], bounds: Rect) {
+        for (&child, rect) in children.iter().zip(publisher_regions(bounds.size)) {
+            cx.place_child(child, rect);
+        }
+    }
+}
 struct DashboardLayout;
 fn regions(size: Size) -> [Rect; 6] {
     let w = size.width.max(0.0);
@@ -884,7 +940,8 @@ fn regions(size: Size) -> [Rect; 6] {
     let footer = 94.0_f64.min(h * 0.18);
     let plot = (h - hero - metrics - footer - 4.0 * gap).max(0.0);
     let y = hero + metrics + 2.0 * gap;
-    let activity_h = plot * 0.46;
+    // Short windows need room for every publisher legend row below the activity plot.
+    let activity_h = plot * if h < 650.0 { 0.36 } else { 0.46 };
     let lower = (plot - activity_h - gap).max(0.0);
     let half = ((w - gap) / 2.0).max(0.0);
     [

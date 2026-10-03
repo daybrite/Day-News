@@ -3,14 +3,18 @@
 name: day-news-dashboard-single-refresh
 description: Refresh Now targets the displayed source and preserves conditional requests.
 flow:
-  - navigate: { route: settings }
+  - dialog_mode: { mode: scripted }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - select: { id: refresh-interval-picker, index: 1 }
-  - navigate: { route: subscriptions }
-  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/1' }
-  - tap: { id: subscribe-add }
-  - input: { id: subscribe-url, text: 'http://127.0.0.1:28762/feed/2' }
-  - tap: { id: subscribe-add }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28762/feed/1' }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28762/feed/2' }
   - pause: { secs: 4 }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: 'feed:8512098384262059532' }
   - toolbar: { item: feed-overview }
   - wait_for: { id: dashboard-refresh-now }
@@ -25,5 +29,8 @@ flow:
   - tap: { id: dashboard-publisher-8512098384262059532 }
   - wait_for: { id: dashboard-habits-chart }
   - assert_visible: { id: dashboard-refresh-now }
-  - navigate: { route: settings }
+  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - select: { id: refresh-interval-picker, index: 0 }
+  - dialog_mode: { mode: native }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }

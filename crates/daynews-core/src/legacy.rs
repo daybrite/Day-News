@@ -767,6 +767,25 @@ pub fn subscribe(url: &str) {
     });
 }
 
+pub async fn subscribe_discovered(
+    url: String,
+    update: daynews_feed::FeedUpdate,
+) -> Result<u64, String> {
+    let id = with_db(|d| d.add_feed(&url, &fallback_title(&url), None))
+        .ok_or_else(|| "subscription store unavailable".to_string())?;
+    if !apply_update(id, url, Ok(update)) {
+        return Err("subscription import failed".into());
+    }
+    Ok(id)
+}
+pub async fn subscribe_asset(url: String) -> Result<u64, String> {
+    let parsed = fetch_feed(&url).await.map_err(|e| e.to_string())?;
+    subscribe_discovered(
+        url,
+        daynews_feed::FeedUpdate::Modified(parsed, Default::default(), None),
+    )
+    .await
+}
 pub fn unsubscribe(feed: u64) {
     with_db(|d| d.delete_feed(feed));
     // The window that removed the feed cannot stay scoped to it.
@@ -1021,6 +1040,13 @@ async fn refresh_one(id: u64, url: String) -> bool {
         )
         .await
     };
+    apply_update(id, url, result)
+}
+fn apply_update(
+    id: u64,
+    url: String,
+    result: Result<daynews_feed::FeedUpdate, daynews_feed::FeedError>,
+) -> bool {
     batch(|| match result {
         Ok(daynews_feed::FeedUpdate::NotModified(validators)) => {
             with_db(|d| d.feed_checked(id, validators.etag, validators.last_modified));

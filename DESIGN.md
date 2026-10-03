@@ -360,10 +360,20 @@ chronological articles inside each group. A name/icon header marks each group an
 follows the native list's first-visible-row signal. Uniform recycling rows reserve header
 space; headers do not add selectable records or change article indexes.
 
-Subscriptions exposes native list reordering and localized Move Up/Down controls on every
-platform. Moves persist contiguous positions without changing folders. Sidebar order, group
-order and the bounded four-request refresh queue share that priority. Native drag support
-remains toolkit-dependent; the explicit controls work wherever dragging is unavailable.
+The Feeds sidebar section supports drag reordering through Day's shared native list driver;
+smart feeds, section headers, tags, and Settings are fixed. The row context menu retains
+localized Move Up/Down controls. Moves persist contiguous positions without changing folders.
+Sidebar order, article group order and the bounded four-request refresh queue share that priority.
+The separate Subscriptions page is removed. File → New Feed and the sidebar add button open
+an attached URL prompt, prefilled only with a valid clipboard HTTP(S) URL. A direct feed is
+parsed once; websites advertise candidates through Link headers, alternate links, feed metadata,
+or conventional feed anchors. Relative links honor the final response URL and HTML base.
+Missing feeds show an alert; multiple candidates require a choice. Only the selected candidate
+is fetched. The parsed response, validators and body hash are imported without a duplicate fetch.
+Subscription completion selects that feed and clears the previous article search. OPML controls
+remain in Settings and the File menu. The common article document used for feed bodies and
+readability content shows the full resolved href in a pointer-following tooltip. Tooltip content
+uses textContent, not HTML; scrolling, leaving, clicking or blurring hides it.
 Regression coverage lives in daynews-db polling/store tests and the grouped-feed DayScript.
 
 ### Scope dashboards
@@ -374,7 +384,10 @@ publishing habits, contributor counts, reading time, saved/read share and source
 Today shows local-hour arrivals; Unread emphasizes backlog age; Starred maps the saved
 collection over publication time. Smart-feed dashboards add a publisher donut and counts.
 Publisher legend links select their feed in the sidebar and navigate to its overview; hovering
-a link highlights its row and matching donut segment. Stable feed IDs keep identically named
+a link highlights its row and matching donut segment. Publisher navigation reopens the detail
+layer after the scope change, including on compact mobile stacks. The donut and legend
+share a horizontal region with reserved widths; legend rows cannot consume the donut
+height in a short CI capture window. Stable feed IDs keep identically named
 publishers separate. The shared day-piece-charts interaction grammar binds the legend and donut to one
 series-projected point parameter. Conditional opacity provides hover emphasis; registered
 link handlers select a publisher from either surface, with pointer cursors on its hit target. Publication plots offer date/count guides, length bars offer
@@ -430,3 +443,11 @@ filter uses Google Material Symbols’ Apache-2.0 mark_email_unread vector, sepa
 the article-grouping filter. Bulk Mark All as Read remains in the Article menu with its
 shortcut, rather than occupying the toolbar. Walkthrough bulk-marking steps use its
 shared command id through the menu model.
+
+### Preferences entry point
+
+Toolkits with `Cap::AppMenu` expose the registered preferences window through their standard
+Settings/Preferences menu command, and omit Settings from the sidebar. Toolkits without an
+app menu retain the Settings destination in navigation. Walkthroughs open and close the
+registered `day.preferences` window on desktop and capture that window while testing its
+controls; browser and mobile walkthroughs navigate to the inline destination.

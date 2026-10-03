@@ -29,6 +29,10 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
         return Vec::new();
     }
     let mut items = vec![
+        toolbar_button("new-feed", res::str::menu_new_feed())
+            .icon(Symbol::Add)
+            .action(crate::subscriptions::begin_new_feed)
+            .placement(ToolbarPlacement::Secondary),
         crate::commands::refresh()
             .toolbar_item()
             .placement(ToolbarPlacement::Navigation),
