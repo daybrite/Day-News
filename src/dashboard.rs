@@ -731,7 +731,9 @@ pub fn dashboard() -> impl Piece {
             _ => res::str::dashboard_library_intro().format(),
         })
         .font(Font::Footnote)
-        .max_lines(2)
+        // The compact hero must also fit its eyebrow, title and actionable site URL.
+        // A second description line can consume the URL's entire height on ArkUI.
+        .single_line()
         .color(move || palette().text_muted),
         when(
             move || matches!(scope.get(), Scope::Feed(_)) && feed_page_url(data).is_some(),

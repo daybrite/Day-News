@@ -429,6 +429,8 @@ cards and forecast. It has no scroll container, and layout never writes reactive
 As the viewport shrinks, the header, metrics and forecast yield more space to the chart
 cards. This keeps their flexible plots from collapsing after titles and padding consume
 the available height, as seen in CI's small desktop windows and Android tablet layout.
+The hero description stays on one line so its title and actionable site URL both remain
+visible in compact panes, including Harmony's phone layout.
 Length distributions use horizontal bars to keep bucket labels readable in narrow panes;
 day-piece-charts thins colliding axis labels against measured text bounds. Charts use its
 built-in spring transitions for initial appearance and incoming metadata, growing bars,
