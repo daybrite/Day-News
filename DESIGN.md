@@ -426,6 +426,9 @@ web page; HTML markup and scripts are excluded from the word estimate.
 
 The layout divides the offered content bounds among header, metrics, three flexible chart
 cards and forecast. It has no scroll container, and layout never writes reactive state.
+As the viewport shrinks, the header, metrics and forecast yield more space to the chart
+cards. This keeps their flexible plots from collapsing after titles and padding consume
+the available height, as seen in CI's small desktop windows and Android tablet layout.
 Length distributions use horizontal bars to keep bucket labels readable in narrow panes;
 day-piece-charts thins colliding axis labels against measured text bounds. Charts use its
 built-in spring transitions for initial appearance and incoming metadata, growing bars,

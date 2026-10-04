@@ -947,13 +947,16 @@ fn regions(size: Size) -> [Rect; 6] {
     let h = size.height.max(0.0);
     let compact = w < 480.0;
     let gap = 10.0_f64.min(h / 50.0).min(w / 4.0);
-    let hero = (if compact { 100.0_f64 } else { 112.0_f64 }).min(h * 0.2);
-    let metrics = 62.0_f64.min(h * 0.12);
-    let footer = 232.0_f64.min(h * 0.42);
+    // In smaller windows, reserve space for the plots before the decorative header and
+    // settings card. Their old combined 74% allocation left only enough room for chart
+    // titles and padding, so the flexible chart nodes collapsed to zero height.
+    let hero = (if compact { 100.0_f64 } else { 112.0_f64 }).min(h * 0.15);
+    let metrics = 62.0_f64.min(h * 0.08);
+    let footer = 232.0_f64.min(h * 0.30);
     let plot = (h - hero - metrics - footer - 4.0 * gap).max(0.0);
     let y = hero + metrics + 2.0 * gap;
     // Short windows need room for every publisher legend row below the activity plot.
-    let activity_h = plot * if h < 650.0 { 0.36 } else { 0.46 };
+    let activity_h = plot * 0.42;
     let lower = (plot - activity_h - gap).max(0.0);
     let half = ((w - gap) / 2.0).max(0.0);
     [
