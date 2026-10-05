@@ -4,23 +4,35 @@ description: Conditional refresh, simultaneous updating indicators, icons and un
 flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/1' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/1' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/2' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/2' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/3' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/3' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/4' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/4' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/5' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/5' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/6' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/6' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 8 }
   - navigate: { route: all }
   - wait_for: { id: article-row-0 }

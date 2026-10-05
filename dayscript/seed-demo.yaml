@@ -4,7 +4,7 @@
 #
 # The seven feeds live under resource/assets/demo/<locale>/ and ship inside the app; the README
 # there describes each one. An `asset:demo/…` URL names a feed without its language: the app reads
-# the set for the locale it is running in, falling back to English (daynews-core `fetch_feed`),
+# the set for the locale it is running in, falling back to English (daynews-core `preview_feed`),
 # so a run under `--locale` shows that language's articles wherever the app has a set for it. No
 # live feed and no network, so it runs identically on every platform and on a fresh CI runner.
 #
@@ -20,32 +20,46 @@ flow:
   - dialog_mode: { mode: scripted }
   - wait_for: { id: nav, timeout_secs: 30 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "asset:demo/field-notes.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "asset:demo/field-notes.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "asset:demo/night-sky.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "asset:demo/night-sky.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "asset:demo/kitchen-science.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "asset:demo/kitchen-science.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "asset:demo/atlas.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "asset:demo/atlas.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "asset:demo/word-of-the-day.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "asset:demo/word-of-the-day.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "asset:demo/workshop.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "asset:demo/workshop.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "asset:demo/almanac.json" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "asset:demo/almanac.json" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   # By Fluent key, so the count reads correctly in whatever locale the run uses.
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 7 } }

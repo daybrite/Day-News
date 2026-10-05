@@ -16,7 +16,10 @@ pub struct Candidate {
     pub title: Option<String>,
 }
 pub enum Discovery {
-    Feed { url: String, update: FeedUpdate },
+    Feed {
+        url: String,
+        update: Box<FeedUpdate>,
+    },
     Candidates(Vec<Candidate>),
 }
 /// Only absolute HTTP(S) URLs without embedded credentials are subscription input.
@@ -67,7 +70,7 @@ fn discover_response(response: Response, requested: &str) -> Result<Discovery, F
         );
         return Ok(Discovery::Feed {
             url: final_url,
-            update,
+            update: Box::new(update),
         });
     }
     Ok(Discovery::Candidates(candidates(&response, &final_url)))
@@ -296,12 +299,13 @@ mod tests {
     fn direct_feed_preserves_response_validators_and_final_url() {
         let mut r=Response::new(200, vec![("ETag".into(),"\"v1\"".into())], br#"<rss version="2.0"><channel><title>Fixture</title><link>https://fixture.example/</link><description>Fixture</description></channel></rss>"#.to_vec());
         r.url = "https://fixture.example/real.rss".into();
-        let Discovery::Feed {
-            url,
-            update: FeedUpdate::Modified(_, validators, Some(_)),
-        } = discover_response(r, "https://fixture.example/redirect").unwrap()
+        let Discovery::Feed { url, update } =
+            discover_response(r, "https://fixture.example/redirect").unwrap()
         else {
             panic!("feed")
+        };
+        let FeedUpdate::Modified(_, validators, Some(_)) = *update else {
+            panic!("modified feed")
         };
         assert_eq!(url, "https://fixture.example/real.rss");
         assert_eq!(validators.etag.as_deref(), Some("\"v1\""));

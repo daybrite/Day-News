@@ -4,8 +4,10 @@ description: Auto-load waits for visibility, shows progress, and preserves readi
 flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/long-feed.json' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/long-feed.json' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - toolbar: { item: feed-overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: feed-inline-reader }

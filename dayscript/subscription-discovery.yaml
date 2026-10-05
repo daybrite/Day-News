@@ -4,53 +4,68 @@ description: Direct feeds, HTML/base discovery, HTTP Link headers, ambiguous cho
 flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28763/direct.xml' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28763/direct.xml' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 1 } }
   - assert_route: { route: 'feed:1442691631189166321' }
   - wait_for: { id: article-row-0 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28763/site' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28763/site' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 2 } }
   - assert_route: { route: 'feed:2226428218085183488' }
   - wait_for: { id: article-row-0 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28763/header' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28763/header' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 3 } }
   - assert_route: { route: 'feed:7108728110427175209' }
   - wait_for: { id: article-row-0 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28763/multi' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28763/multi' }
+  - tap: { id: feed-verify }
   - assert_presented: {}
   - respond: { button: 1 }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 4 } }
   - assert_route: { route: 'feed:101536170517251688' }
   - wait_for: { id: article-row-0 }
   - screenshot: new-feed-selected
   - toolbar: { item: new-feed }
-  - respond: { text: 'http://127.0.0.1:28763/missing' }
-  - assert_presented: {}
-  - respond: { button: 0 }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28763/missing' }
+  - tap: { id: feed-verify }
+  - assert_text: { id: feed-verification-status, key: subscribe_failed }
+  - tap: { id: feed-cancel }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 4 } }
   - reorder: { id: nav-reorder-list, from: 6, to: 9 }
   - pause: { secs: 1 }
   - assert_route: { route: 'feed:101536170517251688' }
   - screenshot: reordered-sidebar
   - toolbar: { item: new-feed }
-  - respond: { text: 'file:///tmp/fixture.xml' }
-  - assert_presented: {}
-  - respond: { button: 0 }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'file:///tmp/fixture.xml' }
+  - tap: { id: feed-verify }
+  - assert_text: { id: feed-verification-status, key: subscribe_failed }
+  - tap: { id: feed-cancel }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 4 } }
   - toolbar: { item: unread-feeds-only, on: true }
   - toolbar: { item: new-feed }
-  - respond: { text: 'http://127.0.0.1:28763/empty.xml' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28763/empty.xml' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
   - assert_route: { route: 'feed:8308222376836992429' }
   - assert_text: { id: dashboard-title, text: Fixture Empty }

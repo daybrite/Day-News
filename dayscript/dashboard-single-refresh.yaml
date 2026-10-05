@@ -8,11 +8,15 @@ flow:
   - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - select: { id: refresh-interval-picker, index: 1 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/1' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/1' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/feed/2' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/2' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 4 }
   - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: 'feed:8512098384262059532' }

@@ -164,7 +164,9 @@ fn build_shell() -> impl Piece {
     // Each window owns its scope, search and selection; the store and badges stay shared.
     daynews_core::NewsScene::scoped(|sc| {
         reader_view::ReaderView::scoped(move |_| {
-            site_browser::Browser::scoped(move |_| shell_body(sc))
+            site_browser::Browser::scoped(move |_| {
+                subscriptions::SubscriptionSheet::scoped(move |_| shell_body(sc))
+            })
         })
     })
 }
@@ -349,7 +351,12 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     } else {
         navigation
     };
-    column((navigation.id("nav").grow(), site_browser::browser_cover())).grow()
+    column((
+        navigation.id("nav").grow(),
+        site_browser::browser_cover(),
+        subscriptions::subscription_sheet(),
+    ))
+    .grow()
 }
 
 /// The reader as a destination. The timeline is no longer in here; it is the nav's

@@ -247,8 +247,12 @@ flow:
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 6 }, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   # Subscribe again, so the screenshots below and the next run see all seven feeds.
   - toolbar: { item: new-feed, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_presented: { skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - respond: { text: "asset:demo/kitchen-science.xml", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: feed-url, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - input: { id: feed-url, text: "asset:demo/kitchen-science.xml", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: feed-verify, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_idle: { skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - screenshot: { name: subscription-preview, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: feed-subscribe, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 2, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 7 }, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 

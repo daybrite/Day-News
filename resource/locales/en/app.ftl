@@ -270,3 +270,12 @@ site_data_cleared = Site information forgotten.
 site_data_failed = Could not clear site information. Please try again.
 site_private_unsupported = Private browsing is unavailable on this platform. Site browsing is disabled in Incognito Mode.
 site_browser_go = Go
+
+subscribe_verify = Verify
+subscribe_preview_note = Verify a feed or website address to preview its articles before subscribing.
+subscribe_verifying = Checking feed…
+subscribe_preview_ready =
+    { $count ->
+        [one] One article available
+       *[other] { $count } articles available
+    }

@@ -12,6 +12,8 @@ pub use day_part_http::HttpError;
 pub struct ParsedFeed {
     pub title: Option<String>,
     pub site_url: Option<String>,
+    /// Explicit self link, useful when a browser opens a downloaded feed document.
+    pub source_url: Option<String>,
     pub description: Option<String>,
     pub icon_url: Option<String>,
     pub items: Vec<ParsedItem>,
@@ -298,11 +300,20 @@ fn normalize(f: feed_rs::model::Feed, base_url: &str) -> ParsedFeed {
         .links
         .iter()
         .find(|l| l.rel.as_deref() == Some("alternate") && l.href != base_url)
-        .or_else(|| f.links.iter().find(|l| l.href != base_url))
+        .or_else(|| {
+            f.links
+                .iter()
+                .find(|l| l.href != base_url && l.rel.as_deref() != Some("self"))
+        })
         .map(|l| l.href.clone());
     ParsedFeed {
         title: f.title.map(|t| clean(&t.content)).filter(|s| !s.is_empty()),
         site_url,
+        source_url: f
+            .links
+            .iter()
+            .find(|l| l.rel.as_deref() == Some("self"))
+            .map(|l| l.href.clone()),
         description: f
             .description
             .map(|t| clean(&t.content))
@@ -411,7 +422,7 @@ fn now_secs() -> i64 {
 
 /// Collapse whitespace and strip tags from a text field. Feeds put HTML in `<title>` more often
 /// than they should, and a title with markup in it looks broken in a list.
-fn clean(s: &str) -> String {
+pub fn clean(s: &str) -> String {
     // Decode first: feeds routinely escape a whole HTML body into a text field, so the tags
     // only become visible after decoding (`&lt;p&gt;` → `<p>`).
     let decoded = decode_entities(s);

@@ -849,7 +849,7 @@ pub async fn subscribe_discovered(
 }
 /// Fixture subscriptions use the same awaitable import, preserving bundled localization.
 pub async fn subscribe_asset(url: String) -> Result<u64, String> {
-    let parsed = fetch_feed(&url).await.map_err(|e| e.to_string())?;
+    let parsed = preview_feed(&url).await.map_err(|e| e.to_string())?;
     subscribe_discovered(
         url,
         daynews_feed::FeedUpdate::Modified(parsed, Default::default(), None),
@@ -990,7 +990,7 @@ fn start_refresh(feeds: Vec<(u64, String)>) {
 /// (dayscript/seed-demo.yaml subscribes to the demo feeds bundled under
 /// `resource/assets/demo/`). A missing asset reports as a 404 rather than a new error
 /// arm; the subscription then shows the same failed-refresh state a dead feed does.
-async fn fetch_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed::FeedError> {
+pub async fn preview_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed::FeedError> {
     if let Some(name) = url.strip_prefix("asset:") {
         let locale = day_l10n::locale().get_untracked();
         for candidate in asset_candidates(name, &locale) {
@@ -1113,7 +1113,7 @@ async fn refresh_one(id: u64, url: String) -> bool {
         }
     };
     let result = if url.starts_with("asset:") {
-        fetch_feed(&url)
+        preview_feed(&url)
             .await
             .map(|feed| daynews_feed::FeedUpdate::Modified(feed, Default::default(), None))
     } else {

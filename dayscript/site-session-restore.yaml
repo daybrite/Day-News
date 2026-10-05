@@ -4,7 +4,10 @@ description: Login cookies and browser storage persist across application restar
 flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
-  - respond: { text: 'http://127.0.0.1:28764/feed.json' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28764/feed.json' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - wait_for: { id: dashboard-site-preview }
   - tap: { id: dashboard-site-preview }

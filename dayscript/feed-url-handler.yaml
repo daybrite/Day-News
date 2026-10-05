@@ -1,0 +1,22 @@
+# Synthetic discovery origin: tests/subscription-discovery-server.py; isolated store.
+name: feed-url-handler
+description: External feed URL opens the same verification sheet, previews before committing, and rejects unsafe protocols.
+flow:
+  - open_url: { url: 'feed:http://127.0.0.1:28763/direct.xml' }
+  - wait_for: { id: feed-url }
+  - assert_text: { id: feed-url, text: 'http://127.0.0.1:28763/direct.xml' }
+  - tap: { id: feed-verify }
+  - assert_text: { id: feed-preview-title, text: Fixture Direct }
+  - assert_text: { id: feed-verification-status, key: subscribe_preview_ready, args: { count: 1 } }
+  - screenshot: feed-verification-preview
+  # No subscription until explicit confirmation.
+  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 0 } }
+  - tap: { id: feed-subscribe }
+  - wait_for: { id: article-row-0 }
+  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 1 } }
+  - open_url: { url: 'feed:javascript:alert(1)' }
+  - wait_for: { id: feed-url }
+  - tap: { id: feed-verify }
+  - assert_text: { id: feed-verification-status, key: subscribe_failed }
+  - tap: { id: feed-cancel }
+  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 1 } }

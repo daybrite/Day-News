@@ -4,6 +4,17 @@
 # Any [app] property can be overridden per platform ([app.ios]), per toolkit ([app.qt]),
 # or per target ([app.macos-appkit]); the most specific table wins.
 schema = 1
+url_schemes = ["feed", "feeds", "rss", "atom", "web+feed"]
+
+[[file_types]]
+extensions = ["rss"]
+mime_types = ["application/rss+xml"]
+apple_uti = "org.rss.rss"
+
+[[file_types]]
+extensions = ["atom"]
+mime_types = ["application/atom+xml"]
+apple_uti = "org.atom.atom"
 
 [app]
 id = "dev.daybrite.news"

@@ -3,11 +3,15 @@ name: day-news-feed-progress
 flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/progress/known' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/progress/known' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: 'http://127.0.0.1:28762/progress/unknown' }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/progress/unknown' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 9 }
   - navigate: { route: all }
   - nav_back: { native: true, only_on: [ios-uikit] }

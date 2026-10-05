@@ -9,32 +9,46 @@ flow:
   - dialog_mode: { mode: scripted }
   - wait_for: { id: nav, timeout_secs: 30 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "https://www.nasa.gov/feed/" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://www.nasa.gov/feed/" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "https://www.quantamagazine.org/feed/" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://www.quantamagazine.org/feed/" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "https://www.sciencedaily.com/rss/all.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://www.sciencedaily.com/rss/all.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "https://www.merriam-webster.com/wotd/feed/rss2" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://www.merriam-webster.com/wotd/feed/rss2" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "https://users.rust-lang.org/c/announcements/6.rss" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://users.rust-lang.org/c/announcements/6.rss" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "https://blog.rust-lang.org/feed.xml" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://blog.rust-lang.org/feed.xml" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   - toolbar: { item: new-feed }
-  - assert_presented: {}
-  - respond: { text: "https://social.rust-lang.org/@rust.rss" }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://social.rust-lang.org/@rust.rss" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
   - pause: { secs: 4 }
   - assert_text: { id: feeds-count, text: "7 feeds" }
   - navigate: { route: unread }

@@ -30,10 +30,10 @@ flow:
   - pause: { secs: 1 }
   - screenshot: menu-next-unread
 
-  # File ▸ New Feed opens an attached URL prompt.
+  # File ▸ New Feed opens a verification sheet.
   - dialog_mode: { mode: native }
   - menu: { key: menu_new_feed, path: [menu_file] }
   - wait_idle:
-  - assert_presented: {}
+  - wait_for: { id: feed-url }
   - screenshot: menu-new-feed
-  - respond: { dismiss: true }
+  - tap: { id: feed-cancel }

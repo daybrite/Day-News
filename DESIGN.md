@@ -510,3 +510,14 @@ is supported.
 On merged content-list toolkits (including UIKit), reselecting a feed closes its article
 and opens the article list rather than its overview. Feed rows provide a localized Feed
 overview context command that selects that publisher and explicitly opens its dashboard.
+
+## Feed-link activation and verification
+
+RSS/Atom protocol associations (`feed`, `feeds`, `rss`, `atom`, `web+feed`) and RSS/Atom file
+MIME types activate the same window-owned subscription sheet as File > New Feed / plus. URLs
+are data, never route IDs. Verify performs feed or website discovery, asks for ambiguous choices,
+and previews current article titles/summaries. Subscribe remains disabled until the current input
+has verified successfully, then commits that response with its HTTP validators without fetching
+again and selects the new source. Editing the URL invalidates the ability to subscribe to an old
+preview. Clipboard prefill accepts web/feed URLs only. Downloaded feed files are read with a
+bounded asynchronous FileUrl lease and use their advertised website for fresh discovery.
