@@ -501,3 +501,8 @@ Reselecting the active sidebar feed clears the article and shows its dashboard. 
 article selection opens the previously selected article's publisher dashboard and selects
 that feed in the sidebar, even when the article was opened from a smart feed. Ordinary scope
 changes that clear selection do not redirect navigation.
+
+The Feed overview command opens the selected article’s publisher dashboard, including from
+iOS article menus. Without a selected article it opens the current scope dashboard. UIKit
+keeps Day’s native navigation sidebar; feed reordering is available only where NavReorder
+is supported.

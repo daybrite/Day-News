@@ -178,11 +178,14 @@ pub(crate) fn dashboard() -> CommandHandle {
         label: res::str::dashboard_show(),
         action: || {
             let scene = daynews_core::scene();
-            batch(|| {
-                scene.selected.set(None);
-                scene.article.set(None);
-                scene.reader_open.set(true);
-            });
+            if scene.selected.get_untracked().is_some() {
+                crate::site_browser::show_article_feed_dashboard();
+            } else {
+                batch(|| {
+                    scene.article.set(None);
+                    scene.reader_open.set(true);
+                });
+            }
         },
     }
     .build()

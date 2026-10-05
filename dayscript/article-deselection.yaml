@@ -13,8 +13,21 @@ flow:
   - assert_missing: { id: reader-web }
   - pause: { secs: 1 }
   - screenshot: article-deselected-feed-dashboard
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-dashboard }
+  - assert_text: { id: dashboard-title, text: Field Notes }
+  - assert_route: { route: 'feed:5756297993796914528' }
   # Navigating to a smart feed without a selected article keeps that smart feed's dashboard.
   - navigate: { route: today }
   - toolbar: { item: feed-overview }
   - wait_for: { id: feed-dashboard }
   - assert_text: { id: dashboard-title, key: nav_today }
+  - nav_back: { native: true, only_on: [ios-uikit] }
+  - nav_back: { native: true, only_on: [ios-uikit] }
+  - assert_missing: { id: nav-reorder-list, only_on: [ios-uikit] }
+  - pause: { secs: 0.5, only_on: [ios-uikit] }
+  - screenshot: { name: native-navigation-list, only_on: [ios-uikit] }
