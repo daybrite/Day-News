@@ -89,6 +89,16 @@ pub fn controls(feed: Option<u64>) -> impl Piece {
                     "inline-reader-picker"
                 }),
         ),
+        when(
+            move || feed.is_none(),
+            || {
+                label(crate::res::str::reader_inline_mode_note())
+                    .font(Font::Caption)
+                    .color(move || crate::theme::palette().text_muted)
+                    .grow_w()
+                    .id("inline-reader-caption")
+            },
+        ),
         labeled(
             crate::res::str::reader_auto_mode(),
             toggle(OptionBinding { feed, auto: true })
@@ -98,6 +108,16 @@ pub fn controls(feed: Option<u64>) -> impl Piece {
                 } else {
                     "auto-reader-picker"
                 }),
+        ),
+        when(
+            move || feed.is_none(),
+            || {
+                label(crate::res::str::reader_auto_mode_note())
+                    .font(Font::Caption)
+                    .color(move || crate::theme::palette().text_muted)
+                    .grow_w()
+                    .id("auto-reader-caption")
+            },
         ),
     ))
     .spacing(5.0)

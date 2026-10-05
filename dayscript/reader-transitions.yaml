@@ -1,0 +1,45 @@
+# Start tests/reader-view-server.py with a fresh isolated DAY_NEWS_DATA_DIR.
+name: reader-transitions
+description: Full-content transitions, settings captions, and global auto-load inheritance.
+flow:
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - assert_presented: {}
+  - respond: { text: 'http://127.0.0.1:28761/feed.json' }
+  - pause: { secs: 2 }
+  - wait_for: { id: feed-inline-reader }
+  - toggle: { id: feed-inline-reader, value: true }
+  - toggle: { id: feed-auto-reader, value: false }
+  - menu: { key: day-preferences }
+  - assert_visible: { id: inline-reader-caption }
+  - assert_visible: { id: auto-reader-caption }
+  - toggle: { id: auto-reader-picker, value: true }
+  - screenshot: { name: reader-settings-captions, window: day.preferences }
+  - close_window: { window: day.preferences }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "loaded"', text: 'loaded' }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'false' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").getAnimations().length', text: '0' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "hiding"', text: 'hiding' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'true' }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-auto-reader }
+  - assert_value: { id: feed-auto-reader, value: true }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'false' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); document.getElementById("reader-load-full").click(); "reversed"', text: 'reversed' }
+  - pause: { secs: 0.5 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'false' }
+  - screenshot: reader-transition-reversed
+  - menu: { key: day-preferences }
+  - toggle: { id: auto-reader-picker, value: false }
+  - close_window: { window: day.preferences }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "hidden"', text: 'hidden' }
+  - pause: { secs: 0.5 }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-auto-reader }
+  - assert_value: { id: feed-auto-reader, value: false }
+  - dialog_mode: { mode: native }

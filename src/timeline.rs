@@ -547,7 +547,7 @@ fn timeline_rows(
                 })
                 .on_selection(|keys| {
                     if keys.is_empty() {
-                        crate::site_browser::show_dashboard();
+                        crate::site_browser::show_article_feed_dashboard();
                     }
                 })
                 // Two-way: app-driven selection (Next Unread, the reader's restore) syncs into

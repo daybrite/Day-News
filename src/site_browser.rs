@@ -67,12 +67,44 @@ pub fn profile(feed: u64) -> WebProfile {
         WebProfile::persistent(format!("news:{name}"))
     }
 }
-pub fn show_dashboard() {
+/// Manual article deselection returns to its publisher rather than the smart-feed scope.
+pub fn show_article_feed_dashboard() {
     let scene = daynews_core::scene();
+    let Some(selected) = scene.selected.get_untracked() else {
+        // Scope changes already clear selection. Do not redirect those navigation events.
+        return;
+    };
+    let feed = scene
+        .article
+        .with_untracked(|article| {
+            article
+                .as_ref()
+                .filter(|a| a.id == selected)
+                .map(|a| a.feed_id)
+        })
+        .or_else(|| {
+            scene.articles.with_untracked(|articles| {
+                articles
+                    .iter()
+                    .find(|a| a.id == selected)
+                    .map(|a| a.feed_id)
+            })
+        });
+    let Some(feed) = feed else { return };
     batch(|| {
-        scene.selected.set(None);
+        if crate::feed_list::FeedList::app()
+            .unread_only
+            .get_untracked()
+            && daynews_core::state()
+                .feeds
+                .with_untracked(|feeds| feeds.iter().any(|f| f.id == feed && f.unread == 0))
+        {
+            crate::feed_list::toggle();
+        }
+        daynews_core::select_scope(daynews_db::Scope::Feed(feed));
+        navigate(&format!("feed:{feed}"));
         scene.article.set(None);
-        scene.reader_open.set(true);
+        day::reactive::at_turn_end(move || scene.reader_open.set(true));
     });
 }
 #[derive(Clone, Copy)]

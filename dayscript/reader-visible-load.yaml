@@ -18,13 +18,19 @@ flow:
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getBoundingClientRect().top > innerHeight', text: 'true' }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'false' }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").scrollIntoView({block:"center"}); "scrolled"', text: 'scrolled' }
+  - web_eval: { id: reader-web, script: 'window.originalInnerHeight = innerHeight; document.getElementById("reader-load-full").scrollIntoView({block:"center"}); "scrolled"', text: 'scrolled' }
   - pause: { secs: 0.5 }
   - web_eval: { id: reader-web, script: 'window.originalScrollY = scrollY; document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'true' }
+  - assert_missing: { id: reader-view-status }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-download")).display', text: 'none' }
+  - web_eval: { id: reader-web, script: 'document.querySelector(".reader-spinner").previousElementSibling.className', text: 'reader-load-label' }
+  - web_eval: { id: reader-web, script: 'innerHeight === window.originalInnerHeight', text: 'true' }
   - web_eval: { id: reader-web, script: 'Boolean(document.querySelector("#reader-load-full kbd"))', text: 'false' }
   - screenshot: reader-bar-downloading
   - pause: { secs: 5 }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Full publication content.' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).display', text: 'none' }
   - web_eval: { id: reader-web, script: 'Math.abs(scrollY - window.originalScrollY) < 2', text: 'true' }
+  - web_eval: { id: reader-web, script: 'innerHeight === window.originalInnerHeight', text: 'true' }
   - screenshot: reader-bar-appended
   - dialog_mode: { mode: native }

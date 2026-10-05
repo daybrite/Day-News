@@ -252,7 +252,9 @@ opml_read_failed = Could not read the file: { $error }
 opml_exported = Exported subscriptions
 
 reader_inline_mode = Inline Reader Mode
+reader_inline_mode_note = Show the full article below the feed preview in the same page. Turn this off to replace the preview with the full article.
 reader_auto_mode = Auto-load Reader Mode
+reader_auto_mode_note = Automatically load full articles when their load button becomes visible. You can override this for each feed. Hiding an article keeps auto-loading enabled when this default is on.
 reader_load_full = Load Full Article
 reader_hide_full = Hide Full Article
 

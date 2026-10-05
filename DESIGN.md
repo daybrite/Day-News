@@ -476,11 +476,16 @@ gated by a WebView IntersectionObserver: no publication request starts until the
 enters the viewport. The native handler rechecks article identity and preferences and
 permits one automatic attempt per selection. Inline insertion retains the scroll offset
 and excludes the inserted slot from scroll anchoring.
+Inline loading uses only the existing web bar's progress indicator. It does not insert a
+native status row above the WebView, keeping the viewport height and reading position stable.
 
 The inline bar remains above the extracted article and becomes “Hide Full Article”
-with upward chevrons when expanded. Hiding preserves the sanitized DOM for reopening
+with upward chevrons when expanded; the trailing spinner replaces the chevrons during loading.
+Full content enters with a short slide and fade, and fades before collapsing. Transitions
+respect reduced motion, cancel on reversal, and preserve the sanitized DOM for reopening
 without another request. Explicit bar activation persists a per-feed automatic-loading
-override: load enables it, hide disables it. Auto preference changes do not reload the
+override: load enables it; hide disables it only when the app-wide auto-load default is off.
+When the default is on, hiding only collapses this article. Auto preference changes do not reload the
 preview document, and the bar exposes aria-expanded and aria-controls.
 
 
@@ -493,4 +498,6 @@ The Incognito Mode preference rebuilds reader hosts with an ephemeral profile, c
 extraction, closes site previews and disables per-feed reader/login/forget controls. Engines
 without real private stores render the safe text preview instead of loading persistent views.
 Reselecting the active sidebar feed clears the article and shows its dashboard. Empty native
-article selection has the same behavior.
+article selection opens the previously selected article's publisher dashboard and selects
+that feed in the sidebar, even when the article was opened from a smart feed. Ordinary scope
+changes that clear selection do not redirect navigation.

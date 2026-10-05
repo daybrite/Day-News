@@ -34,7 +34,8 @@ flow:
   - select: { id: timeline, index: 1 }
   - pause: { secs: 1 }
   - toolbar: { item: reader-view, on: true }
-  - assert_visible: { id: reader-view-status }
+  - assert_missing: { id: reader-view-status }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'true' }
   - navigate: { route: all }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 5 }

@@ -1,0 +1,20 @@
+# Run after seed-demo.yaml with an isolated data directory.
+name: article-deselection
+description: Deselecting an article in a smart feed opens its publisher dashboard.
+flow:
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - select: { id: timeline, index: -1 }
+  - wait_for: { id: feed-dashboard }
+  - assert_text: { id: dashboard-title, text: Field Notes }
+  - assert_route: { route: 'feed:5756297993796914528' }
+  - assert_missing: { id: reader-web }
+  - pause: { secs: 1 }
+  - screenshot: article-deselected-feed-dashboard
+  # Navigating to a smart feed without a selected article keeps that smart feed's dashboard.
+  - navigate: { route: today }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-dashboard }
+  - assert_text: { id: dashboard-title, key: nav_today }

@@ -135,7 +135,8 @@ impl ReaderView {
         }
     }
 
-    /// Explicit bar choices also become this feed's automatic-loading preference.
+    /// Opening enables this feed's auto-load override. Hiding only disables it when
+    /// auto-loading is also off in the application defaults.
     pub fn toggle_from_bar(self, scene: daynews_core::NewsScene) {
         let Some(article) = scene.article.get_untracked() else {
             return;
@@ -146,11 +147,13 @@ impl ReaderView {
         let auto = !self.active.get_untracked();
         day::reactive::batch(|| {
             self.toggle(scene);
-            crate::reader_options::OptionBinding {
-                feed: Some(article.feed_id),
-                auto: true,
+            if auto || !crate::reader_options::options(None).auto {
+                crate::reader_options::OptionBinding {
+                    feed: Some(article.feed_id),
+                    auto: true,
+                }
+                .write(auto);
             }
-            .write(auto);
         });
     }
 
@@ -263,7 +266,37 @@ impl ReaderView {
             .unwrap_or_default();
         let html = serde_json::to_string(&html).unwrap();
         let task = day::task(async move {
-            let _ = self.engine.eval(format!("(() => {{ const slot = document.getElementById('reader-full-slot'); if (!slot) return; const x = scrollX, y = scrollY; if ({active}) {{ window.readerAutoObserver?.disconnect(); if (!slot.dataset.loaded) {{ slot.innerHTML = {html}; slot.dataset.loaded = 'true'; }} }} slot.hidden = !{active}; window.scrollTo(x, y); }})()")).await;
+            let _ = self.engine.eval(format!(r#"(() => {{
+                const slot = document.getElementById('reader-full-slot');
+                if (!slot) return;
+                const active = {active}, x = scrollX, y = scrollY;
+                if (active) {{
+                    window.readerAutoObserver?.disconnect();
+                    if (!slot.dataset.loaded) {{
+                        slot.innerHTML = {html}; slot.dataset.loaded = 'true';
+                    }}
+                }}
+                if (slot.dataset.expanded === String(active)) return;
+                slot.dataset.expanded = String(active);
+                const opacity = slot.hidden ? 0 : Number(getComputedStyle(slot).opacity);
+                slot.readerTransition?.cancel();
+                if (!slot.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) {{
+                    slot.hidden = !active; window.scrollTo(x, y); return;
+                }}
+                if (!active && slot.hidden) return;
+                slot.hidden = false;
+                const animation = slot.animate(active
+                    ? [{{opacity, transform: 'translateY(12px)'}}, {{opacity: 1, transform: 'translateY(0)'}}]
+                    : [{{opacity}}, {{opacity: 0}}],
+                    {{duration: active ? 320 : 180, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards'}});
+                slot.readerTransition = animation;
+                animation.onfinish = () => {{
+                    if (slot.readerTransition !== animation) return;
+                    slot.hidden = !active;
+                    animation.cancel(); slot.readerTransition = null;
+                }};
+                window.scrollTo(x, y);
+            }})()"#)).await;
         });
         // Evaluation is keyed to the current web document and a replaced document drops it.
         day::reactive::Scope::current().on_cleanup(move || task.abort());

@@ -19,7 +19,7 @@ fn document(a: &StoredArticle, control_above: bool) -> String {
         .is_some()
     {
         let control = format!(
-            r#"<div id="reader-load-control"><button type="button" id="reader-load-full" aria-busy="false" aria-expanded="false" aria-controls="reader-full-slot" onclick="document.getElementById('reader-load-link').click()"><span class="reader-spinner" aria-hidden="true"></span><span class="reader-load-label">{}</span><svg class="reader-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 5 6 6 6-6M6 12l6 6 6-6"/></svg></button><a hidden id="reader-load-link" href="day-news-reader://load/{}"></a><a hidden id="reader-auto-link" href="day-news-reader://auto/{}"></a></div>"#,
+            r#"<div id="reader-load-control"><button type="button" id="reader-load-full" aria-busy="false" aria-expanded="false" aria-controls="reader-full-slot" onclick="document.getElementById('reader-load-link').click()"><span class="reader-load-label">{}</span><span class="reader-spinner" aria-hidden="true"></span><svg class="reader-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 5 6 6 6-6M6 12l6 6 6-6"/></svg></button><a hidden id="reader-load-link" href="day-news-reader://load/{}"></a><a hidden id="reader-auto-link" href="day-news-reader://auto/{}"></a></div>"#,
             escape(&crate::res::str::reader_load_full().format()),
             a.id,
             a.id
@@ -132,8 +132,9 @@ fn document_with_style(
   .reader-download {{ width: 21px; height: 21px; flex-shrink: 0; }}
   #reader-load-full[aria-expanded="true"] .reader-download {{ transform: rotate(180deg); }}
   .reader-spinner {{ width: 15px; height: 15px; flex-shrink: 0; border: 2px solid currentColor;
-    border-right-color: transparent; border-radius: 50%; visibility: hidden; }}
-  #reader-load-full[aria-busy="true"] .reader-spinner {{ visibility: visible; animation: reader-spin .85s linear infinite; }}
+    border-right-color: transparent; border-radius: 50%; display: none; }}
+  #reader-load-full[aria-busy="true"] .reader-spinner {{ display: block; animation: reader-spin .85s linear infinite; }}
+  #reader-load-full[aria-busy="true"] .reader-download {{ display: none; }}
   @keyframes reader-spin {{ to {{ transform: rotate(360deg); }} }}
   @media (prefers-reduced-motion: reduce) {{ .reader-spinner {{ animation-duration: 2s !important; }} }}
   #reader-load-full:hover:not(:disabled) {{ background: color-mix(in srgb, currentColor 8%, transparent); }}
@@ -482,7 +483,7 @@ pub fn reader_pane() -> impl Piece {
 
     column((
         when(
-            move || view.loading.get() || view.error.get().is_some(),
+            move || view.error.get().is_some(),
             move || {
                 label(move || view.status())
                     .font(Font::Footnote)
