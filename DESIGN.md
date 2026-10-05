@@ -506,3 +506,7 @@ The Feed overview command opens the selected article’s publisher dashboard, in
 iOS article menus. Without a selected article it opens the current scope dashboard. UIKit
 keeps Day’s native navigation sidebar; feed reordering is available only where NavReorder
 is supported.
+
+On merged content-list toolkits (including UIKit), reselecting a feed closes its article
+and opens the article list rather than its overview. Feed rows provide a localized Feed
+overview context command that selects that publisher and explicitly opens its dashboard.

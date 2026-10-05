@@ -182,6 +182,9 @@ fn with_selected_feed(f: impl FnOnce(u64)) {
 /// right-clicked or long-pressed rather than at the selection (docs/menus.md).
 pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
     vec![
+        menu_item(res::str::dashboard_show().format())
+            .id("feed-dashboard")
+            .action(move || crate::site_browser::show_feed_dashboard(feed)),
         menu_item(res::str::refresh_action().format())
             .action(move || daynews_core::refresh_feed(feed)),
         menu_item(res::str::mark_all_read().format())

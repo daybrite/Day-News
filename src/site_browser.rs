@@ -91,6 +91,11 @@ pub fn show_article_feed_dashboard() {
             })
         });
     let Some(feed) = feed else { return };
+    show_feed_dashboard(feed);
+}
+/// Open a sidebar publisher's overview, regardless of the current article or scope.
+pub fn show_feed_dashboard(feed: u64) {
+    let scene = daynews_core::scene();
     batch(|| {
         if crate::feed_list::FeedList::app()
             .unread_only
@@ -126,7 +131,9 @@ impl Binding<Option<String>> for FeedSelection {
             batch(|| {
                 self.scene.selected.set(None);
                 self.scene.article.set(None);
-                self.scene.reader_open.set(true);
+                self.scene
+                    .reader_open
+                    .set(day_core::capability(day_spec::Cap::NavContentList) != Support::Emulated);
             });
         }
         self.section.set(key);
