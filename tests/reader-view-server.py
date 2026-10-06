@@ -9,6 +9,12 @@ BASE = f"http://127.0.0.1:{PORT}"
 
 
 class Handler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.end_headers()
+
     def do_GET(self):
         if self.path in ("/feed.json", "/long-feed.json"):
             body = json.dumps({
@@ -37,6 +43,7 @@ class Handler(BaseHTTPRequestHandler):
             content_type = "text/html; charset=utf-8"
             status = 403 if self.path == "/denied" else 200
         self.send_response(status)
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()

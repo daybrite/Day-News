@@ -1,0 +1,41 @@
+# Start tests/reader-view-server.py 28772. Android: adb reverse tcp:28772 tcp:28772.
+# Use an isolated DAY_NEWS_DATA_DIR. open_url avoids depending on clipboard permission.
+name: native-reader-interactions
+description: Long previews, visibility-triggered extraction, stable scrolling, and reversible reader transitions.
+flow:
+  - open_url: { url: 'feed:http://127.0.0.1:28772/long-feed.json' }
+  - wait_for: { id: feed-url }
+  - tap: { id: feed-verify }
+  - wait_for: { id: feed-preview-title }
+  - tap: { id: feed-subscribe }
+  - pause: { secs: 1 }
+  - toolbar: { item: feed-overview }
+  - wait_for: { id: feed-inline-reader }
+  - toggle: { id: feed-inline-reader, value: true }
+  - toggle: { id: feed-auto-reader, value: true }
+  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getBoundingClientRect().top > innerHeight', text: 'true' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
+  - web_eval: { id: reader-web, script: 'window.regressionHeight = innerHeight; window.regressionMarker = "retained"; document.getElementById("reader-load-full").scrollIntoView({block:"center"}); "scrolled"', text: 'scrolled' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'true', only_on: [macos-appkit, macos-gtk, macos-qt, ios-uikit, android-mdc] }
+  - web_eval: { id: reader-web, script: 'window.regressionScroll = scrollY; innerHeight === window.regressionHeight', text: 'true' }
+  - assert_missing: { id: reader-view-status }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Full publication content.', timeout_secs: 20 }
+  - web_eval: { id: reader-web, script: 'Math.abs(scrollY-window.regressionScroll) < 2 && innerHeight === window.regressionHeight', text: 'true' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).display', text: 'none' }
+  - screenshot: reader-native-appended-stable
+  - toolbar: { item: star, on: true }
+  - toolbar: { item: read, on: false }
+  - web_eval: { id: reader-web, script: 'window.regressionMarker', text: retained }
+  - web_eval: { id: reader-web, script: 'Math.abs(scrollY-window.regressionScroll) < 2', text: 'true' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "collapsed"', text: collapsed }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'true', timeout_secs: 20 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "expanded"', text: expanded }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'false' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); document.getElementById("reader-load-full").click(); "reversed"', text: reversed }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'false' }
+  - web_eval: { id: reader-web, script: 'window.regressionMarker', text: retained }
+  - screenshot: reader-native-transition-reversed
+  - toolbar: { item: star, on: false }

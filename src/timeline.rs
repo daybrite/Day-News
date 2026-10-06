@@ -616,7 +616,13 @@ fn timeline_rows(
                 .overlay_aligned(
                     Alignment::TopLeading,
                     when(
-                        move || grouped && !sc.articles.with(|rows| rows.is_empty()),
+                        // The first row already carries its feed heading. Pin a heading only
+                        // after that row scrolls away, so the overlay cannot cover its title.
+                        move || {
+                            grouped
+                                && first_visible.get() > 0
+                                && !sc.articles.with(|rows| rows.is_empty())
+                        },
                         move || {
                             feed_header(
                                 move || {

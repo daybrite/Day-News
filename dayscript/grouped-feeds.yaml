@@ -1,4 +1,5 @@
-# Run after seed-demo.yaml in an isolated store.
+# Desktop regression: run after seed-demo.yaml in an isolated store.
+# Mobile navigation sidebars intentionally omit drag reordering.
 name: day-news-grouped-feeds
 description: Group headings, floating title and persistent feed priority.
 flow:
@@ -9,16 +10,18 @@ flow:
   - select: { id: refresh-interval-picker, index: 0 }
   - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - navigate: { route: all }
-  - wait_for: { id: floating-feed-name }
+  - wait_for: { id: article-row-0 }
+  - assert_missing: { id: floating-feed-name }
   - screenshot: grouped-feeds
   - reorder: { id: nav-reorder-list, from: 8, to: 6 }
   - pause: { secs: 1 }
   - navigate: { route: all }
-  - wait_for: { id: floating-feed-name }
-  - assert_text: { id: floating-feed-name, text: Kitchen Science }
+  - wait_for: { id: article-row-0 }
+  - assert_text: { id: article-row-0, contains: What makes bread rise }
   - screenshot: reordered-feed-groups
   - select: { id: timeline, index: 30 }
   - pause: { secs: 1 }
+  - wait_for: { id: floating-feed-name }
   - screenshot: floating-feed-header
   - reorder: { id: nav-reorder-list, from: 6, to: 8 }
   - pause: { secs: 1 }

@@ -4,6 +4,7 @@
 
 use std::{future::Future, pin::Pin, time::Duration};
 
+#[cfg(not(target_arch = "wasm32"))]
 use day::prelude::*;
 use day_piece_webview::JsHandle;
 use serde::Deserialize;
@@ -107,7 +108,7 @@ impl ArticleExtractor for LocalReadability {
             }
             let response = response.ok_or(ExtractionError::Network)?;
             let (html, base) = decode_page(response, url.as_str())?;
-            let script = extraction_script(&html, &base)?;
+            let script = extraction_script(&html, &base, self.engine).await?;
             let reply = self
                 .engine
                 .eval(script)
@@ -162,15 +163,41 @@ fn decode_page(
     Ok((html.into_owned(), base.into()))
 }
 
-fn script_asset(name: day::AssetName) -> Result<String, ExtractionError> {
-    let asset = resource(name).ok_or(ExtractionError::Unavailable)?;
-    String::from_utf8(asset.as_slice().to_vec()).map_err(|_| ExtractionError::Unavailable)
+async fn script_asset(name: day::AssetName, _engine: JsHandle) -> Result<String, ExtractionError> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let asset = resource(name).ok_or(ExtractionError::Unavailable)?;
+        String::from_utf8(asset.as_slice().to_vec()).map_err(|_| ExtractionError::Unavailable)
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        // The browser serves generated assets as same-origin files, rather than
+        // exposing the native synchronous resource opener. Resolve against the
+        // application document, not the reader's resource-worker URL.
+        let path = serde_json::to_string(&format!("assets/data/{name}")).unwrap();
+        let reply = _engine
+            .eval(format!("new URL({path}, parent.document.baseURI).href"))
+            .await
+            .map_err(|_| ExtractionError::Unavailable)?;
+        let url: String = serde_json::from_str(&reply).map_err(|_| ExtractionError::Unavailable)?;
+        let response = day_part_http::fetch_future(day_part_http::Request::get(url))
+            .await
+            .map_err(|_| ExtractionError::Unavailable)?;
+        if response.status != 200 {
+            return Err(ExtractionError::Unavailable);
+        }
+        String::from_utf8(response.body).map_err(|_| ExtractionError::Unavailable)
+    }
 }
 
-fn extraction_script(html: &str, url: &str) -> Result<String, ExtractionError> {
-    let readability = script_asset(crate::res::assets::reader::readability_js)?;
-    let purify = script_asset(crate::res::assets::reader::purify_js)?;
-    let extract = script_asset(crate::res::assets::reader::extract_js)?;
+async fn extraction_script(
+    html: &str,
+    url: &str,
+    engine: JsHandle,
+) -> Result<String, ExtractionError> {
+    let readability = script_asset(crate::res::assets::reader::readability_js, engine).await?;
+    let purify = script_asset(crate::res::assets::reader::purify_js, engine).await?;
+    let extract = script_asset(crate::res::assets::reader::extract_js, engine).await?;
     // JSON quoting keeps publication text inert, including quotes and closing script tags.
     let input = serde_json::json!({ "html": html, "url": url });
     Ok(format!(

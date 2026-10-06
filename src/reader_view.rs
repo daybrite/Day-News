@@ -41,7 +41,13 @@ impl Ambient for ReaderView {
                     .article
                     .with(|a| a.as_ref().map(|a| (a.id, a.url.clone())))
             },
-            move |_, _| {
+            move |identity, previous| {
+                // watch runs when any field of the article snapshot changes, even if
+                // this projection is unchanged. Read/star edits must keep extraction,
+                // readiness, the live document, and its scroll position intact.
+                if previous == Some(identity) {
+                    return;
+                }
                 state.cancel();
                 state.auto_article.set(None);
                 state.active.set(false);

@@ -1,6 +1,6 @@
 # Run on UIKit with the bundled seed fixtures already in the isolated database.
 name: feed-navigation
-description: A single sidebar selection opens the article list after native back.
+description: A single sidebar selection opens the article list after native back on phones and split-view tablets.
 flow:
   - navigate: { route: all }
   - nav_back: { native: true }
@@ -10,18 +10,18 @@ flow:
   - pause: { secs: 0.5 }
   - assert_route: { route: 'feed:5756297993796914528' }
   - assert_visible: { id: timeline }
-  - assert_missing: { id: feed-dashboard }
+  - assert_text: { id: scope-title, text: Field Notes }
   - screenshot: feed-first-tap-article-list
   - nav_back: { native: true }
   - pause: { secs: 0.8 }
   - select: { id: nav-menu, index: 4 }
   - pause: { secs: 0.5 }
   - assert_visible: { id: timeline }
-  - assert_missing: { id: feed-dashboard }
+  - assert_text: { id: scope-title, text: Field Notes }
   - nav_back: { native: true }
   - pause: { secs: 0.8 }
   - select: { id: nav-menu, index: 5 }
   - pause: { secs: 0.5 }
   - assert_visible: { id: timeline }
-  - assert_missing: { id: feed-dashboard }
+  - assert_text: { id: scope-title, text: Night Sky }
   - screenshot: another-feed-first-tap-article-list

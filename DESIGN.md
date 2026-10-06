@@ -173,6 +173,22 @@ for this app. Provider replacement requires no change to the reader state or ren
 `tests/reader-view-server.py` plus `dayscript/reader-view.yaml` cover native success, cached
 toggle, cancellation on selection, and HTTP failure using an isolated database.
 
+Reader snapshot updates compare article identity explicitly before resetting extraction:
+marking the same article read or starred preserves its live document, downloaded content,
+and scroll position. `watch` callbacks may run even when the projected identity is unchanged.
+Subscription sheets remain alive until the new feed projection and selection settle, then
+dismiss; DOM observers must not be disposed while this asynchronous selection is pending.
+The floating feed heading is hidden at the first row, where the static heading already names
+the group, to avoid covering the first article title. Android explicitly allows cleartext
+traffic so a user-provided HTTP feed is reachable; HTTPS feeds continue using HTTPS.
+
+Browser extraction fetches its generated Readability/sanitizer assets from the application
+origin; native backends use the synchronous bundle resource opener. The DOM WebView reports
+completed loads so the same visibility-triggered reader policy is armed on every toolkit.
+
+See [native interaction regression tests](tests/native-interactions.md) for the six locally
+tested targets, isolated-store setup, native-input coverage, and test limitations.
+
 ## Looking like a reader
 
 The layout was measured against NetNewsWire's own macOS window rather than from memory. What

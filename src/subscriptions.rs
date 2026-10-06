@@ -174,6 +174,7 @@ pub fn subscription_sheet() -> impl Piece {
         }
     });
     cover(sheet.open, move |initial: &String| {
+        let sheet_scope = day::reactive::Scope::current();
         let address = Signal::new(initial.clone());
         let busy = Signal::new(false);
         let status = Signal::new(String::new());
@@ -203,7 +204,7 @@ pub fn subscription_sheet() -> impl Piece {
                         verify_result.borrow_mut().take();
                         let input = address.get_untracked().trim().to_owned();
                         let result = verify_result.clone();
-                        day::task(async move {
+                        let task = day::task(async move {
                             match verify_url(&input).await {
                                 Ok((url, update)) if address.get_untracked().trim() == input => {
                                     if let daynews_feed::FeedUpdate::Modified(feed, _, _) = &update
@@ -226,6 +227,7 @@ pub fn subscription_sheet() -> impl Piece {
                             }
                             busy.set(false);
                         });
+                        sheet_scope.on_cleanup(move || task.abort());
                     })
                     .id("feed-verify"),
             ))
@@ -279,9 +281,14 @@ pub fn subscription_sheet() -> impl Piece {
                         day::task(async move {
                             match daynews_core::subscribe_discovered(url, update).await {
                                 Ok(feed) => {
-                                    busy.set(false);
-                                    sheet.open.set(None);
+                                    // Keep this task's scope alive until the feed projection
+                                    // settles. Dismissing the cover first disposes its child
+                                    // observer on DOM and can leave the old scope selected.
                                     select_subscribed_feed(feed).await;
+                                    if sheet_scope.is_alive() {
+                                        busy.set(false);
+                                    }
+                                    sheet.open.set(None);
                                     return;
                                 }
                                 Err(_) => {
