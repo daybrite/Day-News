@@ -30,4 +30,14 @@ jobs:
       scripts: dayscript/seed-demo.yaml dayscript/walkthrough.yaml
       locales: en
       deploy-web: true
+      # HarmonyOS runs on the phone panel only for now. The default tablet row (a 1280×800
+      # panel on the same emulator image) kills the walkthrough intermittently inside ArkWeb's
+      # in-process GPU thread as the article web view comes up: `Chrome_InProcGp →
+      # __assert_fail → kms_swrast_dri.so!draw_flush`, a Mesa software-rasterizer assertion in
+      # the OpenHarmony 7.0 image itself, not in the app or in Day (run 37461094639, job
+      # 112287771067; Stanza-Redux's tablet row dies the same way). The phone panel passes.
+      # Restore the second row once the emulator image's GPU stack is fixed:
+      #   device=tablet, orientation=landscape, slug=tablet
+      harmony-devices: |
+        device=phone, orientation=portrait, slug=phone
 
