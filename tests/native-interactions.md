@@ -48,6 +48,16 @@ Android's article scrolling was checked with an actual
 `adb shell input swipe`. Such tests do not establish IME, VoiceOver/TalkBack, physical-device,
 or every theme/locale behavior. HarmonyOS and Windows runtime tests require CI or their hosts.
 
+For real Android navigation taps, start the English fixture app on its root list and run
+`python3 tests/android-navigation.py --adb /path/to/adb --serial emulator-5554`. The script
+checks single taps on all four smart feeds, Settings and Reader View Fixtures, then a native
+long press on the fixture feed. It asserts the toolbar destination, because Android's
+accessibility hierarchy also exposes sidebar labels that are hidden behind the current pane.
+This caught bugs that injected dayscript selection events did not: the row tap recognizer
+only reselected the current route, and empty context menus erased native click listeners.
+Android now uses Material's native navigation widget; sidebar drag-reordering is disabled
+there so navigation and long-press feed menus take precedence. Ordinary lists still reorder.
+
 ## Local run, October 6, 2026
 
 | Target | Expanded interaction suite | Full walkthrough / combined suite |
@@ -69,3 +79,31 @@ not validate the final framework changes on iPad. HarmonyOS Rust compilation suc
 HAP packaging is blocked by the host's missing `@ohos/hvigor-ohos-plugin`. No HarmonyOS emulator
 tests were attempted. Android's full walkthrough passed on retry after reducing concurrent
 browser load and using the already-seeded fixture store.
+
+### Android back-stack audit (October 2026)
+
+See [android-navigation-audit.md](android-navigation-audit.md) for ownership,
+root cause, phone/tablet rules, and remaining architecture limits. On the isolated
+English fixture app, return to the compact feeds root and run:
+
+```sh
+python3 tests/android-navigation.py --adb /path/to/adb --back-cycles 4
+python3 tests/android-navigation.py --adb /path/to/adb --tablet
+python3 tests/android-navigation.py --adb /path/to/adb --edge-swipes
+```
+
+The first alternates article toolbar Up and system Back, then leaves the section
+and opens Settings. It checks the native pane is actually offscreen at the feeds
+root, so the blank interstitial cannot pass merely because its title says Day News.
+The second temporarily widens the emulator, checks section changes create no history,
+closes/reopens a reader, and narrows back to verify reader → list → feeds. It restores
+the prior size override and logging property in `finally`; use an isolated emulator
+with a compact initial size and density low enough for 2400×1600 to tile.
+The third tests committed native edge Back swipes from a section and from a reader;
+it requires Android gesture navigation to be enabled.
+
+Local validation: six native destination taps and feed long press; four mixed article
+Back/Up cycles; wide section replacement, wide reader Back and wide-to-compact
+reader navigation, and committed native edge Back swipes. Phone and tablet screenshots inspected. Predictive gesture
+cancellation, physical foldables and process-death restoration require additional
+acceptance coverage; system Back key coverage does not establish those behaviors.
