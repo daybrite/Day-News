@@ -306,6 +306,12 @@ row labels, badges and icons. The icon overlay spins while connecting or when th
 is unknown/encoded, then fills a circular ring for a trustworthy decoded content length.
 Progress updates are throttled to 100 ms (mode changes and completion are immediate).
 Finishing, failure, removal and cancellation clear the overlay without changing row geometry.
+At orderly exit, Day cancels pending main-loop tasks before delivering `WillTerminate` to the
+app. This drops `UpdatingFeed` guards while their signals are alive, before `shutdown` drains
+accepted database writes and closes the worker. Stopping the refresh timer alone does not
+cancel the separate refresh tasks it launched. The native regression
+`quit_cancels_pending_feed_guards_before_closing_the_store` exercises four pending guards,
+database closure, and actual thread-local destruction in a subprocess.
 AppKit/UIKit animate only native Core Animation layers; download ticks never rebuild rows.
 Other toolkits currently omit this optional per-icon decoration; aggregate refresh remains
 visible on every platform.

@@ -1506,6 +1506,58 @@ mod tests {
         worker
     }
     #[test]
+    fn quit_cancels_pending_feed_guards_before_closing_the_store() {
+        const CHILD: &str = "DAY_NEWS_QUIT_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            std::thread::spawn(|| {
+                assert!(!day_core::has_tree());
+                let store = store();
+                let worker = seeded();
+                *store.worker.borrow_mut() = Some(worker);
+                let active = state().updating_feeds;
+                for id in 1..=4 {
+                    store.scheduled_feeds.borrow_mut().insert(id);
+                    active.update(|feeds| {
+                        feeds.insert(id, None);
+                    });
+                    let guard = UpdatingFeed {
+                        store: store.clone(),
+                        id,
+                        active,
+                    };
+                    day_core::task(std::future::poll_fn(move |_| {
+                        let _ = &guard;
+                        Poll::Pending
+                    }));
+                }
+                day_core::on_lifecycle(day_spec::Lifecycle::WillTerminate, move || {
+                    assert!(active.get_untracked().is_empty());
+                    assert!(store.scheduled_feeds.borrow().is_empty());
+                    shutdown();
+                });
+                day_core::dispatch_lifecycle(day_spec::Lifecycle::WillTerminate);
+            })
+            .join()
+            .unwrap();
+            return;
+        }
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "native::tests::quit_cancels_pending_feed_guards_before_closing_the_store",
+                "--nocapture",
+            ])
+            .env(CHILD, "1")
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(String::from_utf8_lossy(&output.stdout).contains("1 passed"));
+    }
+    #[test]
     fn worker_search_reads_title_and_body_indexes_and_handles_user_syntax() {
         let worker = seeded();
         for (term, expected) in [

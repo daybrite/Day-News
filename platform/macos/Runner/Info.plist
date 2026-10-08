@@ -83,6 +83,8 @@
 		<dict>
 			<key>UTTypeIdentifier</key>
 			<string>org.rss.rss</string>
+			<key>UTTypeDescription</key>
+			<string>RSS document</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
@@ -102,6 +104,8 @@
 		<dict>
 			<key>UTTypeIdentifier</key>
 			<string>org.atom.atom</string>
+			<key>UTTypeDescription</key>
+			<string>ATOM document</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
