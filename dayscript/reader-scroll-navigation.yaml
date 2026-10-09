@@ -1,0 +1,52 @@
+# Start tests/reader-view-server.py 28763 with a fresh isolated DAY_NEWS_DATA_DIR.
+name: reader-scroll-navigation
+description: New articles start at the top; flag changes retain the current document and scroll.
+flow:
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28763/scroll-feed.json' }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
+  - pause: { secs: 2 }
+  - wait_for: { id: feed-inline-reader }
+  - toggle: { id: feed-inline-reader, value: true }
+  - toggle: { id: feed-auto-reader, value: false }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: complete }
+  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 600); window.scrollMarker = "retained"', text: retained }
+  - pause: { secs: 0.3 }
+  - web_eval: { id: reader-web, script: 'scrollY > 500', text: 'true' }
+  - toolbar: { item: star, on: true }
+  - pause: { secs: 0.5 }
+  - web_eval: { id: reader-web, script: 'window.scrollMarker === "retained" && scrollY > 500', text: 'true' }
+  # This command is shared by the toolbar and Cmd-/.
+  - toolbar: { item: next-unread }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: slow }
+  - web_eval: { id: reader-web, script: 'scrollY', text: '0' }
+  - screenshot: reader-next-unread-top
+  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 600); "scrolled"', text: scrolled }
+  - pause: { secs: 0.3 }
+  - web_eval: { id: reader-web, script: 'scrollY > 500', text: 'true' }
+  - toolbar: { item: next-article }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: denied }
+  - web_eval: { id: reader-web, script: 'scrollY', text: '0' }
+  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 600); "scrolled"', text: scrolled }
+  - pause: { secs: 0.3 }
+  - web_eval: { id: reader-web, script: 'scrollY > 500', text: 'true' }
+  - toolbar: { item: previous-article }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: slow }
+  - web_eval: { id: reader-web, script: 'scrollY', text: '0' }
+  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 600); "scrolled"', text: scrolled }
+  - pause: { secs: 0.3 }
+  - web_eval: { id: reader-web, script: 'scrollY > 500', text: 'true' }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: complete }
+  - web_eval: { id: reader-web, script: 'scrollY', text: '0' }
+  - screenshot: reader-selected-top
+  - dialog_mode: { mode: native }

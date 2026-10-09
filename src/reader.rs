@@ -238,7 +238,9 @@ pub(crate) fn escape(s: &str) -> String {
 /// without one gets a composed text reader instead of a placeholder leaf.
 fn reader_body(
     provider: ResourceProvider,
+    page: Signal<String>,
     go: Trigger,
+    reload: Trigger,
     view: crate::reader_view::ReaderView,
 ) -> AnyPiece {
     if day_piece_webview::support() == Support::Unsupported
@@ -287,6 +289,7 @@ fn reader_body(
             .with_untracked(|a| a.as_ref().map(|a| crate::site_browser::profile(a.feed_id)))
             .unwrap_or_default();
         web_view_resources(provider, "reader.html")
+            .url_binding(page)
             .profile(profile)
             .js(js)
             .on_load(move || {
@@ -294,7 +297,8 @@ fn reader_body(
                 view.ready.set(true);
                 view.show_inline_content(scene);
             })
-            .reload(go)
+            .go(go)
+            .reload(reload)
             .on_external_link(move |url| {
                 if let Some(id) = url
                     .strip_prefix("day-news-reader://auto/")
@@ -424,7 +428,10 @@ pub fn reader_pane() -> impl Piece {
             ResourceResponse::not_found()
         }
     });
+    let document_url = provider.url("reader.html");
+    let page = Signal::new(document_url.clone());
     let go = Trigger::new();
+    let reload = Trigger::new();
     let rendered = std::rc::Rc::new(std::cell::RefCell::new(None::<String>));
     // Re-render only for article/locale changes. Typography and colors update the live
     // document through its dedicated stylesheet, preserving reading position.
@@ -445,6 +452,12 @@ pub fn reader_pane() -> impl Piece {
         },
         move |_| {
             let original = st.article.get_untracked();
+            // A different article is a navigation, not a reload of the previous document:
+            // web engines restore the old scroll offset when reloading the same URL.
+            let next_page = original
+                .as_ref()
+                .map(|a| format!("{document_url}?article={}", a.id))
+                .unwrap_or_else(|| document_url.clone());
             let key = original.as_ref().map(|a| {
                 format!(
                     "{}:{:?}:{:?}:{:?}:{}",
@@ -477,7 +490,12 @@ pub fn reader_pane() -> impl Piece {
                 .map(|a| document(a, !inline && view.active.get_untracked()))
                 .unwrap_or_default();
             *content.write().unwrap_or_else(|e| e.into_inner()) = doc.into_bytes();
-            go.notify();
+            if page.get_untracked() != next_page {
+                page.set(next_page);
+                go.notify();
+            } else {
+                reload.notify();
+            }
         },
     );
 
@@ -511,7 +529,7 @@ pub fn reader_pane() -> impl Piece {
                         },
                         |key| key.clone(),
                     ),
-                    move |_| reader_body(provider.clone(), go, view),
+                    move |_| reader_body(provider.clone(), page, go, reload, view),
                 )
             },
         ),

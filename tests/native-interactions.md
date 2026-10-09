@@ -44,6 +44,13 @@ reader page in an isolated macOS test app, set `window.scrollTo(0,0)` through `d
 `swift tests/macos-reader-scroll.swift <app-pid>`, and assert `scrollY > 100` through `web_eval`.
 The helper requires macOS Accessibility permission and sends a real wheel event to the app's
 visible content pane. This check passed on AppKit, GTK, and Qt. It does change desktop focus.
+
+For article scroll reset, start `python3 tests/reader-view-server.py 28763`, then launch with
+a fresh isolated store and `--script dayscript/reader-scroll-navigation.yaml`. It opens long
+synthetic articles and checks Next Unread (the Cmd-/ command), Next, Previous, and direct
+selection all start at the top, while starring the current article preserves its document
+and scroll position.
+
 Android's article scrolling was checked with an actual
 `adb shell input swipe`. Such tests do not establish IME, VoiceOver/TalkBack, physical-device,
 or every theme/locale behavior. HarmonyOS and Windows runtime tests require CI or their hosts.

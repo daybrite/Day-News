@@ -16,15 +16,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path in ("/feed.json", "/long-feed.json"):
+        if self.path in ("/feed.json", "/long-feed.json", "/scroll-feed.json"):
             body = json.dumps({
                 "version": "https://jsonfeed.org/version/1.1",
                 "title": "Reader View Fixtures",
                 "items": [
                     {"id": name, "url": f"{BASE}/{name}", "title": name,
                      "date_published": f"2026-09-{30-i:02}T12:00:00Z",
-                     "content_html": f"<p>RSS excerpt for {name}.</p><a href='/reference'>Fixture reference</a>" + ("<p>Long synthetic RSS preview paragraph for visibility testing.</p>" * 100 if self.path == "/long-feed.json" else "")}
-                    for i, name in enumerate(["complete", "slow", "denied"] if self.path == "/feed.json" else ["slow"])
+                     "content_html": f"<p>RSS excerpt for {name}.</p><a href='/reference'>Fixture reference</a>" + ("<p>Long synthetic RSS preview paragraph for visibility testing.</p>" * 100 if self.path != "/feed.json" else "")}
+                    for i, name in enumerate(["slow"] if self.path == "/long-feed.json" else ["complete", "slow", "denied"])
                 ],
             }).encode()
             content_type = "application/feed+json"
