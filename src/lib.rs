@@ -12,6 +12,7 @@ mod extraction;
 mod feed_icons;
 mod feed_list;
 mod format;
+mod http_fixtures;
 mod menus;
 mod reader;
 mod reader_options;
@@ -83,6 +84,7 @@ fn count(n: i64) -> String {
 }
 
 pub fn root() -> impl Piece {
+    http_fixtures::install();
     settings::apply_startup();
     day::register_preferences_with(
         day::WindowOptions {

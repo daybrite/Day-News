@@ -1,0 +1,15 @@
+# DAY_NEWS_HTTP_TEST=1 installs a synthetic HTTP handler before the app opens its store.
+# Runs after the bundled-feed walkthrough, with no fixture server or external publisher.
+name: http-interception
+flow:
+  - dialog_mode: { mode: scripted }
+  - toolbar: { item: new-feed }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: "https://dayscript.invalid/feed.json" }
+  - tap: { id: feed-verify }
+  - tap: { id: feed-subscribe }
+  - wait_for: { id: article-row-0 }
+  - toolbar: { item: refresh }
+  - wait_for: { id: article-row-0 }
+  - screenshot: http-interception
+  - dialog_mode: { mode: native }

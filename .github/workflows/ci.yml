@@ -33,7 +33,9 @@ jobs:
       # resolved once per run, so every leg compiles the same one. Refresh the lock locally
       # (`cargo update -p day`) when a new framework API lands, so a local build matches.
       update-day-deps: true
-      scripts: dayscript/seed-demo.yaml dayscript/walkthrough.yaml
+      scripts: dayscript/seed-demo.yaml dayscript/walkthrough.yaml dayscript/http-interception.yaml
+      launch-env: DAY_NEWS_HTTP_TEST=1
+      preflight-checks: fmt test
       locales: en
       deploy-web: true
       # HarmonyOS runs on the phone panel only for now. The default tablet row (a 1280×800

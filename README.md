@@ -225,3 +225,18 @@ The local `tests/site-session-server.py` fixture and `dayscript/site-session.yam
 shared login, authenticated reader loading, dashboard reselection, and complete cookie,
 localStorage and IndexedDB deletion. `site-incognito.yaml` can then be driven in the running
 app; `site-session-restore.yaml` verifies that its persistent login survives relaunch.
+
+### HTTP interception tests
+
+The feed crate's `tests/interception.rs` exercises the normal conditional-fetch pipeline through
+`day-part-http` handlers: validators, identical-body fingerprints, 304 responses and injected
+transport failure. Its integration-test process owns the global session; other test executables
+are isolated. Existing loopback-server tests still cover the native stack.
+
+For a local app dayscript, use a fresh absolute `--env DAY_NEWS_DATA_DIR=/tmp/news-http-test`
+(the News store override; `DAY_DATA_DIR` does not isolate this app), add
+`--env DAY_NEWS_HTTP_TEST=1`, and run
+`dayscript/http-interception.yaml`. This explicitly installs a synthetic publication at
+`https://dayscript.invalid/feed.json` before the app initializes. No external server is contacted
+for that origin. Other origins retain normal behavior. CI enables the fixture and runs this
+script after the bundled-feed walkthrough. Normal launches install no handler.
