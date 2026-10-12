@@ -1,6 +1,6 @@
 # Day News walkthrough: the reader loop end to end against the imported subscriptions.
 #
-#     day launch -p macos-appkit --script dayscript/walkthrough.yaml
+#     day launch -t macos-appkit --script dayscript/walkthrough.yaml
 # Short-window regression: add --capture-size 2048x1400@2 (1024x700 points).
 #
 # CONTRACT: expects the store to already hold subscriptions with articles (run

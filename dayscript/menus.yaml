@@ -1,6 +1,6 @@
 # Day News desktop menus: File and Go, driven through the native menu bar.
 #
-#     day launch -p macos-appkit --script dayscript/menus.yaml
+#     day launch -t macos-appkit --script dayscript/menus.yaml
 #
 # CONTRACT: expects an imported store (run dayscript/import.yaml first) with at least one
 # unread article, so Go ▸ Next Unread has somewhere to go. Does not invoke File ▸ Refresh,

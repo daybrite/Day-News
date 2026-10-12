@@ -191,6 +191,7 @@ pub fn subscription_sheet() -> impl Piece {
             label(crate::res::str::subscribe_preview_note()).font(Font::Footnote),
             row((
                 text_field(address)
+                    .input_purpose(InputPurpose::Url)
                     .placeholder(crate::res::str::subscribe_placeholder())
                     .id("feed-url")
                     .grow_w(),

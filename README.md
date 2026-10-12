@@ -91,10 +91,10 @@ target the app ships is listed in `Day.toml`.
 
 ```sh
 day doctor                       # toolchains present and missing, with fixes
-day launch -p macos-appkit       # build + run
-day launch -p ios-uikit          # needs a booted Simulator
-day launch -p android-mdc        # needs a JDK and a running emulator or device
-day launch -p web-dom            # serves the WebAssembly build locally
+day launch -t macos-appkit       # build + run
+day launch -t ios-uikit          # needs a booted Simulator
+day launch -t android-mdc        # needs a JDK and a running emulator or device
+day launch -t web-dom            # serves the WebAssembly build locally
 ```
 
 A bare `cargo build` uses the crate's default `mock` backend, which is what lets rust-analyzer and
@@ -107,10 +107,10 @@ cargo build --no-default-features --features appkit    # or gtk / qt / uikit / m
 A fresh install has no subscriptions. Seed some, then drive the whole reader loop:
 
 ```sh
-day launch -p macos-appkit --script dayscript/seed-demo.yaml    # the bundled demo feeds, offline
-day launch -p macos-appkit --script dayscript/import.yaml       # a sample OPML, through the file picker
-day launch -p android-mdc  --script dayscript/seed-mobile.yaml  # a few live feeds, by URL
-day launch -p macos-appkit --script dayscript/walkthrough.yaml  # the full loop, with screenshots
+day launch -t macos-appkit --script dayscript/seed-demo.yaml    # the bundled demo feeds, offline
+day launch -t macos-appkit --script dayscript/import.yaml       # a sample OPML, through the file picker
+day launch -t android-mdc  --script dayscript/seed-mobile.yaml  # a few live feeds, by URL
+day launch -t macos-appkit --script dayscript/walkthrough.yaml  # the full loop, with screenshots
 ```
 
 For an isolated validation run, pass `--env DAY_NEWS_DATA_DIR=/absolute/writable/path`
@@ -157,7 +157,7 @@ authorized service or another local engine.
 - `resource/locales/en/app.ftl` carries every user-facing string.
 - `resource/assets/demo/` holds the articles the screenshots show: seven feeds written for the
   app, one set per language, read offline from inside the app.
-- `platform/` holds the thin native host projects the mobile targets build through.
+- `platform/` holds app-owned Apple host sources and any native resource customizations. Day generates the build projects under `build/`.
 
 Test fixtures live in the repository; `crates/daynews-feed/tests/data` and
 `crates/daynews-opml/tests/data` record where the captured feeds and the vendored OPML samples came
@@ -199,7 +199,7 @@ state without opening it in the reader first.
 To log every executed SQL statement, including database-worker queries and migrations:
 
 ```sh
-day launch -p macos-appkit --env DAY_NEWS_LOG_SQL=1
+day launch -t macos-appkit --env DAY_NEWS_LOG_SQL=1
 ```
 
 Statements appear on the console with a `[Day-News SQL]` prefix, including bound values.
@@ -240,3 +240,14 @@ For a local app dayscript, use a fresh absolute `--env DAY_NEWS_DATA_DIR=/tmp/ne
 `https://dayscript.invalid/feed.json` before the app initializes. No external server is contacted
 for that origin. Other origins retain normal behavior. CI enables the fixture and runs this
 script after the bundled-feed walkthrough. Normal launches install no handler.
+
+
+## Generated native projects
+
+Use a Day CLI with automatic native project generation; Apple builds require **Xcode 27
+or newer**. Xcode project documents, Android Gradle files, and HarmonyOS hvigor files are
+created under `build/` by `day prepare`, `day build`, and `day launch`. Open the selected
+project with `day open -t <target>`; edits to generated files are disposable. Apple Swift
+sources, plists and `.xcconfig` files, and any Android resource overlays, remain app-owned
+under `platform/`. For additional native configuration, use
+`day project add-target <target> --persist-native-project` to create a persistent override.

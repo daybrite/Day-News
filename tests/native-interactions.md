@@ -10,7 +10,7 @@ HTML, including a long preview and a delayed full article. CORS is enabled for b
 For a desktop target:
 
 ```sh
-day launch -p macos-appkit --env DAY_NEWS_DATA_DIR=/tmp/day-news-regression \
+day launch -t macos-appkit --env DAY_NEWS_DATA_DIR=/tmp/day-news-regression \
   --script dayscript/seed-demo.yaml \
   --script dayscript/reading-navigation.yaml \
   --script dayscript/article-deselection.yaml \
