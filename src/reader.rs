@@ -19,8 +19,10 @@ fn document(a: &StoredArticle, control_above: bool) -> String {
         .is_some()
     {
         let control = format!(
-            r#"<div id="reader-load-control"><button type="button" id="reader-load-full" aria-busy="false" aria-expanded="false" aria-controls="reader-full-slot" onclick="document.getElementById('reader-load-link').click()"><span class="reader-load-label">{}</span><span class="reader-spinner" aria-hidden="true"></span><svg class="reader-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 5 6 6 6-6M6 12l6 6 6-6"/></svg></button><a hidden id="reader-load-link" href="day-news-reader://load/{}"></a><a hidden id="reader-auto-link" href="day-news-reader://auto/{}"></a></div>"#,
+            r#"<div id="reader-load-control"><button type="button" id="reader-load-full" aria-busy="false" aria-expanded="false" aria-controls="reader-full-slot" onclick="document.getElementById('reader-load-link').click()"><span class="reader-load-label">{}</span><span class="reader-spinner" aria-hidden="true"></span><svg class="reader-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 5 6 6 6-6M6 12l6 6 6-6"/></svg></button><button type="button" id="reader-load-error" hidden aria-haspopup="dialog" aria-label="{}" onclick="document.getElementById('reader-error-link').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z M12 9v5 M12 17v.1"/></svg></button><span id="reader-error-status" role="status" class="reader-sr-only"></span><a hidden id="reader-error-link" href="day-news-reader://error/{}"></a><a hidden id="reader-load-link" href="day-news-reader://load/{}"></a><a hidden id="reader-auto-link" href="day-news-reader://auto/{}"></a></div>"#,
             escape(&crate::res::str::reader_load_full().format()),
+            escape(&crate::res::str::reader_view_error_details().format()),
+            a.id,
             a.id,
             a.id
         );
@@ -120,7 +122,16 @@ fn document_with_style(
   .when {{ color: {muted}; font-size: 0.74em; letter-spacing: 0.06em; text-transform: uppercase;
            margin: 0 0 22px; }}
   a, #reader-load-full {{ color: {accent}; }}
-  #reader-load-control {{ margin: 28px 0 0; overflow-anchor: none; }}
+  #reader-load-control {{ position: relative; margin: 28px 0 0; overflow-anchor: none; }}
+  #reader-load-error {{ position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 36px; padding: 7px; border: 0; border-radius: 4px;
+    color: inherit; background: transparent; cursor: pointer; }}
+  #reader-load-error svg {{ display: block; width: 22px; height: 22px; }}
+  #reader-load-error:hover {{ background: color-mix(in srgb, currentColor 10%, transparent); }}
+  #reader-load-error:focus-visible {{ outline: 2px solid currentColor; outline-offset: 2px; }}
+  #reader-load-control[data-error="true"] .reader-download {{ visibility: hidden; }}
+  .reader-sr-only {{ position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; }}
   #reader-full-slot {{ overflow-anchor: none; }}
   #reader-load-full {{ width: 100%; display: flex; align-items: center; gap: 12px;
     padding: 15px 16px; border: 1px solid {rule}; border-radius: 6px;
@@ -242,6 +253,7 @@ fn reader_body(
     go: Trigger,
     reload: Trigger,
     view: crate::reader_view::ReaderView,
+    document_load: std::rc::Rc<std::cell::RefCell<Option<crate::load_diagnostics::Load>>>,
 ) -> AnyPiece {
     if day_piece_webview::support() == Support::Unsupported
         || (crate::site_browser::incognito()
@@ -261,10 +273,11 @@ fn reader_body(
                     view.ready.get(),
                     view.loading.get(),
                     view.active.get(),
+                    view.error.get(),
                     day::locale().get(),
                 )
             },
-            move |(ready, loading, active, _), _| {
+            move |(ready, loading, active, error, _), _| {
                 if !ready {
                     return;
                 }
@@ -276,8 +289,13 @@ fn reader_body(
                     crate::res::str::reader_load_full().format()
                 };
                 let text = serde_json::to_string(&text).unwrap();
+                // Format localized UI text before entering asynchronous web evaluation.
+                let failed = error.is_some();
+                let message =
+                    serde_json::to_string(&if failed { view.status() } else { String::new() })
+                        .unwrap();
                 let script = format!(
-                    "(() => {{ const button = document.getElementById('reader-load-full'); if (button) {{ button.disabled = {loading}; button.setAttribute('aria-busy', String({loading})); button.setAttribute('aria-expanded', String({active})); button.querySelector('.reader-load-label').textContent = {text}; }} }})()"
+                    "(() => {{ const button = document.getElementById('reader-load-full'); if (button) {{ button.disabled = {loading}; button.setAttribute('aria-busy', String({loading})); button.setAttribute('aria-expanded', String({active})); button.querySelector('.reader-load-label').textContent = {text}; }} const control = document.getElementById('reader-load-control'); const warning = document.getElementById('reader-load-error'); if (control && warning) {{ control.dataset.error = String({failed}); warning.hidden = !{failed}; warning.title = {message}; document.getElementById('reader-error-status').textContent = {message}; }} }})()"
                 );
                 day::task(async move {
                     let _ = js.eval(script).await;
@@ -293,6 +311,42 @@ fn reader_body(
             .profile(profile)
             .js(js)
             .on_load(move || {
+                // Resource reloads can retain the previous URL. Verify the rendered
+                // document's generation, rather than attributing that URL to an article.
+                let pending = document_load.clone();
+                let article_load = view.article_load.get_untracked();
+                let selected = scene.selected;
+                let url = page.get_untracked();
+                day::task(async move {
+                    let observed = if day_piece_webview::eval_support() == Support::Native {
+                        js.eval("document.body.dataset.dayNewsLoadId")
+                            .await
+                            .ok()
+                            .and_then(|value| serde_json::from_str::<String>(&value).ok())
+                            .and_then(|value| value.parse::<u64>().ok())
+                    } else {
+                        // Backends without evaluation can only validate the article URL.
+                        let id = url::Url::parse(&url).ok().and_then(|url| {
+                            url.query_pairs()
+                                .find(|(key, _)| key == "article")
+                                .and_then(|(_, id)| id.parse::<u64>().ok())
+                        });
+                        pending
+                            .borrow()
+                            .as_ref()
+                            .filter(|load| Some(load.article()) == id)
+                            .map(|load| load.id())
+                    };
+                    let mut pending = pending.borrow_mut();
+                    if pending.as_ref().is_some_and(|load| {
+                        Some(load.id()) == observed
+                            && selected.try_get() == Some(Some(load.article()))
+                    }) {
+                        let load = pending.take().unwrap();
+                        article_load.finish(load.article(), "loaded");
+                        load.finish("loaded", serde_json::json!({}));
+                    }
+                });
                 crate::reader_styles::apply_to(js);
                 view.ready.set(true);
                 view.show_inline_content(scene);
@@ -300,6 +354,26 @@ fn reader_body(
             .go(go)
             .reload(reload)
             .on_external_link(move |url| {
+                if let Some(id) = url
+                    .strip_prefix("day-news-reader://error/")
+                    .and_then(|id| id.parse::<u64>().ok())
+                {
+                    if scene.selected.get_untracked() == Some(id)
+                        && view.error.get_untracked().is_some()
+                    {
+                        let message = view.status();
+                        let title = crate::res::str::reader_view_failed().format();
+                        let dismiss = crate::res::str::dismiss_alert().format();
+                        day::task(async move {
+                            alert(title)
+                                .message(message)
+                                .button(dismiss, ())
+                                .present()
+                                .await;
+                        });
+                    }
+                    return day_piece_webview::LinkPolicy::Ignore;
+                }
                 if let Some(id) = url
                     .strip_prefix("day-news-reader://auto/")
                     .and_then(|id| id.parse::<u64>().ok())
@@ -433,6 +507,14 @@ pub fn reader_pane() -> impl Piece {
     let go = Trigger::new();
     let reload = Trigger::new();
     let rendered = std::rc::Rc::new(std::cell::RefCell::new(None::<String>));
+    let document_load = std::rc::Rc::new(std::cell::RefCell::new(
+        None::<crate::load_diagnostics::Load>,
+    ));
+    let pending_document = document_load.clone();
+    let cleanup_document = document_load.clone();
+    day::reactive::Scope::current().on_cleanup(move || {
+        cleanup_document.borrow_mut().take();
+    });
     // Re-render only for article/locale changes. Typography and colors update the live
     // document through its dedicated stylesheet, preserving reading position.
     bind(
@@ -485,11 +567,49 @@ pub fn reader_pane() -> impl Piece {
             } else {
                 view.article(original)
             };
-            let doc = article
+            let load = article.as_ref().map(|a| {
+                crate::load_diagnostics::Load::start(
+                    "reader_document",
+                    a.id,
+                    if !inline && view.active.get_untracked() {
+                        "reader_view"
+                    } else {
+                        "feed_content"
+                    },
+                )
+            });
+            let mut doc = article
                 .as_ref()
                 .map(|a| document(a, !inline && view.active.get_untracked()))
                 .unwrap_or_default();
+            if let Some(load) = &load {
+                doc = doc.replacen(
+                    "<body>",
+                    &format!("<body data-day-news-load-id=\"{}\">", load.id()),
+                    1,
+                );
+                load.event(
+                    "html_ready",
+                    serde_json::json!({"document_bytes": doc.len()}),
+                );
+                view.article_load.get_untracked().event(
+                    load.article(),
+                    "html_ready",
+                    serde_json::json!({"document_bytes": doc.len()}),
+                );
+            }
+            *pending_document.borrow_mut() = load;
             *content.write().unwrap_or_else(|e| e.into_inner()) = doc.into_bytes();
+            if (day_piece_webview::support() == Support::Unsupported
+                || (crate::site_browser::incognito()
+                    && day_piece_webview::private_browsing_support() == Support::Unsupported))
+                && let Some(load) = pending_document.borrow_mut().take()
+            {
+                view.article_load
+                    .get_untracked()
+                    .finish(load.article(), "text_prepared");
+                load.finish("text_prepared", serde_json::json!({}));
+            }
             if page.get_untracked() != next_page {
                 page.set(next_page);
                 go.notify();
@@ -501,15 +621,6 @@ pub fn reader_pane() -> impl Piece {
 
     column((
         when(
-            move || view.error.get().is_some(),
-            move || {
-                label(move || view.status())
-                    .font(Font::Footnote)
-                    .id("reader-view-status")
-                    .padding(8.0)
-            },
-        ),
-        when(
             move || st.article.get().is_none(),
             crate::dashboard::dashboard,
         ),
@@ -517,6 +628,7 @@ pub fn reader_pane() -> impl Piece {
             move || st.article.get().is_some(),
             move || {
                 let provider = provider.clone();
+                let document_load = document_load.clone();
                 each(
                     items(
                         move || {
@@ -529,7 +641,16 @@ pub fn reader_pane() -> impl Piece {
                         },
                         |key| key.clone(),
                     ),
-                    move |_| reader_body(provider.clone(), page, go, reload, view),
+                    move |_| {
+                        reader_body(
+                            provider.clone(),
+                            page,
+                            go,
+                            reload,
+                            view,
+                            document_load.clone(),
+                        )
+                    },
                 )
             },
         ),

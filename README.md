@@ -135,6 +135,10 @@ publisher's full article into the current reader. The article toolbar exposes th
 on phones. Invoke it again to return to the RSS version, or while loading to cancel. Your
 reader typography and colors apply to both versions.
 
+If extraction fails, the **Load Full Article** box shows a warning button without moving the
+article. Hover for the error message, or click/tap the warning for details. The load button
+remains available to retry; retrying or selecting another article clears the warning.
+
 Extraction runs locally using bundled Mozilla Readability and DOMPurify. It does not execute
 publisher scripts, so pages requiring JavaScript, sign-in, or a subscription may not yield an
 article. Web builds also remain subject to publisher CORS rules. NetNewsWire's Feedbin service
@@ -195,6 +199,29 @@ primary shortcut modifier in place of Command.
 Copy Article Link (⇧⌘C) is in the Article menu and reader toolbar. Right-click or long-press
 an article row to copy its link, open it in the chosen browser, tag it, or toggle its read/star
 state without opening it in the reader first.
+
+Article and Reader View loads emit JSON diagnostics at INFO level under `day_news::load`.
+To watch them in the terminal, use an attached launch (omit `--detach`):
+
+```sh
+day launch -t macos-appkit --env DAY_LOG=info
+```
+
+Each record includes `article_id`, a unique `load_id`, `kind`, `trigger`, `event`, elapsed
+milliseconds, current/start/delta process-memory bytes, and the largest memory sample seen
+during that operation. `article` measures selection through the native document-load callback;
+`reader_view` measures fetch, decode and extraction, distinguishing `explicit` and `automatic`
+triggers, cache hits, errors, timeouts and cancellation. `reader_document` measures HTML
+generation through the native load callback; `reader_inline` measures the DOM update, before
+its decorative animation or remote images finish. Stage details include HTTP status, redirects
+and response/HTML/extracted-content sizes. Match article IDs to follow extraction into display.
+
+Memory is the whole app process (Apple physical footprint, Linux/Android resident set, Windows
+working set), not per-article allocations or a separate web-renderer process. The sampled peak
+is not a continuously measured high-water mark. Unavailable readings are `null`; web builds
+report Wasm linear memory and `null` elapsed time because Day's raw DOM runtime has no Rust
+monotonic clock. Logs contain IDs and statistics, not article bodies, URLs or cookies. Set
+`DAY_LOG=warn` to suppress these diagnostics.
 
 To log every executed SQL statement, including database-worker queries and migrations:
 

@@ -13,6 +13,7 @@ mod feed_icons;
 mod feed_list;
 mod format;
 mod http_fixtures;
+mod load_diagnostics;
 mod menus;
 mod reader;
 mod reader_options;

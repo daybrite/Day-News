@@ -10,20 +10,17 @@ pub struct FeedList {
 
 impl Ambient for FeedList {
     fn create() -> Self {
-        Self {
-            unread_only: Signal::new(day::prefs::get(UNREAD_ONLY_KEY).as_deref() == Some("true")),
-        }
+        let unread_only = Signal::new(false);
+        // Restore before any window reads it, and persist every change for the app's
+        // lifetime, including changes made while revealing a subscribed publisher.
+        day::prefs::bind(UNREAD_ONLY_KEY, unread_only);
+        Self { unread_only }
     }
 }
 
 pub fn toggle() {
     let state = FeedList::app();
     let on = !state.unread_only.get_untracked();
-    if on {
-        day::prefs::set(UNREAD_ONLY_KEY, "true");
-    } else {
-        day::prefs::remove(UNREAD_ONLY_KEY);
-    }
     state.unread_only.set(on);
 }
 
@@ -49,5 +46,67 @@ pub fn move_relative(feed: u64, delta: isize) {
             from.saturating_add_signed(delta)
                 .min(feeds.len().saturating_sub(1)),
         );
+    }
+}
+
+#[cfg(all(
+    test,
+    any(target_os = "macos", target_os = "linux", target_os = "windows")
+))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unread_filter_survives_process_restart() {
+        const CHILD: &str = "DAY_NEWS_TEST_UNREAD_FILTER";
+        if let Ok(mode) = std::env::var(CHILD) {
+            let state = FeedList::app();
+            match mode.as_str() {
+                "enable" => {
+                    assert!(!state.unread_only.get_untracked());
+                    toggle();
+                }
+                "disable" => {
+                    assert!(state.unread_only.get_untracked());
+                    toggle();
+                }
+                "enabled" => assert!(state.unread_only.get_untracked()),
+                "disabled" => assert!(!state.unread_only.get_untracked()),
+                _ => panic!("unknown synthetic test mode"),
+            }
+            day::reactive::flush_sync();
+            return;
+        }
+
+        // Test binaries have their own Apple preferences domain. Restore the key on
+        // other desktop stores too, including when a child assertion fails.
+        struct Restore(Option<String>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                if let Some(value) = &self.0 {
+                    day::prefs::set(UNREAD_ONLY_KEY, value);
+                } else {
+                    day::prefs::remove(UNREAD_ONLY_KEY);
+                }
+            }
+        }
+        let _restore = Restore(day::prefs::get(UNREAD_ONLY_KEY));
+        day::prefs::remove(UNREAD_ONLY_KEY);
+        for mode in ["disabled", "enable", "enabled", "disable", "disabled"] {
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "feed_list::tests::unread_filter_survives_process_restart",
+                ])
+                .env(CHILD, mode)
+                .output()
+                .unwrap();
+            assert!(
+                output.status.success(),
+                "{mode}: {}{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
     }
 }

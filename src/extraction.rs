@@ -39,8 +39,9 @@ pub trait ArticleExtractor {
     fn extract<'a>(&'a self, url: &'a str) -> ExtractionFuture<'a>;
 }
 
-pub struct LocalReadability {
+pub struct LocalReadability<'a> {
     pub engine: JsHandle,
+    pub diagnostics: &'a crate::load_diagnostics::Load,
 }
 
 pub fn web_url(value: &str) -> Option<url::Url> {
@@ -52,7 +53,7 @@ pub fn web_url(value: &str) -> Option<url::Url> {
     })
 }
 
-impl ArticleExtractor for LocalReadability {
+impl ArticleExtractor for LocalReadability<'_> {
     fn extract<'a>(&'a self, url: &'a str) -> ExtractionFuture<'a> {
         Box::pin(async move {
             let url = web_url(url).ok_or(ExtractionError::InvalidUrl)?;
@@ -65,7 +66,7 @@ impl ArticleExtractor for LocalReadability {
                 .build();
             let mut target = url.clone();
             let mut response = None;
-            for _ in 0..=10 {
+            for redirect in 0..=10 {
                 let cookies = self
                     .engine
                     .cookie_header(target.as_str())
@@ -82,6 +83,13 @@ impl ArticleExtractor for LocalReadability {
                     .fetch_future(request)
                     .await
                     .map_err(|_| ExtractionError::Network)?;
+                self.diagnostics.event(
+                    "http_response",
+                    serde_json::json!({
+                        "status": received.status, "response_bytes": received.body.len(),
+                        "redirect_count": redirect,
+                    }),
+                );
                 for (_, cookie) in received
                     .headers
                     .iter()
@@ -108,7 +116,13 @@ impl ArticleExtractor for LocalReadability {
             }
             let response = response.ok_or(ExtractionError::Network)?;
             let (html, base) = decode_page(response, url.as_str())?;
+            self.diagnostics
+                .event("decoded", serde_json::json!({"html_bytes": html.len()}));
             let script = extraction_script(&html, &base, self.engine).await?;
+            self.diagnostics.event(
+                "extracting",
+                serde_json::json!({"script_bytes": script.len()}),
+            );
             let reply = self
                 .engine
                 .eval(script)

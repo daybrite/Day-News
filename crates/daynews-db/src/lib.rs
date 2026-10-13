@@ -16,10 +16,9 @@
 pub mod dashboard;
 mod polling;
 
-use day_macros::Model;
 use day_model::{ModelId, Op};
 use day_persistence::{
-    CountQuery, DbError, Fetch, Many, ModelContainer, One, Pred, Query, Sqlite, schema,
+    CountQuery, DbError, Fetch, Many, Model, ModelContainer, One, Pred, Query, Sqlite, schema,
 };
 use day_reactive::Binding;
 

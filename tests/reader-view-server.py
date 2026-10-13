@@ -16,15 +16,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path in ("/feed.json", "/long-feed.json", "/scroll-feed.json"):
+        if self.path in ("/feed.json", "/error-feed.json", "/long-feed.json", "/scroll-feed.json"):
             body = json.dumps({
                 "version": "https://jsonfeed.org/version/1.1",
                 "title": "Reader View Fixtures",
                 "items": [
                     {"id": name, "url": f"{BASE}/{name}", "title": name,
                      "date_published": f"2026-09-{30-i:02}T12:00:00Z",
-                     "content_html": f"<p>RSS excerpt for {name}.</p><a href='/reference'>Fixture reference</a>" + ("<p>Long synthetic RSS preview paragraph for visibility testing.</p>" * 100 if self.path != "/feed.json" else "")}
-                    for i, name in enumerate(["slow"] if self.path == "/long-feed.json" else ["complete", "slow", "denied"])
+                     "content_html": f"<p>RSS excerpt for {name}.</p><a href='/reference'>Fixture reference</a>" + ("<p>Long synthetic RSS preview paragraph for visibility testing.</p>" * 100 if self.path in ("/long-feed.json", "/scroll-feed.json") or name == "empty" else "")}
+                    for i, name in enumerate(["slow"] if self.path == "/long-feed.json" else ["complete", "slow", "denied"] + (["empty"] if self.path == "/error-feed.json" else []))
                 ],
             }).encode()
             content_type = "application/feed+json"
@@ -42,6 +42,9 @@ class Handler(BaseHTTPRequestHandler):
                     "</article></body></html>").encode()
             content_type = "text/html; charset=utf-8"
             status = 403 if self.path == "/denied" else 200
+            if self.path == "/empty":
+                time.sleep(0.5)  # Keep the asynchronous retry state observable.
+                body = b"<html><head><title></title></head><body></body></html>"
         self.send_response(status)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Type", content_type)

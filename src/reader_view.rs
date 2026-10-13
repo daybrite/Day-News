@@ -2,6 +2,7 @@
 //! overlay for the selected article. Selection changes and window disposal cancel extraction.
 
 use crate::extraction::{ArticleExtractor, ExtractedArticle, ExtractionError, LocalReadability};
+use crate::load_diagnostics::{ArticleLoad, Load};
 use day::prelude::*;
 use day_piece_webview::JsHandle;
 use std::{cell::Cell, rc::Rc};
@@ -16,11 +17,13 @@ pub struct ReaderView {
     pub extracted: Signal<Option<(u64, ExtractedArticle)>>,
     task: Signal<Rc<Cell<Option<day::TaskHandle>>>>,
     auto_article: Signal<Option<u64>>,
+    pub article_load: Signal<ArticleLoad>,
 }
 
 impl Ambient for ReaderView {
     fn create() -> Self {
         let pending = Rc::new(Cell::new(None::<day::TaskHandle>));
+        let article_load = ArticleLoad::default();
         let state = Self {
             engine: JsHandle::new(),
             ready: Signal::new(false),
@@ -30,11 +33,21 @@ impl Ambient for ReaderView {
             extracted: Signal::new(None),
             task: Signal::new(pending.clone()),
             auto_article: Signal::new(None),
+            article_load: Signal::new(article_load.clone()),
         };
         let scene = daynews_core::scene();
         // The displayed snapshot stays visible while the next database read is pending.
         // Cancel extraction as soon as the selection changes, before that snapshot arrives.
-        watch(move || scene.selected.get(), move |_, _| state.cancel());
+        article_load.select(scene.selected.get_untracked());
+        watch(
+            move || scene.selected.get(),
+            move |id, previous| {
+                state.cancel();
+                if previous != Some(id) {
+                    state.article_load.get_untracked().select(*id);
+                }
+            },
+        );
         watch(
             move || {
                 scene
@@ -47,6 +60,11 @@ impl Ambient for ReaderView {
                 // readiness, the live document, and its scroll position intact.
                 if previous == Some(identity) {
                     return;
+                }
+                if let Some((id, _)) = identity {
+                    state.article_load.get_untracked().event(*id, "snapshot_ready", serde_json::json!({
+                        "content_bytes": scene.article.with_untracked(|a| a.as_ref().and_then(|a| a.content_html.as_ref()).map_or(0, String::len)),
+                    }));
                 }
                 state.cancel();
                 state.auto_article.set(None);
@@ -103,6 +121,7 @@ impl Ambient for ReaderView {
         // Signals are already disposed when scope cleanup runs. Keep only the cancellation
         // cell alive here; never read or write window signals during disposal.
         day::reactive::Scope::current().on_cleanup(move || {
+            article_load.select(None);
             if let Some(task) = pending.take() {
                 task.abort();
             }
@@ -137,7 +156,7 @@ impl ReaderView {
             && self.error.get_untracked().is_none()
         {
             self.auto_article.set(Some(article.id));
-            self.toggle(scene);
+            self.toggle_with_trigger(scene, "automatic");
         }
     }
 
@@ -164,6 +183,10 @@ impl ReaderView {
     }
 
     pub fn toggle(self, scene: daynews_core::NewsScene) {
+        self.toggle_with_trigger(scene, "explicit");
+    }
+
+    fn toggle_with_trigger(self, scene: daynews_core::NewsScene, trigger: &'static str) {
         if self.loading.get_untracked() {
             self.cancel();
             return;
@@ -175,10 +198,14 @@ impl ReaderView {
         let Some(article) = scene.article.get_untracked() else {
             return;
         };
+        let load = Load::start("reader_view", article.id, trigger);
         if self
             .extracted
             .with_untracked(|a| a.as_ref().is_some_and(|(id, _)| *id == article.id))
         {
+            load.finish("cache_hit", serde_json::json!({
+                "content_bytes": self.extracted.with_untracked(|a| a.as_ref().map_or(0, |(_, a)| a.content.len())),
+            }));
             self.active.set(true);
             return;
         }
@@ -186,6 +213,7 @@ impl ReaderView {
             .url
             .filter(|url| crate::extraction::web_url(url).is_some())
         else {
+            load.finish("unavailable", serde_json::json!({"reason": "invalid_url"}));
             return;
         };
         self.error.set(None);
@@ -193,6 +221,7 @@ impl ReaderView {
         let task = day::task(async move {
             let provider = LocalReadability {
                 engine: self.engine,
+                diagnostics: &load,
             };
             let result = match futures_util::future::select(
                 provider.extract(&url),
@@ -210,7 +239,20 @@ impl ReaderView {
                         .is_some_and(|a| a.id == article.id && a.url.as_deref() == Some(&url))
                 })
             {
+                load.finish(
+                    "discarded",
+                    serde_json::json!({"reason": "selection_changed"}),
+                );
                 return;
+            }
+            match &result {
+                Ok(content) => load.finish(
+                    "extracted",
+                    serde_json::json!({"content_bytes": content.content.len()}),
+                ),
+                Err(error) => {
+                    load.finish("failed", serde_json::json!({"error": format!("{error:?}")}))
+                }
             }
             day::reactive::batch(|| {
                 self.loading.set(false);
@@ -272,9 +314,14 @@ impl ReaderView {
             .unwrap_or_default();
         let html = serde_json::to_string(&html).unwrap();
         let task = day::task(async move {
-            let _ = self.engine.eval(format!(r#"(() => {{
+            let load = Load::start(
+                "reader_inline",
+                article.id,
+                if active { "expand" } else { "collapse" },
+            );
+            let result = self.engine.eval(format!(r#"(() => {{
                 const slot = document.getElementById('reader-full-slot');
-                if (!slot) return;
+                if (!slot) return 'missing_slot';
                 const active = {active}, x = scrollX, y = scrollY;
                 if (active) {{
                     window.readerAutoObserver?.disconnect();
@@ -282,14 +329,14 @@ impl ReaderView {
                         slot.innerHTML = {html}; slot.dataset.loaded = 'true';
                     }}
                 }}
-                if (slot.dataset.expanded === String(active)) return;
+                if (slot.dataset.expanded === String(active)) return 'unchanged';
                 slot.dataset.expanded = String(active);
                 const opacity = slot.hidden ? 0 : Number(getComputedStyle(slot).opacity);
                 slot.readerTransition?.cancel();
                 if (!slot.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) {{
-                    slot.hidden = !active; window.scrollTo(x, y); return;
+                    slot.hidden = !active; window.scrollTo(x, y); return 'updated';
                 }}
-                if (!active && slot.hidden) return;
+                if (!active && slot.hidden) return 'unchanged';
                 slot.hidden = false;
                 const animation = slot.animate(active
                     ? [{{opacity, transform: 'translateY(12px)'}}, {{opacity: 1, transform: 'translateY(0)'}}]
@@ -302,7 +349,26 @@ impl ReaderView {
                     animation.cancel(); slot.readerTransition = null;
                 }};
                 window.scrollTo(x, y);
+                return 'updated';
             }})()"#)).await;
+            match result {
+                Ok(status) => {
+                    let status = serde_json::from_str::<String>(&status).unwrap_or(status);
+                    let outcome = match status.as_str() {
+                        "updated" => "dom_updated",
+                        "unchanged" => "unchanged",
+                        _ => "failed",
+                    };
+                    load.finish(
+                        outcome,
+                        serde_json::json!({"status": status, "script_content_bytes": html.len()}),
+                    );
+                }
+                Err(_) => load.finish(
+                    "failed",
+                    serde_json::json!({"error": "evaluation_unavailable"}),
+                ),
+            }
         });
         // Evaluation is keyed to the current web document and a replaced document drops it.
         day::reactive::Scope::current().on_cleanup(move || task.abort());

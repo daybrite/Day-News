@@ -324,6 +324,9 @@ are bounded. Successful thumbnails remain visible after transient rediscovery er
 AppKit/UIKit display absolute-file icons in original color; generated bundled RSS symbols
 remain the fallback. `feed_list` owns the persistent unread-only signal used by both the
 menu and toolbar. Filtering changes visible subscription rows, not the scene's article scope.
+The app-wide signal binds to `news.feeds.unread_only` before the sidebar reads it, restoring
+and saving both boolean states. `feed_list::tests::unread_filter_survives_process_restart`
+checks enabled and disabled restoration in separate processes.
 
 
 ## Worker migration validation (2026-10-01)

@@ -5,7 +5,7 @@ flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
   - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: 'http://127.0.0.1:28761/feed.json' }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28761/error-feed.json' }
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
@@ -48,7 +48,33 @@ flow:
   - pause: { secs: 1 }
   - toolbar: { item: reader-view, on: true }
   - pause: { secs: 1 }
-  - assert_text: { id: reader-view-status, key: reader_view_network_error }
+  - assert_missing: { id: reader-view-status }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").hidden', text: 'false' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").title', contains: 'Couldn’t load the full article.' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").click(); "clicked"', text: 'clicked' }
+  - assert_presented: { title: 'Couldn’t Load Full Article' }
+  - respond: { button: 0 }
   - web_eval: { id: reader-web, script: 'document.body.textContent', contains: 'RSS excerpt for denied.' }
   - screenshot: reader-view-error
+  # A long preview catches viewport resizing, scroll jumps and load-box movement on failure.
+  - navigate: { route: all }
+  - select: { id: timeline, index: 3 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").scrollIntoView({block:"center"}); "scrolled"', text: 'scrolled' }
+  - web_eval: { id: reader-web, script: 'window.errorGeometry = [innerHeight, scrollY, document.getElementById("reader-load-control").getBoundingClientRect().top, document.getElementById("reader-load-control").offsetHeight]; scrollY > 0', text: 'true' }
+  - toolbar: { item: reader-view, on: true }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").title', contains: 'No readable article was found.' }
+  - assert_missing: { id: reader-view-status }
+  - web_eval: { id: reader-web, script: '[innerHeight, scrollY, document.getElementById("reader-load-control").getBoundingClientRect().top, document.getElementById("reader-load-control").offsetHeight].every((value, index) => Math.abs(value - window.errorGeometry[index]) < 2)', text: 'true' }
+  - screenshot: reader-no-content-warning
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").click(); "clicked"', text: 'clicked' }
+  - assert_presented: { title: 'Couldn’t Load Full Article' }
+  - respond: { button: 0 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "clicked"', text: 'clicked' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").hidden', text: 'true' }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").title', contains: 'No readable article was found.' }
+  - navigate: { route: all }
+  - select: { id: timeline, index: 0 }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").hidden', text: 'true' }
   - dialog_mode: { mode: native }
