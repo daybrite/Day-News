@@ -17,6 +17,7 @@ mod load_diagnostics;
 mod menus;
 mod reader;
 mod reader_options;
+mod reader_scripts;
 mod reader_styles;
 mod reader_view;
 mod refresh_schedule;

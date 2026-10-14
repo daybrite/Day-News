@@ -27,6 +27,7 @@ pub enum ExtractionError {
     NoContent,
     Unavailable,
     Timeout,
+    CustomScript,
 }
 
 pub type ExtractionFuture<'a> =
@@ -118,16 +119,20 @@ impl ArticleExtractor for LocalReadability<'_> {
             let (html, base) = decode_page(response, url.as_str())?;
             self.diagnostics
                 .event("decoded", serde_json::json!({"html_bytes": html.len()}));
-            let script = extraction_script(&html, &base, self.engine).await?;
+            // Match the final page origin after redirects, never an unrelated feed URL.
+            let custom = crate::reader_scripts::for_url(&base);
+            let script = extraction_script(&html, &base, custom.as_deref(), self.engine).await?;
             self.diagnostics.event(
                 "extracting",
-                serde_json::json!({"script_bytes": script.len()}),
+                serde_json::json!({"script_bytes": script.len(), "custom_script": custom.is_some()}),
             );
-            let reply = self
-                .engine
-                .eval(script)
-                .await
-                .map_err(|_| ExtractionError::Unavailable)?;
+            let reply = self.engine.eval(script).await.map_err(|_| {
+                if custom.is_some() {
+                    ExtractionError::CustomScript
+                } else {
+                    ExtractionError::Unavailable
+                }
+            })?;
             let article: Option<ExtractedArticle> =
                 serde_json::from_str(&reply).map_err(|_| ExtractionError::NoContent)?;
             article
@@ -207,6 +212,7 @@ async fn script_asset(name: day::AssetName, _engine: JsHandle) -> Result<String,
 async fn extraction_script(
     html: &str,
     url: &str,
+    custom: Option<&str>,
     engine: JsHandle,
 ) -> Result<String, ExtractionError> {
     let readability = script_asset(crate::res::assets::reader::readability_js, engine).await?;
@@ -214,8 +220,13 @@ async fn extraction_script(
     let extract = script_asset(crate::res::assets::reader::extract_js, engine).await?;
     // JSON quoting keeps publication text inert, including quotes and closing script tags.
     let input = serde_json::json!({ "html": html, "url": url });
+    // Explicitly installed code is executable; publication text remains JSON data. A local
+    // function scope keeps hook declarations out of the live reader's global namespace.
+    let hook = custom.map_or_else(|| "undefined".to_owned(), |source| format!(
+        "function(document, url, Readability) {{\n{source}\n;return extract(document, url, Readability);\n}}"
+    ));
     Ok(format!(
-        "(() => {{ {readability}\n{purify}\n{extract}\nreturn extractArticle({input}); }})()"
+        "(() => {{ {readability}\n{purify}\n{extract}\nreturn extractArticle({input}, {hook}); }})()"
     ))
 }
 

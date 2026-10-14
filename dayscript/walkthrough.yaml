@@ -217,6 +217,13 @@ flow:
   - assert_value: { id: refresh-interval-picker, value: 4 }
   - select: { id: refresh-interval-picker, index: 0 }
   - assert_value: { id: refresh-interval-picker, value: 0 }
+  - assert_visible: { id: app-reader-script }
+  - assert_visible: { id: site-reader-scripts }
+  - tap: { id: app-reader-script }
+  - wait_for: { id: reader-script-source }
+  - tap: { id: reader-script-template }
+  - screenshot: reader-script-editor
+  - tap: { id: reader-script-close }
   - screenshot: { name: settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - screenshot: { name: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
 

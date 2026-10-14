@@ -119,6 +119,7 @@ pub fn controls(feed: Option<u64>) -> impl Piece {
                     .id("auto-reader-caption")
             },
         ),
+        crate::reader_scripts::controls(feed),
     ))
     .spacing(5.0)
     .grow_w()

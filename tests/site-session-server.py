@@ -8,7 +8,14 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split('?')[0]
         authenticated = 'session=fixture' in self.headers.get('Cookie', '')
         cookie = None
-        if path == '/feed.json':
+        if path == '/reader-feed.json':
+            body = json.dumps({'version':'https://jsonfeed.org/version/1.1','title':'Reader Script Fixture','home_page_url':BASE+'/site','items':[{'id':'reader-script','title':'Reader script fixture article','url':BASE+'/reader-story','date_published':'2026-10-03T12:00:00Z','content_html':'<p>Public synthetic preview.</p>'}]}).encode()
+            mime = 'application/feed+json';status=200
+        elif path == '/reader-story':
+            paragraph = 'Synthetic publication text about custom extraction and careful observations. '*40
+            body = f'<html><head><title>Reader script fixture article</title></head><body><article><p>{paragraph}</p><p>Mozilla fixture content.</p></article></body></html>'.encode()
+            mime='text/html';status=200
+        elif path == '/feed.json':
             body = json.dumps({'version':'https://jsonfeed.org/version/1.1','title':'Session Fixture','home_page_url':BASE+'/site','items':[{'id':'protected','title':'Protected fixture article','url':BASE+'/protected','date_published':'2026-10-03T12:00:00Z','content_html':'<p>Public synthetic preview.</p>'}]}).encode()
             mime = 'application/feed+json';status=200
         elif path == '/protected':

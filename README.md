@@ -146,6 +146,37 @@ requires authorized application credentials; Day News does not reuse NetNewsWire
 or impersonate it. `ArticleExtractor` in `src/extraction.rs` is the replacement point for an
 authorized service or another local engine.
 
+**Custom reader scripts:** Settings → **App Reader Script…** edits the default for every
+site. **Site Reader Script…** on a feed overview edits that site's override; Settings →
+**Manage Site Scripts…** also lets you select an installed override or enter any site URL.
+The URL is reduced to its origin (scheme, host, and port). Matching uses the article's final
+URL after redirects; subdomains, HTTP/HTTPS, and non-default ports are separate sites.
+Precedence is site override → app script → bundled Mozilla Readability.
+
+Use **Mozilla Template**, paste code, or **Import…** a UTF-8 `.js` file (up to 256 KiB).
+**Save Script** installs a copy that survives relaunch; editing the original file does not
+change the installed copy. **Export…** saves the editor contents. **Remove Override** restores
+inheritance, and **Close** discards unsaved edits. Changing an installed script cancels pending
+extraction and clears cached full content in all windows. Load Full Content again to test it.
+
+The script must define this synchronous function (no modules or async return values):
+
+```javascript
+function extract(document, url, Readability) {
+  // Work on a sanitized, detached document with its base URL already set.
+  document.querySelectorAll(".newsletter-promo").forEach(node => node.remove());
+  return new Readability(document, { maxElemsToParse: 50000 }).parse();
+}
+```
+
+A script may instead return `{ content: "<p>Extracted HTML</p>", title: "…", byline: "…" }`.
+Only `content` is required. Return `null` to use bundled Mozilla on an untouched copy of the
+page; this skips the app script too. Syntax/runtime errors show a custom-script error and
+leave the RSS preview readable. The app sanitizes both the input and returned HTML.
+These are trusted scripts running in the reader's JavaScript engine, **not a security sandbox**:
+install only code you trust. A nonterminating script may stall the web engine; the normal
+30-second extraction deadline cannot interrupt synchronous JavaScript.
+
 - `src/lib.rs` is the shell: a typed-route sidebar whose article list is a content-list pane, so
   desktops get three columns and a phone pushes through them.
 - `src/timeline.rs` is the article list, a native recycling [`list`](https://daybrite.dev/docs/internal/list)

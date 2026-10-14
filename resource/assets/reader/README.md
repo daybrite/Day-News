@@ -13,3 +13,7 @@
 
 The app accesses these files through generated `res::assets::reader` constants. Publication
 HTML is data passed to the adapter, never executable script or a bundled UI translation.
+
+User-installed scripts are separate from these vendored libraries. The adapter accepts an
+optional synchronous extraction hook; its input document and returned HTML are sanitized
+just as for Mozilla extraction. See the main README for the hook API and site matching.

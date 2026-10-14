@@ -139,6 +139,18 @@ before extraction and before returning it to the reader. All bundled scripts use
 asset accessors. JS-only and authenticated pages are not supported, and web HTTP requests
 remain subject to CORS. A backend without JS evaluation disables the command.
 
+`reader_scripts` persists copied UTF-8 source in the versioned `news.reader.scripts.v1`
+preference: one app default and a sorted map of exact origins. The provider selects a script
+using the final fetched URL. Editors in Settings and the feed overview share these defaults;
+a revision signal cancels active extraction and invalidates per-window overlays on save/remove.
+The optional synchronous `extract(document, url, Readability)` hook runs inside a local function
+scope with a sanitized document clone and the unchanged bundled Mozilla constructor. `null`
+delegates to Mozilla on the original detached document. Returned content is sanitized again;
+invalid results and script exceptions use localized error guidance. This is trusted user code,
+not an isolation boundary; a synchronous infinite loop cannot be interrupted by the Rust timeout.
+`tests/reader-extraction.cjs` covers the adapter and `dayscript/reader-scripts.yaml` covers the
+native editors, precedence, removal, errors, and invalidation of an already displayed article.
+
 `ReaderView` is ambient per-window state. The command toggles a temporary full-text overlay;
 it never writes over stored RSS content. Repeating it while loading cancels, while repeating it
 after completion switches between the two versions without refetching. Changing article ID or

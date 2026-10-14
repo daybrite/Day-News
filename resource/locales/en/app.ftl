@@ -281,3 +281,23 @@ subscribe_preview_ready =
         [one] One article available
        *[other] { $count } articles available
     }
+
+reader_script_app = App Reader Script…
+reader_script_site = Site Reader Script…
+reader_script_sites = Manage Site Scripts…
+reader_script_new_site = New site…
+reader_script_address = Site URL
+reader_script_invalid_site = Enter an http:// or https:// site URL without credentials.
+reader_script_help = Define function extract(document, url, Readability). Return an object with HTML content and optional title and byline, or null to use Mozilla Readability. Site scripts override the app script; sites match the final article URL’s scheme, host, and port.
+reader_script_trust = Install only scripts you trust: they execute JavaScript in the reader. Input and returned HTML are sanitized. Close discards unsaved edits.
+reader_script_template = Mozilla Template
+reader_script_import = Import…
+reader_script_export = Export…
+reader_script_filter = JavaScript files
+reader_script_import_failed = Could not import the script. Choose a UTF-8 JavaScript file, at most 256 KiB, without NUL characters.
+reader_script_remove = Remove Override
+reader_script_removed = Override removed. This scope now inherits the app script or Mozilla Readability.
+reader_script_save = Save Script
+reader_script_saved = Script saved. It will be used the next time full content is loaded.
+reader_script_invalid_source = Enter a nonempty script, at most 256 KiB, without NUL characters.
+reader_script_failed = The custom reader script failed. Check its extract function and return value, or remove the override in Reader Script settings to restore the default.

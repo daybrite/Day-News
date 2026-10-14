@@ -118,6 +118,17 @@ impl Ambient for ReaderView {
             state.auto_article.set(None);
             state.ready.set(false);
         });
+        watch(crate::reader_scripts::revision, move |_, previous| {
+            if previous.is_some() {
+                state.cancel();
+                state.extracted.set(None);
+                state.active.set(false);
+                state.error.set(None);
+                // An explicit next load must use the new script. Do not automatically
+                // restart network work merely because another window saved a preference.
+                state.auto_article.set(scene.selected.get_untracked());
+            }
+        });
         // Signals are already disposed when scope cleanup runs. Keep only the cancellation
         // cell alive here; never read or write window signals during disposal.
         day::reactive::Scope::current().on_cleanup(move || {
@@ -325,8 +336,9 @@ impl ReaderView {
                 const active = {active}, x = scrollX, y = scrollY;
                 if (active) {{
                     window.readerAutoObserver?.disconnect();
-                    if (!slot.dataset.loaded) {{
-                        slot.innerHTML = {html}; slot.dataset.loaded = 'true';
+                    const content = {html};
+                    if (slot.readerContent !== content) {{
+                        slot.innerHTML = content; slot.readerContent = content; slot.dataset.loaded = 'true';
                     }}
                 }}
                 if (slot.dataset.expanded === String(active)) return 'unchanged';
@@ -384,6 +396,7 @@ impl ReaderView {
                 ExtractionError::TooLarge => res::str::reader_view_too_large().format(),
                 ExtractionError::NoContent => res::str::reader_view_no_content().format(),
                 ExtractionError::Timeout => res::str::reader_view_timeout().format(),
+                ExtractionError::CustomScript => res::str::reader_script_failed().format(),
                 _ => res::str::reader_view_unavailable().format(),
             }
         } else {
