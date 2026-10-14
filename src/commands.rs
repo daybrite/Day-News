@@ -2,6 +2,20 @@
 use crate::res;
 use day::prelude::*;
 
+pub(crate) fn preview_site() -> CommandHandle {
+    Command {
+        id: "preview-site",
+        label: res::str::site_preview(),
+        action: || {
+            if let Some(feed) = crate::site_browser::selected_feed() {
+                crate::site_browser::preview(feed);
+            }
+        },
+    }
+    .build()
+    .enabled(|| crate::site_browser::selected_feed().is_some_and(crate::site_browser::can_preview))
+}
+
 pub(crate) fn refresh() -> CommandHandle {
     Command {
         id: "refresh",

@@ -176,6 +176,10 @@ fn build_shell() -> impl Piece {
 
 fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
     let st = daynews_core::state();
+    // Dynamic sidebar rows can be re-derived while a transient sheet owns the current
+    // reactive scope. Their menu actions belong to this window, so closing that sheet
+    // must not unregister the actions still installed on its sidebar.
+    let menu_scope = day::reactive::Scope::current();
     let section: Signal<Option<String>> = Signal::new(Some(OPENING_SECTION.into()));
     // Apply the opening scope by hand: `watch` fires on change, so without this the sidebar
     // highlights Today while the timeline still shows whatever scope the store opened with.
@@ -313,7 +317,7 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
                     })
                     .collect::<Vec<_>>()
             },
-            |(f, icon): &(daynews_core::FeedRow, Option<String>)| {
+            move |(f, icon): &(daynews_core::FeedRow, Option<String>)| {
                 let name = if f.has_error {
                     format!("⚠ {}", f.title)
                 } else {
@@ -326,8 +330,10 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
                     row.icon(res::images::sidebar_feed)
                         .icon_tint(Color::hex(0x30B0C7))
                 };
-                row.badge(count(f.unread))
-                    .context_menu(menus::feed_context_menu(f.id, f.unread))
+                menu_scope.enter(|| {
+                    row.badge(count(f.unread))
+                        .context_menu(menus::feed_context_menu(f.id, f.unread))
+                })
             },
         )
         // User tags, with their article counts; selecting one scopes the timeline to it.

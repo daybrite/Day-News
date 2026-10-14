@@ -240,8 +240,11 @@ macOS with `--script dayscript/feed-refresh-relaunch.yaml`; `/stats` on port 287
 additional 304s, no new icon downloads, and at most four active feed requests.
 
 
-Feed dashboards include **Preview Site or Login** and **Forget all site information**. The
-interactive preview shares its site's browser profile with full-article loading, including
+Feed dashboards include **Preview Site or Login** and **Forget all site information**.
+**Preview Site or Login** is also available in a feed's context menu and the **Feed** app menu
+when a feed is selected. AppKit opens a narrow native sheet; iPad uses an adaptive sheet.
+Other backends center a narrow modal panel on wide windows and use the available width on phones.
+The interactive preview shares its site's browser profile with full-article loading, including
 HttpOnly login cookies. Incognito Mode in Preferences uses private browser storage and disables
 per-feed login, forgetting and reader-option controls. On engines without private browsing,
 private requests are blocked and the stored article preview remains available. Platform

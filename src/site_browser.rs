@@ -42,7 +42,7 @@ pub fn privacy_control() -> impl Piece {
 pub fn site_url(feed: u64) -> Option<String> {
     daynews_core::state()
         .feeds
-        .with_untracked(|rows| {
+        .with(|rows| {
             rows.iter()
                 .find(|row| row.id == feed)
                 .map(|row| row.site_url.clone().unwrap_or_else(|| row.feed_url.clone()))
@@ -156,8 +156,34 @@ impl Ambient for Browser {
         state
     }
 }
-pub fn site_controls(feed: u64) -> impl Piece {
+/// The Feed menu follows the focused window's sidebar selection.
+pub fn selected_feed() -> Option<u64> {
+    match daynews_core::try_scene()?.scope.get() {
+        daynews_db::Scope::Feed(feed) => Some(feed),
+        _ => None,
+    }
+}
+pub fn can_preview(feed: u64) -> bool {
+    !incognito() && day_piece_webview::support() == Support::Native && site_url(feed).is_some()
+}
+/// Shared entry point for the dashboard, app menu and the context-clicked feed.
+pub fn preview(feed: u64) {
+    let Some(browser) = Browser::try_ambient().or_else(Browser::focused) else {
+        return;
+    };
+    open_preview(browser, feed);
+}
+/// Row and button callbacks retain their owning window even if focus changes meanwhile.
+pub fn preview_action(feed: u64) -> impl Fn() {
     let browser = Browser::ambient();
+    move || open_preview(browser, feed)
+}
+fn open_preview(browser: Browser, feed: u64) {
+    if can_preview(feed) {
+        browser.open.set(Some(feed.to_string()));
+    }
+}
+pub fn site_controls(feed: u64) -> impl Piece {
     let clearing = Signal::new(false);
     let clear = Signal::new(false);
     let started = Signal::new(false);
@@ -167,13 +193,8 @@ pub fn site_controls(feed: u64) -> impl Piece {
     column((
         row((
             button(res::str::site_preview())
-                .action(move || browser.open.set(Some(feed.to_string())))
-                .enabled(move || {
-                    !incognito()
-                        && !clearing.get()
-                        && site_url(feed).is_some()
-                        && day_piece_webview::support() == Support::Native
-                })
+                .action(preview_action(feed))
+                .enabled(move || !clearing.get() && can_preview(feed))
                 .id("dashboard-site-preview"),
             button(res::str::site_forget())
                 .action(move || {
@@ -238,7 +259,7 @@ pub fn browser_cover() -> impl Piece {
         let back = Trigger::new();
         let forward = Trigger::new();
         let go = Trigger::new();
-        column((
+        let content = column((
             column((
                 row((
                     button(res::str::site_browser_back())
@@ -279,7 +300,28 @@ pub fn browser_cover() -> impl Piece {
                 .id("site-browser-web")
                 .grow(),
         ))
-        .grow()
+        .id("site-browser-sheet")
+        .grow();
+        if cfg!(any(feature = "appkit", feature = "uikit")) {
+            content.any()
+        } else {
+            // The cover still owns the modal input boundary on backends without native
+            // sheets. Keep its browser panel narrow and let the dimmed window show beside it;
+            // on a phone max_width simply accepts the available width.
+            zstack((content
+                .background(|| crate::theme::palette().bg)
+                .max_width(640.0),))
+            .grow()
+            .any()
+        }
+    })
+    .sheet()
+    .background(|_| {
+        if cfg!(any(feature = "appkit", feature = "uikit")) {
+            crate::theme::palette().bg
+        } else {
+            Color::rgba(0.0, 0.0, 0.0, 0.35)
+        }
     })
     .unrouted()
 }

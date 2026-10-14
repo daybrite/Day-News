@@ -514,7 +514,16 @@ When the default is on, hiding only collapses this article. Auto preference chan
 preview document, and the bar exposes aria-expanded and aria-controls.
 
 
-Site previews use an interactive WebView cover with Back, Forward and an editable address.
+Site previews use an unrouted interactive WebView sheet with Back, Forward and an editable
+address. The dashboard button, feed context menu and Feed menu share the same guarded action;
+the context menu targets its row, while the app menu follows the focused window's selected
+feed and is disabled on smart feeds. Incognito mode and unsupported WebViews disable preview.
+Sidebar menu handlers and row/button browser actions retain their owning window scope;
+refreshing feed rows while a sheet is open must not tie their handlers to that transient sheet.
+Day's existing `.sheet()` presentation bounds AppKit sheets to 640×620 points (or the available
+window space) and uses UIKit's adaptive page sheet. On other backends the modal cover contains
+a centered browser panel capped at 640 points over a translucent backdrop. Narrow windows use
+their available width. This uses existing sheet and layout support, without a framework API change.
 The per-origin WebProfile is shared with the inert reader host. Native HTTP extraction reads
 HttpOnly cookies from that profile for each redirect destination and writes Set-Cookie
 responses back to it; cookies are never blindly forwarded across origins. Forget Site creates

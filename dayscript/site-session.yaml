@@ -15,6 +15,7 @@ flow:
   - assert_text: { id: dashboard-site-status, key: site_data_cleared, timeout_secs: 20 }
   - tap: { id: dashboard-site-preview }
   - wait_for: { id: site-browser-web }
+  - assert_frame: { id: site-browser-sheet, width: 640, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - pause: { secs: 1 }
   - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed out' }
   - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-login").click(); "login"', text: 'login' }
@@ -28,12 +29,30 @@ flow:
   - tap: { id: site-browser-forward }
   - pause: { secs: 0.5 }
   - tap: { id: site-browser-close }
+  # The app menu uses the selected feed, and reuses its existing login profile.
+  - menu: { id: preview-site, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - wait_for: { id: site-browser-web, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - pause: { secs: 0.5, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in', only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - screenshot: { name: site-preview-app-menu, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - tap: { id: site-browser-close, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  # A context menu targets its row even with a smart feed selected.
+  - navigate: { route: today, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - context_menu: { id: 'sidebar:item:feed:4345234357225265956', item_id: feed-site-preview, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - wait_for: { id: site-browser-web, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - pause: { secs: 0.5, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - web_eval: { id: site-browser-web, script: 'location.pathname', text: '/site', only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - screenshot: { name: site-preview-feed-context, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - tap: { id: site-browser-close, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - assert_missing: { id: site-browser-web, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - assert_route: { route: today, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - navigate: { route: 'feed:4345234357225265956', only_on: [macos-appkit, macos-gtk, macos-qt] }
   - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - web_eval: { id: reader-web, script: 'document.querySelector("#reader-load-full kbd") === null', text: 'true' }
-  - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).visibility', text: 'hidden' }
+  - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).display', text: 'none' }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "load"', text: 'load' }
   - pause: { secs: 2 }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }

@@ -65,15 +65,14 @@ pub fn install() {
                         .action(|| go(ROUTE_STARRED, Scope::Starred)),
                 ],
             ),
-            // The feed the sidebar has selected: the same three commands its row's context menu
-            // offers. With no feed selected they do nothing, like the Article commands with no
-            // open article.
+            // Feed operations follow the focused window's sidebar selection.
             sub_menu(
                 res::str::menu_feed().format(),
                 vec![
                     crate::commands::unread_feeds_only().menu_item(),
                     crate::commands::group_by_feeds().menu_item(),
                     menu_separator(),
+                    crate::commands::preview_site().menu_item(),
                     menu_item(res::str::menu_refresh_feed().format())
                         .action(|| with_selected_feed(daynews_core::refresh_feed)),
                     menu_item(res::str::mark_all_read().format()).action(|| {
@@ -178,13 +177,17 @@ fn with_selected_feed(f: impl FnOnce(u64)) {
     }
 }
 
-/// A sidebar feed row's context menu: the Feed menu's three commands, aimed at the row that was
+/// A sidebar feed row's context menu: feed commands aimed at the row that was
 /// right-clicked or long-pressed rather than at the selection (docs/menus.md).
 pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
     vec![
         menu_item(res::str::dashboard_show().format())
             .id("feed-dashboard")
             .action(move || crate::site_browser::show_feed_dashboard(feed)),
+        menu_item(res::str::site_preview().format())
+            .id("feed-site-preview")
+            .enabled(crate::site_browser::can_preview(feed))
+            .action(crate::site_browser::preview_action(feed)),
         menu_item(res::str::refresh_action().format())
             .action(move || daynews_core::refresh_feed(feed)),
         menu_item(res::str::mark_all_read().format())
@@ -209,5 +212,7 @@ mod tests {
         super::set_open_read(true);
         super::set_open_starred(true);
         crate::subscriptions::begin_new_feed();
+        assert_eq!(crate::site_browser::selected_feed(), None);
+        crate::site_browser::preview(0);
     }
 }
