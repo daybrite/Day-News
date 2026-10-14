@@ -24,6 +24,11 @@ mod refresh_schedule;
 mod settings;
 mod site_browser;
 mod subscriptions;
+#[cfg(all(
+    test,
+    any(target_os = "macos", target_os = "linux", target_os = "windows")
+))]
+mod test_prefs;
 mod theme;
 mod timeline;
 mod toolbar;

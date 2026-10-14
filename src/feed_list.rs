@@ -78,26 +78,10 @@ mod tests {
             return;
         }
 
-        // Test binaries have their own Apple preferences domain. Restore the key on
-        // other desktop stores too, including when a child assertion fails.
-        struct Restore(Option<String>);
-        impl Drop for Restore {
-            fn drop(&mut self) {
-                if let Some(value) = &self.0 {
-                    day::prefs::set(UNREAD_ONLY_KEY, value);
-                } else {
-                    day::prefs::remove(UNREAD_ONLY_KEY);
-                }
-            }
-        }
-        let _restore = Restore(day::prefs::get(UNREAD_ONLY_KEY));
-        day::prefs::remove(UNREAD_ONLY_KEY);
+        let preferences = crate::test_prefs::PreferenceTest::new(UNREAD_ONLY_KEY);
         for mode in ["disabled", "enable", "enabled", "disable", "disabled"] {
-            let output = std::process::Command::new(std::env::current_exe().unwrap())
-                .args([
-                    "--exact",
-                    "feed_list::tests::unread_filter_survives_process_restart",
-                ])
+            let output = preferences
+                .child("feed_list::tests::unread_filter_survives_process_restart")
                 .env(CHILD, mode)
                 .output()
                 .unwrap();

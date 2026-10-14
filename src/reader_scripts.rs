@@ -359,24 +359,12 @@ mod tests {
             }
             return;
         }
-        // The test executable has a separate preferences domain on Apple platforms.
-        struct Restore(Option<String>);
-        impl Drop for Restore {
-            fn drop(&mut self) {
-                if let Some(value) = &self.0 {
-                    day::prefs::set(KEY, value);
-                } else {
-                    day::prefs::remove(KEY);
-                }
-            }
-        }
-        let _restore = Restore(day::prefs::get(KEY));
+        let preferences = crate::test_prefs::PreferenceTest::new(KEY);
         for mode in ["install", "read", "remove", "empty"] {
-            let output = std::process::Command::new(std::env::current_exe().unwrap())
-                .args([
-                    "--exact",
+            let output = preferences
+                .child(
                     "reader_scripts::tests::installed_scripts_survive_process_restart_and_removal",
-                ])
+                )
                 .env(CHILD, mode)
                 .output()
                 .unwrap();
