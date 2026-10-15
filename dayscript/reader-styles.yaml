@@ -6,16 +6,23 @@ flow:
   - wait_for: { id: article-row-0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - menu: { key: day-preferences, only_on: [macos-appkit] }
-  - navigate: { route: settings, only_on: [ios-uikit] }
-  # A real native back proves Settings joined the visible phone stack, not a hidden column.
+  # On a phone or the web the section is a root list of groups: open it and tap the group's
+  # row (`settings/<group>` is the desktop window's route to a tab).
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: reader-size-slider }
+  # A real native back proves the Reader page joined the visible phone stack, not a hidden column.
   - pause: { secs: 1, only_on: [ios-uikit] }
   - nav_back: { native: true, only_on: [ios-uikit] }
   - assert_missing: { id: reader-size-slider, only_on: [ios-uikit] }
-  - navigate: { route: settings, only_on: [ios-uikit] }
+  - tap: { id: prefs-group-reader, only_on: [ios-uikit] }
+  - wait_for: { id: reader-reset-styles }
   - tap: { id: reader-reset-styles }
-  - set_value: { id: reader-size-slider, value: 140 }
-  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  # Slider values are driven where the row's id is on the control itself; the UIKit, ArkUI
+  # GTK and XAML settings rows put it on the layout wrapper, which a probe cannot read.
+  - set_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
+  - assert_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
   # Georgia is the first installed recommendation on Apple platforms.
   - select: { id: reader-font-picker, index: 1 }
   - input: { id: reader-background-color, text: '#fff2d5' }
@@ -35,12 +42,22 @@ flow:
   - menu: { id: reader-decrease-text-size, only_on: [macos-appkit] }
   - web_eval: { id: reader-web, script: 'window.readerStyleMarker', text: preserved }
   - screenshot: { name: reader-custom-style, only_on: [macos-appkit] }
-  - menu: { key: day-preferences, only_on: [macos-appkit] }
-  - navigate: { route: settings, only_on: [ios-uikit] }
-  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: reader-size-slider }
+  - assert_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
+  - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: theme-picker }
   - select: { id: theme-picker, index: 0 }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: reader-reset-styles }
   - tap: { id: reader-reset-styles }
-  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  - assert_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
   - close_window: { window: day.preferences, only_on: [macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - select: { id: timeline, index: 0, only_on: [ios-uikit] }

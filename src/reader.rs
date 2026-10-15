@@ -11,7 +11,7 @@ fn document(a: &StoredArticle, control_above: bool) -> String {
     let mut document = document_with_style(
         a,
         day::dark_mode(),
-        &crate::reader_styles::state().get_untracked(),
+        &day::reactive::untrack(crate::reader_styles::style),
     );
     if a.url
         .as_deref()
@@ -264,7 +264,7 @@ fn reader_body(
         let scene = daynews_core::scene();
         let js = view.engine;
         watch(
-            || (crate::reader_styles::state().get(), day::dark_mode()),
+            || (crate::reader_styles::style(), day::dark_mode()),
             move |_, _| crate::reader_styles::apply_to(js),
         );
         watch(

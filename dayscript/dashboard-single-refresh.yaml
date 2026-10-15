@@ -4,8 +4,12 @@ name: day-news-dashboard-single-refresh
 description: Refresh Now targets the displayed source and preserves conditional requests.
 flow:
   - dialog_mode: { mode: scripted }
-  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  # On a phone or the web the section is a root list of groups: open it and tap the group's
+  # row (`settings/<group>` is the desktop window's route to a tab).
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: refresh-interval-picker }
   - select: { id: refresh-interval-picker, index: 1 }
   - toolbar: { item: new-feed }
   - wait_for: { id: feed-url }
@@ -33,8 +37,10 @@ flow:
   - tap: { id: dashboard-publisher-8512098384262059532 }
   - wait_for: { id: dashboard-habits-chart }
   - assert_visible: { id: dashboard-refresh-now }
-  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: refresh-interval-picker }
   - select: { id: refresh-interval-picker, index: 0 }
   - dialog_mode: { mode: native }
   - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }

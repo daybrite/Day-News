@@ -9,8 +9,14 @@ flow:
   - wait_for: { id: dashboard-title }
   - assert_text: { id: dashboard-title, key: nav_all_articles }
   - screenshot: smoke
-  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: language-picker }
-  - assert_visible: { id: refresh-interval-picker }
+  # On a phone or the web the section is a root list of groups: open it and tap the group's
+  # row (`settings/<group>` is the desktop window's route to a tab).
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: refresh-interval-picker }
   - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }

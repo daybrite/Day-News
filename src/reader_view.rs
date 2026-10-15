@@ -185,7 +185,7 @@ impl ReaderView {
             self.toggle(scene);
             if auto || !crate::reader_options::options(None).auto {
                 crate::reader_options::OptionBinding {
-                    feed: Some(article.feed_id),
+                    feed: article.feed_id,
                     auto: true,
                 }
                 .write(auto);

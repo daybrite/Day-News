@@ -1,439 +1,382 @@
-//! Appearance, language, browser, and retention preferences. Choices persist in the
-//! platform preference store and apply immediately.
+//! Settings and About (https://daybrite.dev/docs/settings): the typed, persisted preferences
+//! the rest of the app reads, and the declaration of the groups Day's shared surface presents.
+//! The surface itself is Day's: the Settings window and the App menu's Settings…/About items on
+//! a desktop, the Settings section's pages behind the sidebar item on a phone and the web, and
+//! the About window or header card. Every value is a [`Pref`]: one key in the platform store,
+//! one signal, read from anywhere with `.get()` and written by its row or by a command.
 
-use crate::theme::palette;
+use crate::res;
 use day::prelude::*;
+use day_piece_settings::prelude::*;
 
-pub(crate) const THEME_KEY: &str = "news.theme";
-const LOCALE_KEY: &str = "news.locale";
-const BROWSER_KEY: &str = "news.browser";
+/// The project site the About window links to.
+const WEBSITE: &str = "https://daybrite.github.io/Day-News";
+/// The repository the About window links to.
+const SOURCE: &str = "https://github.com/daybrite/Day-News";
 
-const LIST_SCALE_KEY: &str = "news.list.scale";
-pub const DEFAULT_LIST_SCALE: usize = 120;
+// ---------------------------------------------------------------------------------------------
+// Articles
+// ---------------------------------------------------------------------------------------------
+
+/// Whether the timeline shows a heading per feed (the Feed menu toggles it too).
+pub static GROUP_BY_FEED: Pref<bool> = Pref::new("news.articles.group_by_feed", || true);
+/// The article list's text size, in percent of the platform's body size.
+pub static LIST_SCALE: Pref<f64> = Pref::new("news.list.scale", || DEFAULT_LIST_SCALE);
+pub const DEFAULT_LIST_SCALE: f64 = 120.0;
 pub const MIN_LIST_SCALE: f64 = 70.0;
 pub const MAX_LIST_SCALE: f64 = 250.0;
+/// Preview lines under each row's title, none to five.
+pub static PREVIEW_LINES: Pref<u32> =
+    Pref::new("news.list.preview_lines", || DEFAULT_PREVIEW_LINES);
+pub const DEFAULT_PREVIEW_LINES: u32 = 2;
+pub const MAX_PREVIEW_LINES: u32 = 5;
 
-const PREVIEW_LINES_KEY: &str = "news.list.preview_lines";
-pub const DEFAULT_PREVIEW_LINES: usize = 2;
-pub const MAX_PREVIEW_LINES: usize = 5;
+// ---------------------------------------------------------------------------------------------
+// Reader
+// ---------------------------------------------------------------------------------------------
 
-thread_local! {
-    static LIST_SCALE: std::cell::OnceCell<Signal<usize>> = const { std::cell::OnceCell::new() };
-    static PREVIEW_LINES: std::cell::OnceCell<Signal<usize>> = const { std::cell::OnceCell::new() };
-}
+/// The reader's text size, in percent; Article ▸ Increase/Decrease Text Size step it by ten.
+pub static READER_SCALE: Pref<f64> =
+    Pref::new("news.reader.scale", || crate::reader_styles::DEFAULT_SCALE);
+/// The reader's font family; empty for the platform's system font.
+pub static READER_FONT: Pref<String> = Pref::new("news.reader.font", String::new);
+/// The reader's page color as `#rrggbb`; empty follows the appearance.
+pub static READER_BACKGROUND: Pref<String> = Pref::new("news.reader.background", String::new);
+/// The reader's text color as `#rrggbb`; empty follows the appearance.
+pub static READER_TEXT: Pref<String> = Pref::new("news.reader.text", String::new);
+/// Full content loads under the feed preview (on) or replaces it (off). Per-feed overrides
+/// live in `reader_options`.
+pub static READER_INLINE: Pref<bool> = Pref::new("news.reader.inline", || true);
+/// Full content loads on its own when the load bar scrolls into view.
+pub static READER_AUTO: Pref<bool> = Pref::new("news.reader.auto", || false);
 
-fn normalized_list_scale(value: f64) -> usize {
-    if value.is_finite() {
-        ((value / 10.0).round() * 10.0).clamp(MIN_LIST_SCALE, MAX_LIST_SCALE) as usize
-    } else {
-        DEFAULT_LIST_SCALE
-    }
-}
+// ---------------------------------------------------------------------------------------------
+// Browser
+// ---------------------------------------------------------------------------------------------
 
-pub fn list_scale() -> Signal<usize> {
-    LIST_SCALE.with(|slot| {
-        *slot.get_or_init(|| {
-            Signal::new_in(
-                day::reactive::Scope::root(),
-                day::prefs::get(LIST_SCALE_KEY)
-                    .and_then(|value| value.parse().ok())
-                    .map(normalized_list_scale)
-                    .unwrap_or(DEFAULT_LIST_SCALE),
-            )
-        })
-    })
-}
+/// The application id web links open in; empty for the system default.
+pub static BROWSER: Pref<String> = Pref::new("news.browser", String::new);
+/// Private browser storage for site previews and full-content loads.
+pub static INCOGNITO: Pref<bool> = Pref::new("news.browser.incognito", || false);
 
-#[derive(Clone, Copy)]
-struct ListScale;
-impl Binding<f64> for ListScale {
-    fn read(&self) -> f64 {
-        list_scale().get() as f64
-    }
-    fn peek(&self) -> f64 {
-        list_scale().get_untracked() as f64
-    }
-    fn write(&self, value: f64) {
-        let value = normalized_list_scale(value);
-        if value == DEFAULT_LIST_SCALE {
-            day::prefs::remove(LIST_SCALE_KEY);
-        } else {
-            day::prefs::set(LIST_SCALE_KEY, &value.to_string());
-        }
-        list_scale().set(value);
-    }
-}
+// ---------------------------------------------------------------------------------------------
+// Feeds
+// ---------------------------------------------------------------------------------------------
 
-pub fn preview_lines() -> Signal<usize> {
-    PREVIEW_LINES.with(|slot| {
-        *slot.get_or_init(|| {
-            Signal::new_in(
-                day::reactive::Scope::root(),
-                day::prefs::get(PREVIEW_LINES_KEY)
-                    .and_then(|value| value.parse::<usize>().ok())
-                    .filter(|value| *value <= MAX_PREVIEW_LINES)
-                    .unwrap_or(DEFAULT_PREVIEW_LINES),
-            )
-        })
-    })
-}
+/// Days a read article stays before the launch-time prune removes it; 0 keeps everything.
+pub static RETENTION_DAYS: Pref<u32> =
+    Pref::new("retention.days", || daynews_core::DEFAULT_RETENTION_DAYS);
+/// The retention choices, in days; `0` keeps everything.
+const RETENTION_CHOICES: [u32; 5] = [30, 90, 180, 365, 0];
 
-#[derive(Clone, Copy)]
-struct PreviewLines;
-impl Binding<usize> for PreviewLines {
-    fn read(&self) -> usize {
-        preview_lines().get()
-    }
-    fn peek(&self) -> usize {
-        preview_lines().get_untracked()
-    }
-    fn write(&self, value: usize) {
-        let value = value.min(MAX_PREVIEW_LINES);
-        if value == DEFAULT_PREVIEW_LINES {
-            day::prefs::remove(PREVIEW_LINES_KEY);
-        } else {
-            day::prefs::set(PREVIEW_LINES_KEY, &value.to_string());
-        }
-        preview_lines().set(value);
-    }
-}
-
-pub fn reset_list_styles() {
-    ListScale.write(DEFAULT_LIST_SCALE as f64);
-    PreviewLines.write(DEFAULT_PREVIEW_LINES);
-}
-
-fn list_preferences() -> impl Piece {
-    let labels = (0..=MAX_PREVIEW_LINES).map(|lines| {
-        if lines == 0 {
-            crate::res::str::settings_preview_none().format()
-        } else {
-            crate::res::str::settings_preview_lines_count(lines as f64).format()
-        }
+/// Declare and install the surface, then wire the prefs that drive state outside the UI: the
+/// timeline's grouping flag, the retention prune and the refresh timer. Returns the handle the
+/// navigation uses for its Settings section on the platforms without a menu bar.
+pub fn install() -> Prefs {
+    // Articles the last prune removed, reported under the retention row.
+    let pruned = Signal::global(0usize);
+    let prefs = Preferences::new()
+        .about(
+            About::from_manifest()
+                .icon(res::images::app_logo)
+                .link(day::tr("day-about-website"), WEBSITE)
+                .link(day::tr("day-about-source"), SOURCE),
+        )
+        .group(general_group(res::locales::ALL))
+        .group(articles_group())
+        .group(reader_group())
+        .group(browser_group())
+        .group(feeds_group(pruned))
+        .install();
+    // These outlive any window, like the prefs' own persistence watches.
+    day::reactive::Scope::root().enter(|| {
+        // daynews-core publishes the grouping flag the timeline reads; it has no view of the
+        // store, so the pref feeds it.
+        let st = daynews_core::state();
+        st.group_by_feed.set(GROUP_BY_FEED.get_untracked());
+        GROUP_BY_FEED.watch(move |on| st.group_by_feed.set(*on));
+        // Retention: prune at launch per the stored window, and again on every change so the
+        // choice visibly acts.
+        day::task(async {
+            daynews_core::prune(RETENTION_DAYS.get_untracked()).await;
+        });
+        RETENTION_DAYS.watch(move |days| {
+            let days = *days;
+            day::task(async move {
+                pruned.set(daynews_core::prune(days).await);
+            });
+        });
+        crate::refresh_schedule::install();
     });
-    column((
-        divider(),
-        label(crate::res::str::settings_list_heading()).font(Font::Headline),
-        labeled(
-            crate::res::str::settings_list_size(),
-            row((
-                slider(ListScale)
-                    .range(MIN_LIST_SCALE..=MAX_LIST_SCALE)
+    prefs
+}
+
+fn articles_group() -> Group {
+    let lines = (0..=MAX_PREVIEW_LINES).map(|n| {
+        let label = if n == 0 {
+            res::str::settings_preview_none()
+        } else {
+            res::str::settings_preview_lines_count(f64::from(n))
+        };
+        (n, label)
+    });
+    Group::new("articles", res::str::settings_articles())
+        .icon(res::vectors::dashboard_all)
+        .row(rows::toggle(&GROUP_BY_FEED, res::str::group_by_feeds()).id("group-by-feeds-picker"))
+        .row(
+            rows::slider(
+                &LIST_SCALE,
+                res::str::settings_list_size(),
+                MIN_LIST_SCALE..=MAX_LIST_SCALE,
+            )
+            .step(10.0)
+            .caption(|| res::str::settings_list_percent(LIST_SCALE.get()).format())
+            .id("list-size-slider"),
+        )
+        .row(
+            rows::choice(&PREVIEW_LINES, res::str::settings_preview_lines(), lines)
+                .id("preview-lines-picker"),
+        )
+}
+
+fn reader_group() -> Group {
+    use crate::reader_styles::{self as styles, ReaderColor};
+    let (mut families, _recommended) = styles::font_choices(
+        day::font_families()
+            .iter()
+            .map(|f| f.family.clone())
+            .collect(),
+    );
+    // A persisted family can disappear after uninstalling a font. Keep it selectable and let
+    // CSS use its system fallback until the user picks another family or resets styles.
+    let stored = READER_FONT.get_untracked();
+    if !stored.is_empty() && !families.contains(&stored) {
+        families.push(stored);
+    }
+    let fonts: Vec<(String, String)> = families
+        .into_iter()
+        .map(|family| {
+            let label = if family.is_empty() {
+                res::str::settings_reader_default_font().format()
+            } else {
+                family.clone()
+            };
+            (family, label)
+        })
+        .collect();
+    // Incognito disables the full-content defaults, as it does the per-feed overrides.
+    let editable = Signal::global(!INCOGNITO.get_untracked());
+    day::reactive::Scope::root().enter(|| INCOGNITO.watch(move |private| editable.set(!private)));
+    Group::new("reader", res::str::settings_reader())
+        .icon(Symbol::Document)
+        .section(
+            Section::new()
+                .row(
+                    rows::slider(
+                        &READER_SCALE,
+                        res::str::settings_reader_size(),
+                        styles::MIN_SCALE..=styles::MAX_SCALE,
+                    )
                     .step(10.0)
-                    .id("list-size-slider")
-                    .grow_w(),
-                label(|| {
-                    crate::res::str::settings_list_percent(list_scale().get() as f64).format()
-                })
-                .id("list-size-value")
-                .width(64.0),
+                    .caption(|| res::str::settings_reader_percent(READER_SCALE.get()).format())
+                    .id("reader-size-slider"),
+                )
+                .row(
+                    rows::choice(&READER_FONT, res::str::settings_reader_font(), fonts)
+                        .id("reader-font-picker"),
+                )
+                // Notes go in footers: a long caption widens the title column and pushes the
+                // control past the panel's edge.
+                .footer(res::str::settings_reader_font_note()),
+        )
+        .section(
+            Section::new()
+                .row(color_row(
+                    res::str::settings_reader_background,
+                    ReaderColor::Background,
+                    "reader-background-color",
+                ))
+                .row(color_row(
+                    res::str::settings_reader_text,
+                    ReaderColor::Text,
+                    "reader-text-color",
+                )),
+        )
+        .section(
+            Section::new()
+                .row(
+                    rows::action(res::str::settings_reader_reset(), styles::reset)
+                        .id("reader-reset-styles"),
+                )
+                .footer(res::str::settings_reader_reset_note()),
+        )
+        .section(
+            Section::new()
+                .row(
+                    rows::toggle(&READER_INLINE, res::str::reader_inline_mode())
+                        .enabled(editable)
+                        .id("inline-reader-picker"),
+                )
+                .footer(res::str::reader_inline_mode_note()),
+        )
+        .section(
+            Section::new()
+                .row(
+                    rows::toggle(&READER_AUTO, res::str::reader_auto_mode())
+                        .enabled(editable)
+                        .id("auto-reader-picker"),
+                )
+                .footer(res::str::reader_auto_mode_note()),
+        )
+        // The app script and the site-script manager, with the editor sheet they open.
+        .section(Section::new().row(rows::custom(crate::reader_scripts::settings_controls)))
+}
+
+/// A color well row: the title leading, the platform's color picker trailing. The crate has no
+/// color row yet, so this composes one from the colorpicker piece over a hex `Pref<String>`.
+fn color_row(
+    title: fn() -> day::LocalizedText,
+    color: crate::reader_styles::ReaderColor,
+    key: &'static str,
+) -> Row {
+    rows::custom(move || {
+        row((
+            label(title()),
+            spacer(),
+            day_piece_colorpicker::color_picker(color)
+                .title(title())
+                .key(key),
+        ))
+        .spacing(12.0)
+        .align(VAlign::Center)
+        .grow_w()
+    })
+}
+
+fn browser_group() -> Group {
+    // Discovery runs once per launch; macOS answers, the other platforms leave links to the
+    // system browser and say so.
+    let links = match day::application_handlers(&day::HandlerQuery::Scheme("https".into())) {
+        Ok(handlers) => {
+            let system = match &handlers.default {
+                Some(app) => res::str::settings_browser_default(app.name.as_str()).format(),
+                None => res::str::settings_browser_system().format(),
+            };
+            let mut options = vec![(String::new(), system)];
+            options.extend(
+                handlers
+                    .applications
+                    .iter()
+                    .map(|app| (app.id.clone(), app.name.clone())),
+            );
+            Section::new()
+                .row(
+                    rows::choice(&BROWSER, res::str::settings_browser_label(), options)
+                        .id("browser-picker"),
+                )
+                .footer(res::str::settings_browser_note())
+        }
+        Err(_) => Section::new()
+            .row(rows::info(
+                res::str::settings_browser_label(),
+                res::str::settings_browser_system(),
             ))
-            .spacing(8.0)
-            .align(VAlign::Center)
-            .grow_w(),
-        ),
-        labeled(
-            crate::res::str::settings_preview_lines(),
-            picker(labels, PreviewLines).id("preview-lines-picker"),
-        ),
-    ))
-    .spacing(12.0)
-    .align(HAlign::Leading)
-    .grow_w()
+            .footer(res::str::settings_browser_unavailable()),
+    };
+    let mut privacy = Section::new()
+        .row(rows::toggle(&INCOGNITO, res::str::incognito_mode()).id("incognito-mode-picker"));
+    if day_piece_webview::private_browsing_support() == Support::Unsupported {
+        privacy = privacy.footer(res::str::site_private_unsupported());
+    }
+    Group::new("browser", res::str::settings_browser())
+        .icon(res::vectors::open_browser)
+        .section(links)
+        .section(privacy)
 }
 
-pub fn apply_startup() {
-    day_piece_settings::apply_startup(THEME_KEY, LOCALE_KEY);
+fn feeds_group(pruned: Signal<usize>) -> Group {
+    use crate::refresh_schedule::{REFRESH, Refresh};
+    let retention = RETENTION_CHOICES.map(|days| {
+        let label = match days {
+            30 => res::str::retention_30(),
+            90 => res::str::retention_90(),
+            180 => res::str::retention_180(),
+            365 => res::str::retention_365(),
+            _ => res::str::retention_forever(),
+        };
+        (days, label)
+    });
+    Group::new("feeds", res::str::settings_feeds())
+        .icon(Symbol::Refresh)
+        .section(
+            Section::new()
+                .row(
+                    rows::choice(
+                        &REFRESH,
+                        res::str::settings_refresh_feeds(),
+                        [
+                            (Refresh::Automatic, res::str::settings_refresh_automatic()),
+                            (Refresh::Manual, res::str::settings_refresh_manual()),
+                            (Refresh::Minutes30, res::str::settings_refresh_30()),
+                            (Refresh::Hour, res::str::settings_refresh_60()),
+                            (Refresh::Hours2, res::str::settings_refresh_120()),
+                            (Refresh::Hours4, res::str::settings_refresh_240()),
+                            (Refresh::Hours8, res::str::settings_refresh_480()),
+                        ],
+                    )
+                    .id("refresh-interval-picker"),
+                )
+                .footer(res::str::settings_refresh_automatic_note()),
+        )
+        .section(
+            Section::new()
+                .row(
+                    rows::choice(
+                        &RETENTION_DAYS,
+                        res::str::settings_retention_label(),
+                        retention,
+                    )
+                    .id("retention-picker"),
+                )
+                .footer(move || {
+                    let note = res::str::settings_retention_note().format();
+                    match pruned.get() {
+                        0 => note,
+                        n => format!("{note} {}", res::str::retention_pruned(n as f64).format()),
+                    }
+                }),
+        )
+        .section(
+            Section::new()
+                .row(
+                    rows::action(res::str::opml_import(), crate::subscriptions::import_opml)
+                        .id("opml-import"),
+                )
+                .row(
+                    rows::action(res::str::opml_export(), crate::subscriptions::export_opml)
+                        .id("opml-export"),
+                )
+                // The import and export outcomes land on the app-wide status line.
+                .footer(move || daynews_core::state().status.get()),
+        )
 }
 
-/// Browser overrides apply only to web links; mail, PDF/file and other schemes retain their
-/// own system associations. Discovery is refreshed whenever preferences are opened.
+/// Open a link in the chosen browser, or the system's. Browser overrides apply only to web
+/// links; mail, PDF/file and other schemes retain their own system associations.
 pub fn open_link(url: &str) {
     let web_link = url.split_once(':').is_some_and(|(scheme, _)| {
         scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https")
     });
-    let chosen = web_link.then(|| day::prefs::get(BROWSER_KEY)).flatten();
-    if let Some(application) = chosen {
+    let chosen = BROWSER.get_untracked();
+    if web_link && !chosen.is_empty() {
         let url = url.to_owned();
         day::task(async move {
-            if day::open_url_with_application(&url, &application)
-                .await
-                .is_err()
-            {
+            if day::open_url_with_application(&url, &chosen).await.is_err() {
                 // Removed/moved applications must never strand a link inside the reader.
                 open_url(&url);
             }
         });
     } else {
         open_url(url);
-    }
-}
-
-fn browser_picker() -> AnyPiece {
-    let Ok(handlers) = day::application_handlers(&day::HandlerQuery::Scheme("https".into())) else {
-        return column((
-            labeled(
-                crate::res::str::settings_browser_label(),
-                label(crate::res::str::settings_browser_system()),
-            ),
-            label(crate::res::str::settings_browser_unavailable())
-                .font(Font::Footnote)
-                .color(move || palette().text_muted),
-        ))
-        .spacing(8.0)
-        .align(HAlign::Leading)
-        .any();
-    };
-    let stored = day::prefs::get(BROWSER_KEY);
-    let selected = Signal::new(
-        handlers
-            .applications
-            .iter()
-            .position(|app| Some(&app.id) == stored.as_ref())
-            .map_or(0, |i| i + 1),
-    );
-    let mut labels = vec![match &handlers.default {
-        Some(app) => crate::res::str::settings_browser_default(app.name.as_str()).format(),
-        None => crate::res::str::settings_browser_system().format(),
-    }];
-    labels.extend(handlers.applications.iter().map(|app| app.name.clone()));
-    watch(
-        move || selected.get(),
-        move |index, _| {
-            if let Some(app) = index
-                .checked_sub(1)
-                .and_then(|i| handlers.applications.get(i))
-            {
-                day::prefs::set(BROWSER_KEY, &app.id);
-            } else {
-                day::prefs::remove(BROWSER_KEY);
-            }
-        },
-    );
-    column((
-        labeled(
-            crate::res::str::settings_browser_label(),
-            picker(labels, selected).id("browser-picker"),
-        ),
-        label(crate::res::str::settings_browser_note())
-            .font(Font::Footnote)
-            .color(move || palette().text_muted),
-    ))
-    .spacing(8.0)
-    .align(HAlign::Leading)
-    .any()
-}
-
-const RETENTION_KEY: &str = "retention.days";
-
-/// The retention choices, in days; `0` keeps everything.
-const CHOICES: [u32; 5] = [30, 90, 180, 365, 0];
-
-fn choice_label(days: u32) -> String {
-    match days {
-        30 => crate::res::str::retention_30().format(),
-        90 => crate::res::str::retention_90().format(),
-        180 => crate::res::str::retention_180().format(),
-        365 => crate::res::str::retention_365().format(),
-        _ => crate::res::str::retention_forever().format(),
-    }
-}
-
-/// The stored retention window, defaulting to daynews-core's 90 days.
-pub fn retention_days() -> u32 {
-    day::prefs::get(RETENTION_KEY)
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(daynews_core::DEFAULT_RETENTION_DAYS)
-}
-
-pub fn settings_page() -> impl Piece {
-    let selected = Signal::new(
-        CHOICES
-            .iter()
-            .position(|d| *d == retention_days())
-            .unwrap_or(1),
-    );
-    // This page's own note. The app-wide status line reports subscription work ("Subscribed to
-    // …"), and shown here it sat under the retention setting as if the two were related.
-    let note = Signal::new(String::new());
-    // Applying is the watch, not the picker: the picker writes the index, the watch persists
-    // it and prunes right away so the choice visibly acts.
-    watch(
-        move || selected.get(),
-        move |i, _| {
-            let days = CHOICES.get(*i).copied().unwrap_or(0);
-            day::prefs::set(RETENTION_KEY, &days.to_string());
-            day::task(async move {
-                let pruned = daynews_core::prune(days).await;
-                if pruned > 0 && note.try_get().is_some() {
-                    note.set(crate::res::str::retention_pruned(pruned as f64).format());
-                }
-            });
-        },
-    );
-
-    scroll(
-        column((
-            row((
-                button(crate::res::str::opml_import())
-                    .action(crate::subscriptions::import_opml)
-                    .id("opml-import"),
-                button(crate::res::str::opml_export())
-                    .action(crate::subscriptions::export_opml)
-                    .id("opml-export"),
-            ))
-            .spacing(8.0),
-            label(move || daynews_core::state().status.get())
-                .font(Font::Footnote)
-                .id("status"),
-            label(crate::res::str::settings_heading())
-                .font(Font::Headline)
-                .color(move || palette().text),
-            labeled(
-                crate::res::str::settings_appearance(),
-                picker(
-                    [
-                        crate::res::str::settings_light().format(),
-                        crate::res::str::settings_dark().format(),
-                        crate::res::str::settings_system().format(),
-                    ],
-                    crate::reader_styles::Appearance,
-                )
-                .segmented()
-                .id("theme-picker"),
-            ),
-            labeled(
-                crate::res::str::group_by_feeds(),
-                toggle(Grouping).id("group-by-feeds-picker"),
-            ),
-            list_preferences(),
-            reader_preferences(),
-            crate::reader_options::controls(None),
-            crate::site_browser::privacy_control(),
-            day_piece_settings::language_picker(LOCALE_KEY, crate::res::locales::ALL),
-            browser_picker(),
-            labeled(
-                crate::res::str::settings_refresh_feeds(),
-                picker(
-                    [
-                        crate::res::str::settings_refresh_automatic().format(),
-                        crate::res::str::settings_refresh_manual().format(),
-                        crate::res::str::settings_refresh_30().format(),
-                        crate::res::str::settings_refresh_60().format(),
-                        crate::res::str::settings_refresh_120().format(),
-                        crate::res::str::settings_refresh_240().format(),
-                        crate::res::str::settings_refresh_480().format(),
-                    ],
-                    crate::refresh_schedule::Interval,
-                )
-                .id("refresh-interval-picker"),
-            ),
-            label(crate::res::str::settings_refresh_automatic_note())
-                .font(Font::Footnote)
-                .max_lines(3),
-            labeled(
-                crate::res::str::settings_retention_label(),
-                picker(CHOICES.iter().map(|d| choice_label(*d)), selected).id("retention-picker"),
-            ),
-            label(crate::res::str::settings_retention_note())
-                .font(Font::Footnote)
-                .color(move || palette().text_muted),
-            label(move || note.get())
-                .font(Font::Footnote)
-                .color(move || palette().text_muted)
-                .id("settings-status"),
-        ))
-        .spacing(12.0)
-        .align(HAlign::Leading)
-        .padding(18.0)
-        .grow_w(),
-    )
-    .background(move || palette().bg)
-    .grow()
-}
-
-fn reader_preferences() -> impl Piece {
-    use crate::reader_styles::{self as styles, FontChoice, ReaderColor};
-    let (mut families, boundary) = styles::font_choices(
-        day::font_families()
-            .iter()
-            .map(|f| f.family.clone())
-            .collect(),
-    );
-    // A persisted family can disappear after uninstalling a font. Keep it visible and let
-    // CSS use its system fallback until the user selects another family or resets styles.
-    let stored = styles::state().get_untracked().family;
-    if !stored.is_empty() && !families.contains(&stored) {
-        families.push(stored);
-    }
-    let mut labels = families.clone();
-    labels[0] = crate::res::str::settings_reader_default_font().format();
-    column((
-        divider(),
-        label(crate::res::str::settings_reader_heading()).font(Font::Headline),
-        labeled(
-            crate::res::str::settings_reader_size(),
-            row((
-                slider(styles::Scale)
-                    .range(styles::MIN_SCALE..=styles::MAX_SCALE)
-                    .step(10.0)
-                    .id("reader-size-slider")
-                    .grow_w(),
-                label(move || {
-                    crate::res::str::settings_reader_percent(styles::state().get().scale).format()
-                })
-                .id("reader-size-value")
-                .width(64.0),
-            ))
-            .spacing(12.0)
-            .grow_w(),
-        ),
-        labeled(
-            crate::res::str::settings_reader_font(),
-            picker(labels, FontChoice(std::rc::Rc::new(families)))
-                .separators_before([boundary])
-                .id("reader-font-picker"),
-        ),
-        label(crate::res::str::settings_reader_font_note())
-            .font(Font::Footnote)
-            .color(move || palette().text_muted),
-        labeled(
-            crate::res::str::settings_reader_background(),
-            day_piece_colorpicker::color_picker(ReaderColor::Background)
-                .title(crate::res::str::settings_reader_background())
-                .key("reader-background-color"),
-        ),
-        labeled(
-            crate::res::str::settings_reader_text(),
-            day_piece_colorpicker::color_picker(ReaderColor::Text)
-                .title(crate::res::str::settings_reader_text())
-                .key("reader-text-color"),
-        ),
-        button(crate::res::str::settings_reader_reset())
-            .action(styles::reset)
-            .id("reader-reset-styles"),
-        label(crate::res::str::settings_reader_reset_note())
-            .font(Font::Footnote)
-            .color(move || palette().text_muted),
-        divider(),
-    ))
-    .spacing(12.0)
-    .align(HAlign::Leading)
-    .grow_w()
-}
-
-#[derive(Clone, Copy)]
-struct Grouping;
-impl Binding<bool> for Grouping {
-    fn read(&self) -> bool {
-        daynews_core::state().group_by_feed.get()
-    }
-    fn peek(&self) -> bool {
-        daynews_core::state().group_by_feed.get_untracked()
-    }
-    fn write(&self, value: bool) {
-        if value != self.peek() {
-            crate::feed_list::toggle_grouping();
-        }
     }
 }

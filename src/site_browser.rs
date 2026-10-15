@@ -2,42 +2,9 @@
 use crate::res;
 use day::prelude::*;
 use day_piece_webview::{JsHandle, WebProfile, web_view};
-thread_local! {
-    static REVISION: std::cell::OnceCell<Signal<u64>> = const { std::cell::OnceCell::new() };
-}
-fn revision() -> Signal<u64> {
-    REVISION.with(|r| *r.get_or_init(|| Signal::new_in(day::reactive::Scope::root(), 0)))
-}
+/// Tracked read of the Incognito Mode setting (Settings ▸ Browser).
 pub fn incognito() -> bool {
-    revision().get();
-    day::prefs::get("news.browser.incognito").as_deref() == Some("true")
-}
-#[derive(Clone, Copy)]
-struct Privacy;
-impl Binding<bool> for Privacy {
-    fn read(&self) -> bool {
-        incognito()
-    }
-    fn peek(&self) -> bool {
-        incognito()
-    }
-    fn write(&self, value: bool) {
-        day::prefs::set("news.browser.incognito", &value.to_string());
-        let revision = revision();
-        revision.update(|n| *n = n.wrapping_add(1));
-    }
-}
-pub fn privacy_control() -> impl Piece {
-    column((
-        labeled(
-            res::str::incognito_mode(),
-            toggle(Privacy).id("incognito-mode-picker"),
-        ),
-        when(
-            || incognito() && day_piece_webview::private_browsing_support() == Support::Unsupported,
-            || label(res::str::site_private_unsupported()).font(Font::Footnote),
-        ),
-    ))
+    crate::settings::INCOGNITO.get()
 }
 pub fn site_url(feed: u64) -> Option<String> {
     daynews_core::state()

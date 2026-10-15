@@ -9,7 +9,7 @@ flow:
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
-  - menu: { key: day-preferences }
+  - navigate: { route: settings/reader }
   - wait_for: { id: app-reader-script }
   - tap: { id: app-reader-script }
   - wait_for: { id: reader-script-source }
@@ -29,7 +29,7 @@ flow:
   - pause: { secs: 2 }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Global script fixture.' }
   # Save a replacement with the article still selected: its cached extraction must be invalidated.
-  - menu: { key: day-preferences }
+  - navigate: { route: settings/reader }
   - tap: { id: app-reader-script }
   - input: { id: reader-script-source, text: 'function extract(document, url, Readability) { return {content: "<p>Updated global fixture.</p>"}; }' }
   - tap: { id: reader-script-save }
@@ -73,7 +73,7 @@ flow:
   - web_eval: { id: reader-web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
   - pause: { secs: 2 }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Updated global fixture.' }
-  - menu: { key: day-preferences }
+  - navigate: { route: settings/reader }
   - tap: { id: app-reader-script }
   - tap: { id: reader-script-remove }
   - tap: { id: reader-script-close }

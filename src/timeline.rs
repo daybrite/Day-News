@@ -439,8 +439,8 @@ pub fn timeline_pane() -> impl Piece {
             items(
                 move || {
                     vec![(
-                        crate::settings::preview_lines().get(),
-                        crate::settings::list_scale().get(),
+                        crate::settings::PREVIEW_LINES.get() as usize,
+                        crate::settings::LIST_SCALE.get().round() as usize,
                         st.group_by_feed.get(),
                     )]
                 },

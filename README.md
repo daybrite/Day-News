@@ -38,17 +38,21 @@ three panes become three taps, each one a native push.
   and a marker on any feed that stopped responding.
 - Full-text search across every article, matching as you type.
 - Star what you want to keep and mark what you have read. A refresh never undoes either.
-- Settings include live Light, Dark, or System appearance and a language selector (English
-  currently ships). On Mac, Command-comma opens a dedicated Settings window, including a
-  browser choice for Day News. On iOS, links follow the system browser setting.
-- Article List preferences offer an independent text-size slider and zero to five preview
-  lines (two by default), with matching row heights and a compact, single-row empty state.
-  List text defaults to 120% and reader text to 140%; size and preview choices persist
-  across launches.
-- Reader preferences include a persistent text-size slider, installed-font picker with reading
-  recommendations, and native background/text color wells. Article → Increase/Decrease Text
-  Size (Command-plus/minus) updates the same setting. Styles apply without reloading the article.
-  Reset Styles restores System appearance and automatic reader styling while keeping other settings.
+- Settings are Day's shared surface: the Settings window behind Command-comma on a Mac (and
+  Preferences on GNOME and KDE), a Settings section of the sidebar on a phone and the web, and
+  an About window or card with the version from the manifest. General holds live Light, Dark,
+  or System appearance and a language selector (English currently ships); Browser holds the
+  browser choice for Day News on a Mac (links follow the system browser elsewhere) and
+  Incognito Mode.
+- Articles settings offer an independent text-size slider, feed grouping, and zero to five
+  preview lines (two by default), with matching row heights and a compact, single-row empty
+  state. List text defaults to 120% and reader text to 140%; every choice persists across
+  launches.
+- Reader settings include a persistent text-size slider, an installed-font menu with reading
+  recommendations, native background/text color wells, and the inline and auto-load defaults.
+  Article → Increase/Decrease Text Size (Command-plus/minus) updates the same setting. Styles
+  apply without reloading the article. Reset Styles restores System appearance and automatic
+  reader styling while keeping other settings.
 - Article links open externally while the reader keeps its place. The browser controls whether
   the destination appears in a new tab or window. Article → Open in Browser opens the selected
   article with Return/Enter, without a modifier key.
@@ -146,9 +150,10 @@ requires authorized application credentials; Day News does not reuse NetNewsWire
 or impersonate it. `ArticleExtractor` in `src/extraction.rs` is the replacement point for an
 authorized service or another local engine.
 
-**Custom reader scripts:** Settings → **App Reader Script…** edits the default for every
-site. **Site Reader Script…** on a feed overview edits that site's override; Settings →
-**Manage Site Scripts…** also lets you select an installed override or enter any site URL.
+**Custom reader scripts:** Settings → Reader → **App Reader Script…** edits the default for
+every site. **Site Reader Script…** on a feed overview edits that site's override; Settings →
+Reader → **Manage Site Scripts…** also lets you select an installed override or enter any
+site URL.
 The URL is reduced to its origin (scheme, host, and port). Matching uses the article's final
 URL after redirects; subdomains, HTTP/HTTPS, and non-default ports are separate sites.
 Precedence is site override → app script → bundled Mozilla Readability.
@@ -185,8 +190,11 @@ install only code you trust. A nonterminating script may stall the web engine; t
   article composed from pieces when a backend has no web engine. GTK on macOS uses WebKit.
 - `src/extraction.rs` defines the extraction provider; `src/reader_view.rs` owns per-window
   loading, cancellation, errors, and the temporary full-text overlay.
-- `src/subscriptions.rs`, `src/settings.rs`, `src/menus.rs`, and `src/toolbar.rs` cover feed
-  management with OPML import and export, retention, the app menus, and the window toolbar.
+- `src/settings.rs` declares the settings: the typed, persisted preferences the other modules
+  read, and the groups (General, Articles, Reader, Browser, Feeds) and About that Day's shared
+  [settings surface](https://daybrite.dev/docs/settings) presents on every platform.
+- `src/subscriptions.rs`, `src/menus.rs`, and `src/toolbar.rs` cover feed management with OPML
+  import and export, the app menus, and the window toolbar.
 - `crates/` holds `daynews-opml`, `daynews-feed`, `daynews-db`, and `daynews-core`: OPML, feed
   parsing, the store, and the view model, all headless.
 - `resource/locales/en/app.ftl` carries every user-facing string.
@@ -276,7 +284,7 @@ Feed dashboards include **Preview Site or Login** and **Forget all site informat
 when a feed is selected. AppKit opens a narrow native sheet; iPad uses an adaptive sheet.
 Other backends center a narrow modal panel on wide windows and use the available width on phones.
 The interactive preview shares its site's browser profile with full-article loading, including
-HttpOnly login cookies. Incognito Mode in Preferences uses private browser storage and disables
+HttpOnly login cookies. Incognito Mode in Settings → Browser uses private browser storage and disables
 per-feed login, forgetting and reader-option controls. On engines without private browsing,
 private requests are blocked and the stored article preview remains available. Platform
 capabilities and storage-location limitations are documented in

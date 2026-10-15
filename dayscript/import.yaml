@@ -14,8 +14,11 @@ name: day-news-import
 description: Import an OPML file through the real file picker and refresh every feed.
 flow:
   - wait_for: { id: nav }
-  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  # On a phone or the web the section is a root list of groups: open it and tap the group's
+  # row (`settings/<group>` is the desktop window's route to a tab).
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: opml-import }
   - tap: { id: opml-import }
   - pause: { secs: 1 }

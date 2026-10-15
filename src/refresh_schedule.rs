@@ -1,38 +1,56 @@
-//! One app-wide refresh timer, independent of the preferences window's lifetime.
+//! One app-wide refresh timer, driven by the Refresh Feeds setting and independent of any
+//! window's lifetime.
 use day::prelude::Signal;
+use day_piece_settings::prelude::*;
 use futures_util::future::{AbortHandle, Abortable};
 use std::cell::{OnceCell, RefCell};
 
-const KEY: &str = "news.refresh.minutes";
+pref_enum! {
+    /// How the feeds refresh on their own: Day News's per-feed cadence, never, or on a fixed
+    /// interval. Stored under short tags.
+    pub enum Refresh {
+        Automatic = "auto",
+        Manual = "manual",
+        Minutes30 = "30",
+        Hour = "60",
+        Hours2 = "120",
+        Hours4 = "240",
+        Hours8 = "480",
+    }
+}
+
+/// The Refresh Feeds setting.
+pub static REFRESH: Pref<Refresh> = Pref::new("news.refresh.minutes", || Refresh::Automatic);
+
+/// The `minutes()` of [`Refresh::Automatic`]: the per-feed scheduler, not one interval.
 const AUTOMATIC: u64 = u64::MAX;
-pub const CHOICES: [u64; 7] = [AUTOMATIC, 0, 30, 60, 120, 240, 480];
-const DEFAULT: u64 = AUTOMATIC;
+
+impl Refresh {
+    /// Minutes between whole-library refreshes: 0 for Manual, [`AUTOMATIC`] for the per-feed
+    /// cadence.
+    pub fn minutes(self) -> u64 {
+        match self {
+            Refresh::Automatic => AUTOMATIC,
+            Refresh::Manual => 0,
+            Refresh::Minutes30 => 30,
+            Refresh::Hour => 60,
+            Refresh::Hours2 => 120,
+            Refresh::Hours4 => 240,
+            Refresh::Hours8 => 480,
+        }
+    }
+}
 
 thread_local! {
     static NEXT: OnceCell<Signal<Option<i64>>> = const { OnceCell::new() };
-    static INTERVAL: OnceCell<Signal<usize>> = const { OnceCell::new() };
     static TIMER: RefCell<Option<AbortHandle>> = const { RefCell::new(None) };
 }
 
-fn stored_minutes() -> u64 {
-    day::prefs::get(KEY)
-        .and_then(|value| value.parse().ok())
-        .filter(|value| CHOICES.contains(value))
-        .unwrap_or(DEFAULT)
-}
-
-fn interval() -> Signal<usize> {
-    INTERVAL.with(|slot| {
-        *slot.get_or_init(|| {
-            Signal::new_in(
-                day::reactive::Scope::root(),
-                CHOICES
-                    .iter()
-                    .position(|value| *value == stored_minutes())
-                    .unwrap_or(0),
-            )
-        })
-    })
+/// Start the timer for the stored setting and restart it on every change. Call once, in the
+/// root scope.
+pub fn install() {
+    start();
+    REFRESH.watch(|_| start());
 }
 
 pub fn stop() {
@@ -46,7 +64,7 @@ pub fn stop() {
 
 pub fn start() {
     stop();
-    let minutes = CHOICES[interval().get_untracked()];
+    let minutes = REFRESH.get_untracked().minutes();
     if minutes == 0 {
         return;
     }
@@ -81,30 +99,13 @@ pub fn start() {
     });
 }
 
-#[derive(Clone, Copy)]
-pub struct Interval;
-impl day::prelude::Binding<usize> for Interval {
-    fn read(&self) -> usize {
-        interval().get()
-    }
-    fn peek(&self) -> usize {
-        interval().get_untracked()
-    }
-    fn write(&self, index: usize) {
-        if let Some(value) = CHOICES.get(index) {
-            day::prefs::set(KEY, &value.to_string());
-            interval().set(index);
-            start();
-        }
-    }
-}
-
 fn next() -> Signal<Option<i64>> {
     NEXT.with(|slot| *slot.get_or_init(|| Signal::new_in(day::reactive::Scope::root(), None)))
 }
-/// Actual scheduling mode and fixed timer deadline, for the dashboard's estimate.
+/// Actual scheduling mode (in minutes, see [`Refresh::minutes`]) and fixed timer deadline, for
+/// the dashboard's estimate. Tracked.
 pub fn schedule() -> (u64, Option<i64>) {
-    (CHOICES[interval().get()], next().get())
+    (REFRESH.get().minutes(), next().get())
 }
 pub fn automatic(value: u64) -> bool {
     value == AUTOMATIC

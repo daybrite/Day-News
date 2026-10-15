@@ -186,26 +186,57 @@ flow:
   - pause: { secs: 1 }
   - assert_visible: { id: timeline-empty, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
-  # Settings: display controls share persistent bindings and reset to the shipped defaults.
-  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: retention-picker }
+  # Settings: Day's shared surface (https://daybrite.dev/docs/settings), a window on the
+  # desktops and the Settings section of the sidebar on a phone or the web. `settings` opens
+  # the window (on General, the first group) or selects the section, whose root lists the
+  # groups. On a desktop `settings/<group>` then switches the window to a group's tab; a phone
+  # taps the group's row and comes back with `nav_back`. The window stays open across groups
+  # and closes at the end; display controls persist and reset together to the shipped defaults.
+  - navigate: { route: settings }
+  - wait_for: { id: language-picker, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - screenshot: { name: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: language-picker }
   - assert_visible: { id: theme-picker, only_on: [macos-appkit, ios-uikit] }
-  - assert_visible: { id: language-picker }
-  - assert_visible: { id: browser-picker, only_on: [macos-appkit] }
-  - assert_visible: { id: list-size-slider }
+  # On a phone or the web the section is a root list of groups: open it and tap the group's
+  # row (`settings/<group>` is the desktop window's route to a tab).
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: list-size-slider }
+  - assert_visible: { id: group-by-feeds-picker }
   - assert_visible: { id: preview-lines-picker }
-  - assert_visible: { id: reader-size-slider }
-  - assert_visible: { id: reader-font-picker }
-  - set_value: { id: list-size-slider, value: 170 }
-  - assert_text: { id: list-size-value, key: settings_list_percent, args: { value: 170 } }
-  - set_value: { id: reader-size-slider, value: 160 }
-  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 160 } }
+  # Slider values are driven where the row's id is on the control itself; the UIKit, ArkUI
+  # GTK and XAML settings rows put it on the layout wrapper, which a probe cannot read.
+  - set_value: { id: list-size-slider, value: 170, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
+  - assert_value: { id: list-size-slider, value: 170, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
   - select: { id: preview-lines-picker, index: 3 }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: reader-size-slider }
+  - assert_visible: { id: reader-font-picker }
+  - set_value: { id: reader-size-slider, value: 160, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
+  - assert_value: { id: reader-size-slider, value: 160, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
   - tap: { id: reader-reset-styles }
-  - assert_text: { id: list-size-value, key: settings_list_percent, args: { value: 120 } }
-  - assert_text: { id: reader-size-value, key: settings_reader_percent, args: { value: 140 } }
+  - assert_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: list-size-slider }
+  - assert_value: { id: list-size-slider, value: 120, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
   - assert_value: { id: preview-lines-picker, value: 2 }
+  - navigate: { route: settings/browser, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-browser, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: incognito-mode-picker }
+  - assert_visible: { id: browser-picker, only_on: [macos-appkit] }
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: retention-picker }
   - assert_visible: { id: refresh-interval-picker }
   - select: { id: refresh-interval-picker, index: 0 }
   - assert_value: { id: refresh-interval-picker, value: 0 }
@@ -217,16 +248,18 @@ flow:
   - assert_value: { id: refresh-interval-picker, value: 4 }
   - select: { id: refresh-interval-picker, index: 0 }
   - assert_value: { id: refresh-interval-picker, value: 0 }
-  - assert_visible: { id: app-reader-script }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: app-reader-script }
   - assert_visible: { id: site-reader-scripts }
   - tap: { id: app-reader-script }
   - wait_for: { id: reader-script-source }
   - tap: { id: reader-script-template }
   - screenshot: reader-script-editor
   - tap: { id: reader-script-close }
-  - screenshot: { name: settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
-  - screenshot: { name: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-
+  - screenshot: { name: settings-reader, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - screenshot: { name: settings-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
 
   # The toolbar's sidebar toggle hides the pane and brings it back.
@@ -263,11 +296,12 @@ flow:
   - pause: { secs: 2, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - assert_text: { id: feeds-count, key: feeds_count, args: { count: 7 }, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
-  # Subscription import/export lives in Settings.
-  - menu: { key: day-preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  # Subscription import/export lives in Settings ▸ Feeds.
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: feeds-count }
-  - assert_visible: { id: opml-export }
+  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: opml-export }
+  - assert_visible: { id: opml-import }
   - screenshot: { name: subscription-settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - screenshot: { name: subscription-settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
 

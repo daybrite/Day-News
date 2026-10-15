@@ -1,15 +1,16 @@
-//! Persisted, app-wide reader presentation. Controls write through the same bindings as menus.
+//! App-wide reader presentation: the stylesheet built from the reader prefs in `settings`, the
+//! color bindings the settings rows edit, and the reset every "Reset Styles" goes through.
+use crate::settings::{
+    LIST_SCALE, PREVIEW_LINES, READER_BACKGROUND, READER_FONT, READER_SCALE, READER_TEXT,
+};
 use day::prelude::*;
-use std::{cell::OnceCell, rc::Rc};
+use day_piece_settings::prelude::*;
 
-const SCALE_KEY: &str = "news.reader.scale";
-const FONT_KEY: &str = "news.reader.font";
-const BACKGROUND_KEY: &str = "news.reader.background";
-const TEXT_KEY: &str = "news.reader.text";
 pub const DEFAULT_SCALE: f64 = 140.0;
 pub const MIN_SCALE: f64 = 70.0;
 pub const MAX_SCALE: f64 = 250.0;
 
+/// The four reader prefs resolved into one value the document and the stylesheet take.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ReaderStyle {
     pub scale: f64,
@@ -37,199 +38,88 @@ fn scale(value: f64) -> f64 {
     }
 }
 
-fn stored_color(key: &str) -> Option<Color> {
-    day::prefs::get(key)
-        .and_then(|v| Color::parse(&v))
-        .map(|mut c| {
-            c.a = 1.0;
-            c
-        })
-}
-
-thread_local! {
-    static STYLE: OnceCell<Signal<ReaderStyle>> = const { OnceCell::new() };
-    static APPEARANCE: OnceCell<Signal<usize>> = const { OnceCell::new() };
-}
-
-pub fn state() -> Signal<ReaderStyle> {
-    STYLE.with(|slot| {
-        *slot.get_or_init(|| {
-            Signal::new_in(
-                day::reactive::Scope::root(),
-                ReaderStyle {
-                    scale: scale(
-                        day::prefs::get(SCALE_KEY)
-                            .and_then(|s| s.parse().ok())
-                            .unwrap_or(DEFAULT_SCALE),
-                    ),
-                    family: day::prefs::get(FONT_KEY)
-                        .filter(|s| s.len() <= 512)
-                        .unwrap_or_default(),
-                    background: stored_color(BACKGROUND_KEY),
-                    text: stored_color(TEXT_KEY),
-                },
-            )
-        })
+/// A stored `#rrggbb`, opaque; anything else (the empty default included) is "follow the
+/// appearance".
+fn parse_color(hex: &str) -> Option<Color> {
+    Color::parse(hex).map(|mut c| {
+        c.a = 1.0;
+        c
     })
 }
 
-pub fn appearance() -> Signal<usize> {
-    APPEARANCE.with(|slot| {
-        *slot.get_or_init(|| {
-            Signal::new_in(
-                day::reactive::Scope::root(),
-                match day::prefs::get(super::settings::THEME_KEY).as_deref() {
-                    Some("light") => 0,
-                    Some("dark") => 1,
-                    _ => 2,
-                },
-            )
-        })
-    })
+/// Tracked read of the reader prefs as one style; a document or a stylesheet watch rebuilds
+/// when any of the four changes.
+pub fn style() -> ReaderStyle {
+    let family = READER_FONT.get();
+    ReaderStyle {
+        scale: scale(READER_SCALE.get()),
+        // A store entry nobody could have typed is ignored rather than injected into CSS.
+        family: if family.len() <= 512 {
+            family
+        } else {
+            String::new()
+        },
+        background: parse_color(&READER_BACKGROUND.get()),
+        text: parse_color(&READER_TEXT.get()),
+    }
 }
 
-fn change(edit: impl FnOnce(&mut ReaderStyle)) {
-    let signal = state();
-    let old = signal.get_untracked();
-    let mut next = old.clone();
-    edit(&mut next);
-    if next == old {
-        return;
-    }
-    if next.scale != old.scale {
-        if next.scale == DEFAULT_SCALE {
-            day::prefs::remove(SCALE_KEY);
-        } else {
-            day::prefs::set(SCALE_KEY, &next.scale.to_string());
-        }
-    }
-    if next.family != old.family {
-        if next.family.is_empty() {
-            day::prefs::remove(FONT_KEY);
-        } else {
-            day::prefs::set(FONT_KEY, &next.family);
-        }
-    }
-    for (key, value, previous) in [
-        (BACKGROUND_KEY, next.background, old.background),
-        (TEXT_KEY, next.text, old.text),
-    ] {
-        if value != previous {
-            if let Some(color) = value {
-                day::prefs::set(key, &css_color(color));
-            } else {
-                day::prefs::remove(key);
-            }
-        }
-    }
-    signal.set(next);
-}
-
+/// Article ▸ Increase/Decrease Text Size: one step of the settings slider.
 pub fn adjust_size(delta: f64) {
-    Scale.write(state().get_untracked().scale + delta);
+    READER_SCALE.set(scale(READER_SCALE.get_untracked() + delta));
 }
 
+/// Reset Styles: the reader's prefs, the article list's, and the shared appearance back to
+/// System. Each reset removes its key from the store.
 pub fn reset() {
-    for key in [
-        SCALE_KEY,
-        FONT_KEY,
-        BACKGROUND_KEY,
-        TEXT_KEY,
-        super::settings::THEME_KEY,
-    ] {
-        day::prefs::remove(key);
-    }
     batch(|| {
-        state().set(ReaderStyle::default());
-        crate::settings::reset_list_styles();
-        appearance().set(2);
-        day::set_appearance(None);
+        READER_SCALE.reset();
+        READER_FONT.reset();
+        READER_BACKGROUND.reset();
+        READER_TEXT.reset();
+        LIST_SCALE.reset();
+        PREVIEW_LINES.reset();
+        APPEARANCE.reset();
     });
 }
 
-#[derive(Clone, Copy)]
-pub struct Scale;
-impl Binding<f64> for Scale {
-    fn read(&self) -> f64 {
-        state().get().scale
-    }
-    fn peek(&self) -> f64 {
-        state().get_untracked().scale
-    }
-    fn write(&self, value: f64) {
-        change(|s| s.scale = scale(value));
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct Appearance;
-impl Binding<usize> for Appearance {
-    fn read(&self) -> usize {
-        appearance().get()
-    }
-    fn peek(&self) -> usize {
-        appearance().get_untracked()
-    }
-    fn write(&self, index: usize) {
-        let index = index.min(2);
-        match index {
-            0 => day::prefs::set(super::settings::THEME_KEY, "light"),
-            1 => day::prefs::set(super::settings::THEME_KEY, "dark"),
-            _ => day::prefs::remove(super::settings::THEME_KEY),
-        };
-        appearance().set(index);
-        day::set_appearance(match index {
-            0 => Some(false),
-            1 => Some(true),
-            _ => None,
-        });
-    }
-}
-
+/// The two color wells, bound to their hex prefs: reading falls back to the appearance's
+/// palette, writing stores the opaque color.
 #[derive(Clone, Copy)]
 pub enum ReaderColor {
     Background,
     Text,
 }
+
+impl ReaderColor {
+    fn pref(self) -> &'static Pref<String> {
+        match self {
+            Self::Background => &READER_BACKGROUND,
+            Self::Text => &READER_TEXT,
+        }
+    }
+}
+
 impl Binding<Color> for ReaderColor {
     fn read(&self) -> Color {
-        let style = state().get();
         let palette = crate::theme::palette();
-        match self {
-            Self::Background => style.background.unwrap_or(palette.bg),
-            Self::Text => style.text.unwrap_or(palette.text),
-        }
+        parse_color(&self.pref().get()).unwrap_or(match self {
+            Self::Background => palette.bg,
+            Self::Text => palette.text,
+        })
     }
     fn peek(&self) -> Color {
         day::reactive::untrack(|| self.read())
     }
     fn write(&self, mut color: Color) {
         color.a = 1.0;
-        change(|s| match self {
-            Self::Background => s.background = Some(color),
-            Self::Text => s.text = Some(color),
-        });
+        self.pref().set(css_color(color));
     }
 }
 
-#[derive(Clone)]
-pub struct FontChoice(pub Rc<Vec<String>>);
-impl Binding<usize> for FontChoice {
-    fn read(&self) -> usize {
-        let family = state().get().family;
-        self.0.iter().position(|f| *f == family).unwrap_or(0)
-    }
-    fn peek(&self) -> usize {
-        day::reactive::untrack(|| self.read())
-    }
-    fn write(&self, index: usize) {
-        if let Some(family) = self.0.get(index) {
-            change(|s| s.family = family.clone());
-        }
-    }
-}
-
-/// Repeated recommended entries are intentional: the lower section is the complete catalog.
+/// The font menu's entries: the system default, the recommended reading faces that are
+/// installed, then the whole catalog. Returns the choices and the index where the catalog
+/// starts. Repeated recommended entries are intentional: the lower section is complete.
 pub fn font_choices(mut available: Vec<String>) -> (Vec<String>, usize) {
     available.sort_by_key(|s| s.to_lowercase());
     available.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
@@ -318,7 +208,7 @@ pub fn stylesheet(style: &ReaderStyle, dark: bool) -> String {
 }
 
 pub fn apply_to(js: day_piece_webview::JsHandle) {
-    let css = stylesheet(&state().get_untracked(), day::dark_mode());
+    let css = stylesheet(&day::reactive::untrack(style), day::dark_mode());
     let encoded = serde_json::to_string(&css).expect("CSS string serializes");
     day::task(async move {
         // Replace a dedicated style node, leaving document state, selection, and scroll intact.
@@ -368,5 +258,13 @@ mod tests {
             stylesheet(&ReaderStyle::default(), true)
                 .contains(&css_color(crate::theme::palette_for(true).bg))
         );
+    }
+    #[test]
+    fn stored_colors_are_opaque_hex_or_nothing() {
+        assert_eq!(parse_color(""), None);
+        assert_eq!(parse_color("not a color"), None);
+        let c = parse_color("#fff2d5").expect("hex parses");
+        assert_eq!(c.a, 1.0);
+        assert_eq!(css_color(c), "#fff2d5");
     }
 }

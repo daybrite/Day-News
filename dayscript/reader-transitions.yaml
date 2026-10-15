@@ -1,6 +1,6 @@
 # Start tests/reader-view-server.py with a fresh isolated DAY_NEWS_DATA_DIR.
 name: reader-transitions
-description: Full-content transitions, settings captions, and global auto-load inheritance.
+description: Full-content transitions, the reader defaults in Settings, and global auto-load inheritance.
 flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
@@ -12,11 +12,11 @@ flow:
   - wait_for: { id: feed-inline-reader }
   - toggle: { id: feed-inline-reader, value: true }
   - toggle: { id: feed-auto-reader, value: false }
-  - menu: { key: day-preferences }
-  - assert_visible: { id: inline-reader-caption }
-  - assert_visible: { id: auto-reader-caption }
+  - navigate: { route: settings/reader }
+  - wait_for: { id: inline-reader-picker }
+  - assert_visible: { id: auto-reader-picker }
   - toggle: { id: auto-reader-picker, value: true }
-  - screenshot: { name: reader-settings-captions, window: day.preferences }
+  - screenshot: { name: reader-settings-defaults, window: day.preferences }
   - close_window: { window: day.preferences }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
@@ -36,7 +36,8 @@ flow:
   - pause: { secs: 0.5 }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").hidden', text: 'false' }
   - screenshot: reader-transition-reversed
-  - menu: { key: day-preferences }
+  - navigate: { route: settings/reader }
+  - wait_for: { id: auto-reader-picker }
   - toggle: { id: auto-reader-picker, value: false }
   - close_window: { window: day.preferences }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "hidden"', text: 'hidden' }

@@ -71,7 +71,15 @@ fn valid_source(source: &str) -> bool {
     !source.trim().is_empty() && source.len() <= MAX_SCRIPT_BYTES && !source.contains('\0')
 }
 
-pub fn controls(feed: Option<u64>) -> impl Piece {
+/// Settings ▸ Reader: the app script and the site-script manager, with their editor sheet.
+pub fn settings_controls() -> impl Piece {
+    controls(None)
+}
+/// A feed dashboard's Site Reader Script… button, with its editor sheet.
+pub fn feed_controls(feed: u64) -> impl Piece {
+    controls(Some(feed))
+}
+fn controls(feed: Option<u64>) -> impl Piece {
     // Empty string is the app default. Other values open an origin-specific editor.
     let open = Signal::new(None::<String>);
     column((

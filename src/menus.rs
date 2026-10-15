@@ -127,16 +127,14 @@ pub fn install() {
                         .id("reader-increase-text-size")
                         .key("+")
                         .enabled(
-                            crate::reader_styles::state().get().scale
-                                < crate::reader_styles::MAX_SCALE,
+                            crate::settings::READER_SCALE.get() < crate::reader_styles::MAX_SCALE,
                         )
                         .action(|| crate::reader_styles::adjust_size(10.0)),
                     menu_item(res::str::menu_decrease_text_size().format())
                         .id("reader-decrease-text-size")
                         .key("-")
                         .enabled(
-                            crate::reader_styles::state().get().scale
-                                > crate::reader_styles::MIN_SCALE,
+                            crate::settings::READER_SCALE.get() > crate::reader_styles::MIN_SCALE,
                         )
                         .action(|| crate::reader_styles::adjust_size(-10.0)),
                 ],

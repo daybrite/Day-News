@@ -55,6 +55,7 @@ pub fn window() -> day::WindowOptions {
         // read comfortably; this is close to NetNewsWire's own default.
         size: day::prelude::Size::new(1440.0, 900.0),
         min_size: Some(day::prelude::Size::new(720.0, 480.0)),
+        version: Some(env!("CARGO_PKG_VERSION").into()),
         ..Default::default()
     }
 }
@@ -92,15 +93,6 @@ fn count(n: i64) -> String {
 
 pub fn root() -> impl Piece {
     http_fixtures::install();
-    settings::apply_startup();
-    day::register_preferences_with(
-        day::WindowOptions {
-            title_fn: Some(|| res::str::nav_settings().format()),
-            size: Size::new(600.0, 720.0),
-            ..Default::default()
-        },
-        settings::settings_page,
-    );
     // Start opening the store before building the views. Native database work runs on its
     // owning worker; committed snapshots populate the UI as they become available.
     #[cfg(target_arch = "wasm32")]
@@ -138,10 +130,12 @@ pub fn root() -> impl Piece {
                 .set(res::str::storage_error(error).format());
         }
     });
-    daynews_core::state()
-        .group_by_feed
-        .set(day::prefs::get("news.articles.group_by_feed").as_deref() != Some("false"));
-    refresh_schedule::start();
+    // Settings and About (https://daybrite.dev/docs/settings): appearance and language from
+    // Day's catalog, the app's own groups, the name and version from Day.toml. A desktop gets
+    // the App menu's Settings… and About items and their windows; a phone and the web get the
+    // Settings sidebar section in `shell_body`. Also applies the stored grouping and retention
+    // and starts the refresh timer, so it follows the store being opened above.
+    let prefs = settings::install();
     day::on_lifecycle(Lifecycle::WillTerminate, refresh_schedule::stop);
     feed_icons::init();
     // The undo history rides the container's change log; the platform bridge gives it ⌘Z,
@@ -150,37 +144,36 @@ pub fn root() -> impl Piece {
     if let Some(stack) = daynews_core::undo_stack() {
         day::install_undo(&stack);
     }
-    // Retention: prune per the stored setting (Settings page owns changing it).
-    day::task(async {
-        daynews_core::prune(settings::retention_days()).await;
-    });
     // Every window shows the same store (the reader is the app, not the window), so a new
     // window is just another shell. Registered once; each window builds its own signals.
-    day::register_new_window(build_shell);
+    {
+        let prefs = prefs.clone();
+        day::register_new_window(move || build_shell(prefs.clone()));
+    }
     // Menu availability needs the registered window's scene. Install on the next UI
     // turn, after the shell has mounted; commands also tolerate the last window closing.
     day::task(async {
         menus::install();
     });
-    build_shell()
+    build_shell(prefs)
 }
 
 /// The sidebar row a window opens on: NetNewsWire's top smart feed.
 const OPENING_SECTION: &str = "today";
 
 /// One window's contents. Called again for each File ▸ New Window.
-fn build_shell() -> impl Piece {
+fn build_shell(prefs: day_piece_settings::Prefs) -> impl Piece {
     // Each window owns its scope, search and selection; the store and badges stay shared.
-    daynews_core::NewsScene::scoped(|sc| {
+    daynews_core::NewsScene::scoped(move |sc| {
         reader_view::ReaderView::scoped(move |_| {
             site_browser::Browser::scoped(move |_| {
-                subscriptions::SubscriptionSheet::scoped(move |_| shell_body(sc))
+                subscriptions::SubscriptionSheet::scoped(move |_| shell_body(sc, prefs))
             })
         })
     })
 }
 
-fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
+fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> impl Piece {
     let st = daynews_core::state();
     // Dynamic sidebar rows can be re-derived while a transient sheet owns the current
     // reactive scope. Their menu actions belong to this window, so closing that sheet
@@ -203,9 +196,6 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
             }
         },
     );
-
-    let inline_settings =
-        day_core::capability(day_spec::Cap::AppMenu) == day_spec::Support::Unsupported;
 
     let navigation = nav(site_browser::FeedSelection { section, scene: sc })
         .style(NavStyle::Sidebar)
@@ -353,19 +343,19 @@ fn shell_body(sc: daynews_core::NewsScene) -> impl Piece {
                     .badge(count(t.count))
             },
         )
-        .destination(|key: &Option<String>| match key.as_deref() {
-            Some("settings") => Either::Left(settings::settings_page()),
+        // Settings rides the sidebar only where no menu bar can open the window (a phone, the
+        // web): `nav_keys` is empty elsewhere (https://daybrite.dev/docs/settings).
+        .items(
+            {
+                let prefs = prefs.clone();
+                move || prefs.nav_keys(Some("settings".to_string()))
+            },
+            |key: &Option<String>| item(key.clone(), res::str::nav_settings()),
+        )
+        .destination(move |key: &Option<String>| match key.as_deref() {
+            Some("settings") => Either::Left(prefs.page()),
             _ => Either::Right(reader_dest()),
         });
-    let navigation = if inline_settings {
-        navigation.item(
-            "settings".to_string(),
-            res::str::nav_settings(),
-            settings::settings_page,
-        )
-    } else {
-        navigation
-    };
     column((
         navigation.id("nav").grow(),
         site_browser::browser_cover(),

@@ -171,8 +171,9 @@ mode off retains the replacement reader presentation. Auto-load Reader Mode defa
 when enabled, extraction starts when its load bar enters the viewport, once per
 article. Returning manually to the RSS preview does not immediately restart automatic loading.
 
-Preferences contain app-wide defaults. Each feed dashboard exposes independent inline and
-auto-load overrides, persisted by stable feed ID in Day preferences. Feeds without overrides
+Settings → Reader holds the app-wide defaults (`READER_INLINE`, `READER_AUTO`). Each feed
+dashboard exposes independent inline and auto-load overrides, persisted by stable feed ID in
+Day preferences. Feeds without overrides
 inherit the defaults, and changes propagate across windows. Selection changes/disposal retain
 the cancellation and stale-response checks above. Dashboard chart space contracts to make
 room for the feed controls inside the fixed viewport.
@@ -421,7 +422,7 @@ or conventional feed anchors. Relative links honor the final response URL and HT
 Missing feeds show an alert; multiple candidates require a choice. Only the selected candidate
 is fetched. The parsed response, validators and body hash are imported without a duplicate fetch.
 Subscription completion selects that feed and clears the previous article search. OPML controls
-remain in Settings and the File menu. The common article document used for feed bodies and
+remain in Settings → Feeds and the File menu. The common article document used for feed bodies and
 readability content shows the full resolved href in a pointer-following tooltip. Tooltip content
 uses textContent, not HTML; scrolling, leaving, clicking or blurring hides it.
 Regression coverage lives in daynews-db polling/store tests and the grouped-feed DayScript.
@@ -499,13 +500,20 @@ the article-grouping filter. Bulk Mark All as Read remains in the Article menu w
 shortcut, rather than occupying the toolbar. Walkthrough bulk-marking steps use its
 shared command id through the menu model.
 
-### Preferences entry point
+### Settings and About
 
-Toolkits with `Cap::AppMenu` expose the registered preferences window through their standard
-Settings/Preferences menu command, and omit Settings from the sidebar. Toolkits without an
-app menu retain the Settings destination in navigation. Walkthroughs open and close the
-registered `day.preferences` window on desktop and capture that window while testing its
-controls; browser and mobile walkthroughs navigate to the inline destination.
+Settings are `day-piece-settings` (Day's `docs/settings.md`). `src/settings.rs` declares every
+preference as a `Pref<T>` static over the platform store (`news.*`, `retention.days`) and the
+groups General (Day's appearance and language rows), Articles, Reader, Browser and Feeds, plus
+an About built from the manifest. `Preferences::install` in `root()` registers the Settings
+window and the App menu's Settings…/About items where a menu bar exists, and the
+`settings/<group>` routes. Where there is none, `prefs.nav_keys` places a Settings sidebar
+section whose destination is `prefs.page()`: a root list (About header, one row per group)
+that pushes one page per group. Settings that drive state outside the UI (feed grouping,
+retention pruning, the refresh timer) are watches on their prefs, installed once in the root
+scope. Walkthroughs reach a group with `navigate: settings/<group>` on the desktops, and on a
+phone open `settings` and tap the group's `prefs-group-<id>` row; desktop runs close the
+`day.preferences` window afterwards.
 
 The full-content control is a full-width themed section bar with a double-chevron symbol,
 a spinner visible only while downloading, and a localized label. Automatic extraction is

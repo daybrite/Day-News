@@ -633,7 +633,7 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                 ),
                 |slot| {
                     column((
-                        crate::reader_options::controls(Some(slot.get())),
+                        crate::reader_options::controls(slot.get()),
                         crate::site_browser::site_controls(slot.get()),
                     ))
                 },

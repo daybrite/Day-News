@@ -28,14 +28,11 @@ pub fn visible(unread: i64, unread_only: bool) -> bool {
     !unread_only || unread > 0
 }
 
+/// Feed ▸ Group by Feeds: flips the setting; `settings::install` mirrors it into
+/// daynews-core's flag for the timeline.
 pub fn toggle_grouping() {
-    let signal = daynews_core::state().group_by_feed;
-    let on = !signal.get_untracked();
-    day::prefs::set(
-        "news.articles.group_by_feed",
-        if on { "true" } else { "false" },
-    );
-    signal.set(on);
+    let pref = &crate::settings::GROUP_BY_FEED;
+    pref.set(!pref.get_untracked());
 }
 
 pub fn move_relative(feed: u64, delta: isize) {
