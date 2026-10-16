@@ -319,10 +319,9 @@ pub(crate) fn begin_tag(article: u64) {
 }
 
 /// The heading over the list: which scope is showing, and how much of it is unread.
-fn scope_title() -> String {
+fn scope_title(scope: Scope) -> String {
     let st = daynews_core::state();
-    let sc = daynews_core::scene();
-    match sc.scope.get() {
+    match scope {
         Scope::Today => crate::res::str::nav_today().format(),
         Scope::Unread => crate::res::str::nav_all_unread().format(),
         Scope::Starred => crate::res::str::nav_starred().format(),
@@ -358,7 +357,7 @@ pub fn timeline_pane() -> impl Piece {
         // a bare row of controls did not.
         row((
             column((
-                label(scope_title)
+                label(move || scope_title(sc.scope.get()))
                     .font(Font::Title3)
                     .weight(FontWeight::Bold)
                     .color(move || palette().text)

@@ -132,8 +132,8 @@ pub fn root() -> impl Piece {
     });
     // Settings and About (https://daybrite.dev/docs/settings): appearance and language from
     // Day's catalog, the app's own groups, the name and version from Day.toml. A desktop gets
-    // the App menu's Settings… and About items and their windows; a phone and the web get the
-    // Settings sidebar section in `shell_body`. Also applies the stored grouping and retention
+    // the App menu's Settings… and About items and their windows; the web uses a modal surface
+    // and phones get the Settings sidebar section in `shell_body`. Also applies grouping and retention
     // and starts the refresh timer, so it follows the store being opened above.
     let prefs = settings::install();
     day::on_lifecycle(Lifecycle::WillTerminate, refresh_schedule::stop);
@@ -175,27 +175,12 @@ fn build_shell(prefs: day_piece_settings::Prefs) -> impl Piece {
 
 fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> impl Piece {
     let st = daynews_core::state();
-    // Dynamic sidebar rows can be re-derived while a transient sheet owns the current
-    // reactive scope. Their menu actions belong to this window, so closing that sheet
-    // must not unregister the actions still installed on its sidebar.
+    // Sidebar rows and toolbar items can be re-derived outside this window's reactive
+    // scope. Resolve their scene and register their commands with this window, so closing
+    // a transient sheet cannot unregister the actions still installed on its sidebar.
     let menu_scope = day::reactive::Scope::current();
     let section: Signal<Option<String>> = Signal::new(Some(OPENING_SECTION.into()));
-    // Apply the opening scope by hand: `watch` fires on change, so without this the sidebar
-    // highlights Today while the timeline still shows whatever scope the store opened with.
-    if let Some(scope) = scope_for_key(OPENING_SECTION) {
-        daynews_core::select_scope(scope);
-    }
-    // Thereafter the sidebar selection drives the timeline query.
-    watch(
-        move || section.get(),
-        move |key, _| {
-            if let Some(scope) = key.as_deref().and_then(scope_for_key)
-                && sc.scope.get_untracked() != scope
-            {
-                daynews_core::select_scope(scope);
-            }
-        },
-    );
+    bind_sidebar_scope(section, sc);
 
     let navigation = nav(site_browser::FeedSelection { section, scene: sc })
         .style(NavStyle::Sidebar)
@@ -238,7 +223,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         // Refresh and Mark All as Read act on the scope this list has chosen, so they ride this
         // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root
         // list's bar when it collapses. The article's commands are on the reader.
-        .toolbar(toolbar::feed_items)
+        .toolbar(move || menu_scope.enter(toolbar::feed_items))
         .icon_progress(move || {
             st.updating_feeds
                 .get()
@@ -343,8 +328,8 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
                     .badge(count(t.count))
             },
         )
-        // Settings rides the sidebar only where no menu bar can open the window (a phone, the
-        // web): `nav_keys` is empty elsewhere (https://daybrite.dev/docs/settings).
+        // Settings rides the sidebar where no app menu can open the surface (phones):
+        // `nav_keys` is empty elsewhere, including the web (https://daybrite.dev/docs/settings).
         .items(
             {
                 let prefs = prefs.clone();
@@ -372,4 +357,68 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
 /// here as well, which put two back controls on one screen.)
 fn reader_dest() -> impl Piece {
     reader::reader_pane().grow()
+}
+
+fn bind_sidebar_scope(section: Signal<Option<String>>, sc: daynews_core::NewsScene) {
+    // Reactions may drain after an event leaves this window's scope. Resolve scene-based
+    // commands in their owner's context, even when Settings or another window has focus.
+    let owner = day::reactive::Scope::current();
+    // `watch` fires on change, so apply the opening scope before subscribing.
+    if let Some(scope) = section.get_untracked().as_deref().and_then(scope_for_key) {
+        daynews_core::select_scope(scope);
+    }
+    watch(
+        move || section.get(),
+        move |key, _| {
+            if let Some(scope) = key.as_deref().and_then(scope_for_key)
+                && sc.scope.get_untracked() != scope
+            {
+                owner.enter(|| daynews_core::select_scope(scope));
+            }
+        },
+    );
+}
+
+#[cfg(test)]
+mod navigation_tests {
+    use super::*;
+
+    #[test]
+    fn sidebar_selection_keeps_its_scene_when_reactions_run_elsewhere() {
+        let owner = day::reactive::Scope::child();
+        let (scene, section) = owner.enter(|| {
+            let scene = daynews_core::NewsScene::create();
+            owner.provide(scene);
+            let section = Signal::new(Some(OPENING_SECTION.to_string()));
+            bind_sidebar_scope(section, scene);
+            (scene, section)
+        });
+        assert_eq!(scene.scope.get_untracked(), Scope::Today);
+        scene.selected.set(Some(42)); // Synthetic selection; no database or network.
+        scene.reader_open.set(true);
+        let other_owner = day::reactive::Scope::child();
+        let other = other_owner.enter(|| {
+            let other = daynews_core::NewsScene::create();
+            other_owner.provide(other);
+            section.set(Some("feed:7".into()));
+            day::reactive::flush_sync();
+            other
+        });
+        assert_eq!(scene.scope.get_untracked(), Scope::Feed(7));
+        assert_eq!(other.scope.get_untracked(), Scope::Unread);
+        assert_eq!(scene.selected.get_untracked(), None);
+        assert!(!scene.reader_open.get_untracked());
+
+        // Settings is a full-page section. Returning from it must also work with no
+        // ambient scene and no focused native window, as in the browser walkthrough.
+        assert!(daynews_core::try_scene().is_none());
+        section.set(Some("settings".into()));
+        day::reactive::flush_sync();
+        assert_eq!(scene.scope.get_untracked(), Scope::Feed(7));
+        section.set(Some("feed:9".into()));
+        day::reactive::flush_sync();
+        assert_eq!(scene.scope.get_untracked(), Scope::Feed(9));
+        other_owner.dispose();
+        owner.dispose();
+    }
 }

@@ -187,9 +187,10 @@ flow:
   - assert_visible: { id: timeline-empty, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
   # Settings: Day's shared surface (https://daybrite.dev/docs/settings), a window on the
-  # desktops and the Settings section of the sidebar on a phone or the web. `settings` opens
+  # desktops, a modal on the web, and the Settings section of the sidebar on a phone. `settings` opens
   # the window (on General, the first group) or selects the section, whose root lists the
-  # groups. On a desktop `settings/<group>` then switches the window to a group's tab; a phone
+  # groups. The web opens a modal preferences surface, which must close before feed commands.
+  # On a desktop `settings/<group>` then switches the window to a group's tab; a phone
   # taps the group's row and comes back with `nav_back`. The window stays open across groups
   # and closes at the end; display controls persist and reset together to the shipped defaults.
   - navigate: { route: settings }
@@ -260,7 +261,7 @@ flow:
   - tap: { id: reader-script-close }
   - screenshot: { name: settings-reader, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
   - screenshot: { name: settings-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml, web-dom] }
 
   # The toolbar's sidebar toggle hides the pane and brings it back.
   - toolbar: { item: day.sidebar-toggle, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
@@ -274,9 +275,12 @@ flow:
   # drives the app menu, which the phones do not have, so they skip this block. Kitchen Science
   # refreshes from the bundle, so no network is involved. Its route id is the URL's deterministic
   # hash (daynews_db::feed_id("asset:demo/kitchen-science.xml")).
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml, web-dom] }
   - navigate: { route: "feed:9105033381806695217", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: article-row-0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  # Leaving Settings rebuilds the toolbar and timeline; both must keep their window's scene.
+  - assert_text: { id: scope-title, text: Kitchen Science, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - screenshot: { name: settings-return, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - menu: { key: menu_refresh_feed, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - menu: { key: mark_all_read, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
@@ -306,7 +310,7 @@ flow:
   - screenshot: { name: subscription-settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
 
   # Capture a populated saved-story dashboard, then restore the temporary star.
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml, web-dom] }
   - navigate: { route: all }
   - select: { id: timeline, index: 0 }
   - wait_for: { id: reader-web }

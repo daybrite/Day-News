@@ -244,6 +244,15 @@ than faked in the row label.
 Without that the sidebar highlighted Today while the timeline still showed the scope the store
 opened with — invisible on a store whose newest unread articles are all from today, and obvious
 on a stale one.
+The selection watcher and sidebar toolbar factory retain their owning reactive scope and enter
+it before resolving a scene or registering commands. Reactions can drain outside that scope:
+rebuilding the toolbar while web Settings has focus otherwise panics because the preferences
+surface has no `NewsScene`, and another window's context could redirect a selection command.
+The timeline heading reads its captured scene's scope rather than looking up a scene during
+reactive updates.
+The navigation regression covers both an unrelated scene and no ambient/focused scene, and the
+browser walkthrough closes the modal preferences surface before resuming feed commands and
+checks the feed heading after returning from Settings.
 
 Desktop gets a File menu (New Feed, New Folder, New Window, Refresh, Import/Export Subscriptions,
 Close Window), a Go menu (Previous/Next Article ⌘[/⌘], Next Unread ⌘/, then the three smart feeds),
@@ -512,8 +521,9 @@ section whose destination is `prefs.page()`: a root list (About header, one row 
 that pushes one page per group. Settings that drive state outside the UI (feed grouping,
 retention pruning, the refresh timer) are watches on their prefs, installed once in the root
 scope. Walkthroughs reach a group with `navigate: settings/<group>` on the desktops, and on a
-phone open `settings` and tap the group's `prefs-group-<id>` row; desktop runs close the
-`day.preferences` window afterwards.
+phone or the web open `settings` and tap the group's `prefs-group-<id>` row. Desktop and web
+runs close `day.preferences` afterwards: the web uses a modal cover opened from its app menu,
+so navigating the underlying sidebar does not dismiss Settings.
 
 The full-content control is a full-width themed section bar with a double-chevron symbol,
 a spinner visible only while downloading, and a localized label. Automatic extraction is
