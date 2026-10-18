@@ -26,7 +26,9 @@ The libraries live under `crates/`; the UI crate is the repository root.
 | `crates/daynews-opml` | OPML parse + serialize, nested folders | quick-xml |
 | `crates/daynews-time` | the wall clock and the reader's UTC offset, asked of the host | libc (unix), day-dom (web) |
 | `crates/daynews-feed` | fetching and parsing RSS/RDF/Atom/JSON Feed, normalized | feed-rs, day-part-http, `daynews-time` |
-| `crates/daynews-db` | the store: models, relations, FTS5, queries | day-persistence, day-model, day-macros, `daynews-time` |
+| `crates/daynews-sync` | provider contracts, Feedbin adapter, synchronization engine, HTTP fixtures | day-part-http, serde, chrono, httpdate |
+| `crates/daynews-credentials` | native credential vaults | keyring, day-bridge |
+| `crates/daynews-db` | the store: models, relations, FTS5, queries | day-persistence, day-model, day-macros, `daynews-time`, `daynews-sync` |
 | `crates/daynews-core` | the view-model: signals, refresh orchestration, OPML import/export | `daynews-db`, `daynews-feed`, `daynews-opml`, day-core |
 | `day-news` | the UI | `daynews-core`, day, day-piece-webview |
 
@@ -112,6 +114,109 @@ being reported as success. Unit tests cover search punctuation/title/body matche
 refresh/read edits, per-search subscriptions, sticky unread rows, sidebar counts and deletion
 of the currently displayed article. Framework tests cover transaction/cancellation/close races.
 The synchronous database API is still used by the headless store tests and the web tier.
+
+## Account synchronization
+
+The first native account provider is Feedbin. Settings → Accounts validates the login, previews
+subscription counts, and asks whether to upload eligible local subscriptions (off by default).
+The initial import adopts matching feed URLs and uses Feedbin's read/unread state for matched
+articles. Unmatched local history remains local. Subscribing, renaming, unsubscribing, reading,
+and marking a scope read/unread all use the same durable journal. There is one active account
+per installation; folders, stars, tags, and reader preferences remain local. Web DOM retains its
+existing local-only behavior and does not expose the account screen.
+
+### Provider boundary and reconciliation
+
+`daynews-sync` contains a protocol-independent `Provider`, normalized subscriptions/entries,
+read snapshots or deltas, paginated results, per-operation outcomes, and a `Storage` interface.
+IDs, pagination cursors, and durable delta checkpoints are opaque strings. A provider restores
+its last committed checkpoint at the start of each cycle; the worker commits the next checkpoint
+only after all imports succeed. Feedbin uses complete subscription and unread-ID
+snapshots plus a transactionally saved ETag for the first article page. An unchanged page
+returns 304 without redownloading bodies; subscription membership changes invalidate this
+validator so older history from a newly followed feed is still downloaded. A second protocol test uses nonnumeric IDs, explicit
+read deltas, and an opaque checkpoint. Adding another backend requires its adapter, authentication
+presentation, and registration in the core provider factory; article commands and database
+reconciliation do not depend on Feedbin endpoints or numeric IDs. Dynamic binary plugins are
+not part of this interface.
+
+`daynews-db::sync` owns account records, remote-to-local identity links, and coalesced intents.
+Credentials never enter SQLite. A local article edit and its monotonically revised intent are
+saved in the same database-worker transaction. The cycle sends pending changes first, imports
+subscriptions, applies reading state, downloads article pages and missing unread entries, and
+then reconciles reading state again. Local pending intent overlays remote snapshots. Each
+acknowledgement removes only its exact revision, so an older response cannot erase a newer edit.
+A failed individual operation remains queued without blocking unrelated downloads. Bulk marking
+captures the current article IDs; articles arriving later are not accidentally marked read.
+
+Pending local read/unread intent wins until acknowledged; after acknowledgement the server's
+current state wins. Feedbin supplies no global edit timestamps for stronger conflict ordering.
+Remote unsubscribe removes the feed from active views while retaining cached articles and identity
+records. An offline client's stale rename does not resurrect it. Explicit subscribe and undo can
+restore it. New subscriptions invalidate the known-history stopping point, so older read articles
+from a newly followed feed are also imported. Article matching adopts only a unique URL match
+inside the corresponding feed; titles and dates are not identity. Unmatched remote articles get
+account-scoped IDs. Synced feeds are excluded from direct publisher polling.
+
+Remote imports and journal metadata have non-user authors, keeping acknowledgements out of undo
+history. Undo/redo restores visible state and reconciles it into fresh intents rather than
+rewinding network state. Tests exercise the real undo stack and a worker transaction that fails
+after changing both article state and the journal.
+
+### Native lifecycle, credentials, and HTTP
+
+`daynews-core::native::sync` owns one session across all app windows. It restores a connected
+account on launch, synchronizes while active every minute, coalesces local edits, and offers
+manual refresh. Only one cycle runs at a time. Generation checks discard completions from a
+previous login or disconnected session. Authentication failures pause automatic retries until
+sign-in; transport failures back off, and HTTP Retry-After is respected. These are foreground
+application tasks, not OS background-fetch registrations.
+
+`daynews-credentials` uses Keychain on Apple platforms, Credential Manager on Windows, and Secret
+Service on Linux. The Linux backend uses Rust DBus/crypto implementations, avoiding extra C
+build dependencies; a running, unlocked Secret Service is required at runtime. Android stores
+AES-GCM ciphertext in private preferences with an Android Keystore key and account-bound AAD.
+HarmonyOS uses Asset Store Kit. The mobile bridges report storage errors without including
+secret values. There is no plaintext fallback. Disconnect disables synchronization and deletes
+the saved credential while preserving downloaded data and the remote account.
+
+Feedbin v2 uses HTTPS Basic authentication through `day-part-http::Client` and the platform's
+native HTTP stack. Sync requests disable caching and request network reloads: the live rename
+probe caught an immediate subscription read returning a cached old title. Redirect following is
+disabled, pagination input cannot become an arbitrary
+credential-bearing URL, requests time out, and buffered responses have a 64 MiB limit. Read-state
+writes are batched at 1,000 IDs. Errors and cycle statistics expose categories/counts/timing,
+not authorization headers, response bodies, or passwords. `keyring` supplies mature native vault
+implementations; `chrono` parses provider timestamps, and `httpdate` handles Retry-After dates.
+
+### Reproducible validation
+
+The trial account was tested through the production Day HTTP client and the native AppKit UI:
+authentication, a sample Rust Blog subscription, 401 imported articles, read/unread writes,
+idempotent repeated writes, subscription rename/create/delete, and credential restoration after relaunch. The read-state probe
+restores the original state. NetNewsWire's Feedbin caller, account delegate, and status-send tests
+informed the durable-journal and partial-acknowledgement behavior; this implementation is original.
+
+`daynews-sync::fixture::Server` implements sanitized synthetic request/response exchanges based
+on those live responses: auth 200/401, subscription 201/302/204, entry pagination via Link headers,
+unread ID arrays, and per-ID write acknowledgements. It uses Day HTTP `Simulation`, not a fake
+Provider, and never embeds account credentials or downloaded article content. The tests under
+`daynews-sync/tests/protocol.rs` and `daynews-db/tests/synchronization.rs` therefore exercise the
+production HTTP adapter, including two replicas, restart, partial failure, rollback, undo,
+invalid snapshots, batching, and redirect refusal. They run with `cargo test --workspace`. CI also runs both account dayscripts after the existing
+reader walkthrough on native targets; their steps explicitly skip web DOM. The two HTTP fixture
+sets compose in one Day simulation.
+
+For native UI validation, launch `dayscript/feedbin-sync.yaml` with `DAY_NEWS_SYNC_TEST=1` and a
+fresh `DAY_NEWS_DATA_DIR`. Relaunch against that same store with `dayscript/feedbin-resume.yaml`
+to verify restoration, disconnect, and invalid credentials. Also set
+`DAY_NEWS_SYNC_TEST_SECURE_STORE=1` on both launches to exercise the real native credential vault;
+otherwise the explicit fixture mode supplies only the synthetic test password. Ordinary launches
+never enable interception or that fixture credential. AppKit, iOS, Android, GTK and Qt flows have
+been driven and inspected locally. HarmonyOS is compile-only locally; Windows and Linux vaults
+are cross-checked, with native runtime validation left to those hosts. The live example accepts
+an external owner-only JSON credential file; never pass passwords on the command line or commit
+live scripts, account data, or credentials.
 
 ## Reader
 
@@ -294,7 +399,7 @@ Each of these is a test, because each was a wrong assumption first:
 
 ## Not yet built
 
-Cloud sync (iCloud/Feedbin/Reader), per-feed refresh intervals,
+Additional synchronization providers (iCloud/Reader), per-feed refresh intervals,
 starred-article sync, images cached offline, folder editing in the UI (import creates folders,
 but there is no rename/move), and article pagination beyond the 500-row timeline cap.
 
@@ -585,3 +690,30 @@ has verified successfully, then commits that response with its HTTP validators w
 again and selects the new source. Editing the URL invalidates the ability to subscribe to an old
 preview. Clipboard prefill accepts web/feed URLs only. Downloaded feed files are read with a
 bounded asynchronous FileUrl lease and use their advertised website for fresh discovery.
+
+### Sync progress, cancellation, and authoritative local reset
+
+The engine emits provider-neutral phase/counter observations before requests and after committed
+pages. Feedbin derives optional page totals from the `Link` header's `last` relation; it never
+follows that URL or sends credentials to it. Accounts and the timeline show a determinate bar
+when the extent is known, otherwise a spinner, with article/page counts, a representative feed,
+elapsed time, and a throughput-based stage ETA after a measured sample. Estimates exclude unknown
+future work and may change. Each observation produces one escaped log line without credentials,
+URLs, or article bodies.
+
+Cancel aborts the HTTP future, invalidates stale callbacks/queued writes, and pauses automatic
+triggers until Sync Now (or the next app launch). An already committing transaction may finish;
+downloaded data and unacknowledged intents remain. A durable `importing` marker forces an
+interrupted scan to continue past a previously imported first page on retry. Only successful
+finalization clears that marker and advances the checkpoint.
+
+Clear Local Data and Re-synchronize has a destructive confirmation. It deletes the whole local
+library (including local-only feeds, reader bodies, stars, folders, tags, sync mappings and all
+pending uploads) in one database-worker transaction, retaining login/account identity and app
+preferences. `DatabaseWorker::write_resetting_undo` clears obsolete undo/redo only when that
+transaction succeeds; failure preserves both data and history. Reset queues no server mutations.
+The next cycle downloads subscriptions and remote reading state without a conditional checkpoint.
+
+`dayscript/feedbin-progress.yaml` exercises cancellation, a scheduler interval while paused,
+resume, dismissed reset confirmation, and accepted reset through the ordinary HTTP interface.
+Its explicit fixture latency is test-only (`DAY_NEWS_SYNC_TEST_LATENCY_MS`, requires fixture mode).

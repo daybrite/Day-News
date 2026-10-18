@@ -55,7 +55,7 @@ fn refresh_preserves_read_state_and_adds_only_new() {
     ];
     assert_eq!(db.upsert_articles(f, url, &first), 2);
 
-    db.set_read(article_id(url, "b"), true);
+    db.set_read(article_id(url, "b"), true).unwrap();
     let unread = db.unread_count(Scope::All);
     assert_eq!(unread.get_untracked(), 1);
 
@@ -123,7 +123,7 @@ fn deleting_a_feed_cascades_articles_bodies_and_the_index() {
     assert_eq!(titles(&db, Scope::All, "Findme").len(), 1);
     assert!(db.body(article_id(url, "1")).is_some());
 
-    db.delete_feed(f);
+    db.delete_feed(f).unwrap();
     assert_eq!(db.count(Scope::All).get_untracked(), 0, "articles cascaded");
     assert_eq!(
         titles(&db, Scope::All, "Findme").len(),
@@ -173,14 +173,14 @@ fn mark_all_read_respects_scope_and_is_reversible() {
     let unread = db.unread_count(Scope::All);
     assert_eq!(unread.get_untracked(), 3);
 
-    assert_eq!(db.set_read_all(Scope::Feed(f1), true), 2);
+    assert_eq!(db.set_read_all(Scope::Feed(f1), true).unwrap(), 2);
     assert_eq!(unread.get_untracked(), 1, "only feed A was marked");
     assert_eq!(db.unread_count(Scope::Feed(f2)).get_untracked(), 1);
     assert_eq!(db.unread_count(Scope::Feed(f1)).get_untracked(), 0);
 
-    db.set_read_all(Scope::All, true);
+    db.set_read_all(Scope::All, true).unwrap();
     assert_eq!(unread.get_untracked(), 0);
-    db.set_read_all(Scope::All, false);
+    db.set_read_all(Scope::All, false).unwrap();
     assert_eq!(unread.get_untracked(), 3, "unread-all is reversible");
 }
 
@@ -194,7 +194,7 @@ fn folders_scope_the_timeline_through_the_relation() {
     db.upsert_articles(f1, url, &[item("1", "in folder", "x", 1)]);
 
     assert_eq!(titles(&db, Scope::Folder(tech), ""), ["in folder"]);
-    db.set_read_all(Scope::Folder(tech), true);
+    db.set_read_all(Scope::Folder(tech), true).unwrap();
     assert_eq!(db.unread_count(Scope::All).get_untracked(), 0);
 }
 
@@ -219,7 +219,7 @@ fn tags_cross_articles_and_scope_the_timeline() {
     assert_eq!(db.count(Scope::Tag(keep)).get_untracked(), 0);
     // The tag itself survives an untag; deleting the article drops the membership.
     db.set_tagged(a1, keep, true);
-    db.delete_feed(f);
+    db.delete_feed(f).unwrap();
     assert_eq!(db.count(Scope::Tag(keep)).get_untracked(), 0);
     assert!(db.container.get::<daynews_db::Tag>(keep).is_some());
 }
@@ -247,9 +247,9 @@ fn retention_prunes_old_read_articles_but_never_starred_or_tagged() {
         use day_reactive::Binding;
         store.elem(id).first_seen_at().write(old);
     }
-    db.set_read(article_id(url, "old-read"), true);
-    db.set_read(article_id(url, "old-starred"), true);
-    db.set_read(article_id(url, "old-tagged"), true);
+    db.set_read(article_id(url, "old-read"), true).unwrap();
+    db.set_read(article_id(url, "old-starred"), true).unwrap();
+    db.set_read(article_id(url, "old-tagged"), true).unwrap();
     db.set_starred(article_id(url, "old-starred"), true);
     let keep = db.add_tag("keep");
     db.set_tagged(article_id(url, "old-tagged"), keep, true);
@@ -319,7 +319,7 @@ fn undo_restores_an_unsubscribed_feeds_whole_subtree() {
     day_reactive::flush_sync();
     assert_eq!(db.count(Scope::All).get_untracked(), 1);
 
-    db.delete_feed(f);
+    db.delete_feed(f).unwrap();
     day_reactive::flush_sync();
     assert_eq!(db.count(Scope::All).get_untracked(), 0);
 
@@ -356,7 +356,7 @@ fn conditional_check_persists_validators_without_changing_articles() {
             &[item("one", "Fixture article", "Original body", 100)],
         );
         db.set_feed_body_hash(f, Some("synthetic-fingerprint".into()));
-        db.set_read(article_id(url, "one"), true);
+        db.set_read(article_id(url, "one"), true).unwrap();
         db.set_starred(article_id(url, "one"), true);
         db.feed_checked(
             f,
@@ -603,7 +603,7 @@ fn dashboards_measure_full_scopes_and_reuse_article_metrics_on_feed_checks() {
         .unwrap();
     assert_eq!(checked.words, first.words);
     assert!(checked.feeds[0].next.is_some());
-    db.set_read(article_id(url, "one"), true);
+    db.set_read(article_id(url, "one"), true).unwrap();
     let read = db
         .dashboard_cached(Scope::Feed(feed), now, &mut cache)
         .unwrap();

@@ -15,6 +15,7 @@
 
 pub mod dashboard;
 mod polling;
+pub mod sync;
 
 use day_model::{ModelId, Op};
 use day_persistence::{
@@ -66,6 +67,9 @@ pub struct Feed {
     pub feed_url: String,
     #[model(index)]
     pub title: String,
+    pub custom_title: Option<String>,
+    pub sync_account: Option<u64>,
+    pub unsubscribed: bool,
     /// `None` is a top-level subscription (no folder).
     pub folder: Option<One<Folder>>,
     pub site_url: Option<String>,
@@ -222,15 +226,17 @@ pub fn start_of_today() -> i64 {
 /// The scope's predicate alone (without search or sort), which is what count badges share with
 /// the timeline.
 pub fn scope_pred(scope: Scope) -> Pred {
-    match scope {
-        Scope::All => Pred::Always,
-        Scope::Unread => Article::is_read().eq(false),
-        Scope::Today => Article::published_at().ge(start_of_today()),
-        Scope::Starred => Article::is_starred().eq(true),
-        Scope::Feed(id) => Article::feed().is(id),
-        Scope::Folder(id) => Article::feed().any(Feed::folder().is(id)),
-        Scope::Tag(id) => Article::tags().any(Pred::IdIn(vec![id])),
-    }
+    let visible = Article::feed().any(Feed::unsubscribed().eq(false));
+    visible
+        & match scope {
+            Scope::All => Pred::Always,
+            Scope::Unread => Article::is_read().eq(false),
+            Scope::Today => Article::published_at().ge(start_of_today()),
+            Scope::Starred => Article::is_starred().eq(true),
+            Scope::Feed(id) => Article::feed().is(id),
+            Scope::Folder(id) => Article::feed().any(Feed::folder().is(id)),
+            Scope::Tag(id) => Article::tags().any(Pred::IdIn(vec![id])),
+        }
 }
 
 /// The timeline's fetch: the scope, the search text (through both full-text shadows, titles
@@ -337,7 +343,17 @@ impl Db {
     fn from_driver(driver: Sqlite) -> Result<Db, DbError> {
         let container = ModelContainer::open(
             traced(driver),
-            schema![Folder, Feed, Article, ArticleBody, Tag],
+            schema![
+                Folder,
+                Feed,
+                Article,
+                ArticleBody,
+                Tag,
+                sync::Account,
+                sync::SubscriptionLink,
+                sync::EntryLink,
+                sync::Intent
+            ],
         )?;
         let db = Db { container };
         db.backfill_word_counts()?;
@@ -456,7 +472,8 @@ impl Db {
         };
         // Only overwrite the title when the feed supplied one, so a subscription
         // named by hand (or by its URL) is not blanked by a feed with an empty <title>.
-        if let Some(t) = title.filter(|t| !t.trim().is_empty())
+        if feed.custom_title().peek().is_none()
+            && let Some(t) = title.filter(|t| !t.trim().is_empty())
             && feed.title().peek() != t
         {
             feed.title().write(t.to_string());
@@ -582,7 +599,11 @@ impl Db {
         Ok(self
             .container
             .query::<Feed>()
-            .filter(Feed::next_poll_at().is_null() | Feed::next_poll_at().le(Some(at)))
+            .filter(
+                Feed::sync_account().is_null()
+                    & Feed::unsubscribed().eq(false)
+                    & (Feed::next_poll_at().is_null() | Feed::next_poll_at().le(Some(at))),
+            )
             .sort(Feed::position().asc())
             .sort(Feed::title().asc())
             .live()
@@ -618,16 +639,22 @@ impl Db {
         Ok(())
     }
 
-    pub fn rename_feed(&self, id: u64, title: &str) {
+    pub fn rename_feed(&self, id: u64, title: &str) -> Result<(), DbError> {
         if let Some(feed) = self.container.get::<Feed>(id) {
             feed.title().write(title.to_string());
+            feed.custom_title().write(Some(title.to_string()));
+            self.sync_queue_rename(id, title)?;
         }
+        Ok(())
     }
 
     /// Unsubscribe. Articles, bodies and tag memberships go with the feed (the cascade),
     /// and with an undo stack installed the whole subtree comes back as one unit.
-    pub fn delete_feed(&self, id: u64) {
-        let _ = self.container.delete::<Feed>(id);
+    pub fn delete_feed(&self, id: u64) -> Result<(), DbError> {
+        if !self.sync_unsubscribe(id)? {
+            self.container.delete::<Feed>(id)?;
+        }
+        Ok(())
     }
 
     /// Delete a folder and its feeds (their articles cascade too): the deep cascade.
@@ -714,10 +741,14 @@ impl Db {
             .map(|b| b.content_html().peek())
     }
 
-    pub fn set_read(&self, article: u64, read: bool) {
-        if let Some(a) = self.container.get::<Article>(article) {
+    pub fn set_read(&self, article: u64, read: bool) -> Result<(), DbError> {
+        if let Some(a) = self.container.try_get::<Article>(article)?
+            && a.is_read().peek() != read
+        {
             a.is_read().write(read);
+            self.sync_queue_read(article, read)?;
         }
+        Ok(())
     }
 
     pub fn set_starred(&self, article: u64, starred: bool) {
@@ -738,14 +769,19 @@ impl Db {
         }
     }
 
-    /// Mark everything in `scope` read (or unread): "Mark All as Read". Chunked, so the
-    /// working set stays bounded however many rows the scope holds.
-    pub fn set_read_all(&self, scope: Scope, read: bool) -> usize {
-        let want = !read;
-        let fetch = Fetch::new()
-            .filter(scope_pred(scope) & Article::is_read().eq(want))
-            .sort(Article::published_at().asc());
-        self.bulk_write(fetch, |a| a.is_read().write(read))
+    /// Capture exactly the current scope; a later arriving article is not part of this edit.
+    /// The worker commits article state and outbox together in its enclosing transaction.
+    pub fn set_read_all(&self, scope: Scope, read: bool) -> Result<usize, DbError> {
+        let ids = self
+            .container
+            .query::<Article>()
+            .filter(scope_pred(scope) & Article::is_read().eq(!read))
+            .live()
+            .try_ids()?;
+        for id in &ids {
+            self.set_read(id.handle(), read)?;
+        }
+        Ok(ids.len())
     }
 
     /// Delete read, unstarred, untagged articles older than `days`: the retention pass.
@@ -776,26 +812,6 @@ impl Db {
             let _ = self.container.save();
         }
         n
-    }
-
-    /// Fault, write, and flush a fetch's rows in bounded chunks.
-    fn bulk_write(&self, fetch: Fetch, write: impl Fn(day_model::Elem<Article>)) -> usize {
-        let ids = self
-            .container
-            .query::<Article>()
-            .filter(fetch.pred.clone())
-            .live()
-            .ids();
-        let store = self.container.cache::<Article>();
-        for chunk in ids.chunks(BULK_CHUNK) {
-            let keys: Vec<u64> = chunk.iter().map(|i| i.handle()).collect();
-            let _ = self.container.ensure_resident::<Article>(&keys);
-            for k in &keys {
-                write(store.elem(*k));
-            }
-            let _ = self.container.save();
-        }
-        ids.len()
     }
 
     // ---- the live surface -----------------------------------------------------------------

@@ -5,6 +5,8 @@ edition = "2024"
 license = "Apache-2.0"
 
 [dependencies]
+daynews-sync = { path = "../daynews-sync" }
+serde_json = "1"
 # The local article store rides day-persistence's lazy engine: models declared with
 # #[derive(Model)], relations with cascade rules, generated FTS5 shadows, and live queries
 # the UI binds to directly. SQLite itself comes bundled through the engine.
@@ -18,3 +20,6 @@ day-reactive = { git = "https://github.com/daybrite/day.git" }
 # Statement tracing rides the standard logging facade the day crates already pull in; the
 # engine's trace hook logs each executed SQL at `trace!` in debug builds (Day-Sketch's shape).
 log = "0.4"
+
+[dev-dependencies]
+futures-util = "0.3"

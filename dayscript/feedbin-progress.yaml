@@ -1,0 +1,39 @@
+# Isolated store; DAY_NEWS_SYNC_TEST=1 DAY_NEWS_SYNC_TEST_LATENCY_MS=1500.
+# Real day-part-http simulation latency keeps the in-flight cancellation observable.
+name: feedbin-progress
+description: Progress, cancellation, paused scheduler, and confirmed local reset.
+flow:
+  - dialog_mode: { mode: scripted }
+  - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: prefs-group-accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - input: { id: sync-username, text: fixture@example.invalid, skip_on: [web-dom] }
+  - input: { id: sync-password, text: fixture-password, skip_on: [web-dom] }
+  - tap: { id: sync-sign-in, skip_on: [web-dom] }
+  - wait_for: { id: sync-preview, skip_on: [web-dom] }
+  - tap: { id: sync-connect, skip_on: [web-dom] }
+  - assert_text: { id: sync-progress-activity, key: sync_progress_articles, args: {articles: 1, page: 1, total: 2}, skip_on: [web-dom] }
+  - assert_visible: { id: sync-progress-bar, skip_on: [web-dom] }
+  - assert_visible: { id: sync-progress-time, skip_on: [web-dom] }
+  - screenshot: { name: sync-progress, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-progress, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: sync-cancel-transfer, skip_on: [web-dom] }
+  - pause: { secs: 6, skip_on: [web-dom] }
+  - assert_text: { id: sync-status, key: sync_paused, skip_on: [web-dom] }
+  - assert_missing: { id: sync-cancel-transfer, skip_on: [web-dom] }
+  - tap: { id: sync-now, skip_on: [web-dom] }
+  - assert_text: { id: sync-status, key: sync_ready, timeout_secs: 25, skip_on: [web-dom] }
+  - tap: { id: sync-reset, skip_on: [web-dom] }
+  - assert_presented: { skip_on: [web-dom] }
+  - respond: { dismiss: true, skip_on: [web-dom] }
+  - assert_text: { id: sync-status, key: sync_ready, skip_on: [web-dom] }
+  - tap: { id: sync-reset, skip_on: [web-dom] }
+  - assert_presented: { skip_on: [web-dom] }
+  - respond: { button: 0, skip_on: [web-dom] }
+  - assert_text: { id: sync-progress-activity, key: sync_progress_articles, args: {articles: 1, page: 1, total: 2}, skip_on: [web-dom] }
+  - assert_text: { id: sync-status, key: sync_ready, timeout_secs: 25, skip_on: [web-dom] }
+  - assert_text: { id: sync-pending, key: sync_pending, args: {count: 0}, skip_on: [web-dom] }
+  - screenshot: { name: sync-reset-complete, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-reset-complete, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: sync-disconnect, skip_on: [web-dom] }
+  - wait_for: { id: sync-sign-in, skip_on: [web-dom] }

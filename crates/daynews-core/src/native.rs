@@ -2,11 +2,15 @@
 //! live on one database worker. Committed, owned projections are the only bridge.
 use day_core::Ambient;
 use day_model::Source;
+mod sync;
+pub use sync::*;
+
 use day_persistence::{DatabaseWorker, DbError, ModelContainer, Pred};
 use day_reactive::Binding;
 use day_reactive::{Effect, Signal, batch, watch};
 use daynews_db::{
-    Article, ArticleFields, ArticleRelations, Db, IncomingArticle, Scope, timeline_fetch,
+    Article, ArticleFields, ArticleRelations, Db, FeedFields, IncomingArticle, Scope,
+    timeline_fetch,
 };
 pub use daynews_db::{Scope as TimelineScope, article_id, feed_id, folder_id, tag_id};
 use futures_util::{
@@ -381,7 +385,19 @@ pub fn init(format_status: fn(StatusMessage) -> String) {
                 if let Err(e) = worker.undo(redo).await {
                     report(e);
                 }
+                if let Err(e) = worker
+                    .write(|c| {
+                        Db {
+                            container: c.clone(),
+                        }
+                        .sync_after_undo()
+                    })
+                    .await
+                {
+                    report(e);
+                }
                 update_undo(&worker).await;
+                sync_request_soon();
             });
         },
     );
@@ -459,6 +475,7 @@ fn edit(f: impl FnOnce(&Db) -> Result<(), DbError> + Send + 'static) {
             report(e);
         }
         update_undo(&worker).await;
+        sync_request_soon();
     });
 }
 
@@ -479,6 +496,7 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
     })?;
     let feeds = db
         .query::<Feed>()
+        .filter(Feed::unsubscribed().eq(false))
         .sort(Feed::position().asc())
         .sort(Feed::title().asc())
         .live()
@@ -687,7 +705,7 @@ pub fn open_next_unread() -> bool {
                     sc.reader_open.set(true);
                 });
                 edit(move |db| {
-                    db.set_read(id, true);
+                    db.set_read(id, true)?;
                     Ok(())
                 });
             }
@@ -707,7 +725,7 @@ pub fn set_read(id: u64, read: bool) {
         });
     }
     edit(move |db| {
-        db.set_read(id, read);
+        db.set_read(id, read)?;
         Ok(())
     });
 }
@@ -723,7 +741,7 @@ pub fn toggle_read(id: u64) {
     // Read-modify-write on the queue, never against a potentially stale UI snapshot.
     edit(move |db| {
         if let Some(a) = db.container.try_get::<Article>(id)? {
-            a.is_read().write(!a.is_read().peek());
+            db.set_read(id, !a.is_read().peek())?;
         }
         Ok(())
     });
@@ -754,14 +772,14 @@ pub fn mark_scope_read(read: bool) {
     let sc = scene();
     let scope = sc.scope.get_untracked();
     edit(move |db| {
-        db.set_read_all(scope, read);
+        db.set_read_all(scope, read)?;
         Ok(())
     });
     sc.sticky_read.set(vec![]);
 }
 pub fn mark_feed_read(feed: u64, read: bool) {
     edit(move |db| {
-        db.set_read_all(Scope::Feed(feed), read);
+        db.set_read_all(Scope::Feed(feed), read)?;
         Ok(())
     });
 }
@@ -810,10 +828,12 @@ pub fn subscribe(url: &str) {
         let copy = url.clone();
         match worker
             .write(move |db| {
-                Ok(Db {
+                let db = Db {
                     container: db.clone(),
-                }
-                .add_feed(&copy, &fallback_title(&copy), None))
+                };
+                let id = db.add_feed(&copy, &fallback_title(&copy), None);
+                db.sync_adopt_local(id)?;
+                Ok(id)
             })
             .await
         {
@@ -834,10 +854,12 @@ pub async fn subscribe_discovered(
     let copy = url.clone();
     let id = worker
         .write(move |container| {
-            Ok(Db {
+            let db = Db {
                 container: container.clone(),
-            }
-            .add_feed(&copy, &fallback_title(&copy), None))
+            };
+            let id = db.add_feed(&copy, &fallback_title(&copy), None);
+            db.sync_adopt_local(id)?;
+            Ok(id)
         })
         .await
         .map_err(|e| e.to_string())?;
@@ -845,6 +867,7 @@ pub async fn subscribe_discovered(
         return Err("subscription import failed".into());
     }
     update_undo(&worker).await;
+    sync_request_soon();
     Ok(id)
 }
 /// Fixture subscriptions use the same awaitable import, preserving bundled localization.
@@ -858,7 +881,7 @@ pub async fn subscribe_asset(url: String) -> Result<u64, String> {
 }
 pub fn unsubscribe(feed: u64) {
     edit(move |db| {
-        db.container.delete::<daynews_db::Feed>(feed)?;
+        db.delete_feed(feed)?;
         Ok(())
     });
     let sc = scene();
@@ -878,7 +901,7 @@ pub fn create_folder(name: &str) -> Option<u64> {
 pub fn rename_feed(feed: u64, title: &str) {
     let title = title.to_owned();
     edit(move |db| {
-        db.rename_feed(feed, &title);
+        db.rename_feed(feed, &title)?;
         Ok(())
     });
 }
@@ -946,6 +969,7 @@ pub fn move_feed(feed: u64, to: usize) {
 /// other feed; the bounded stream keeps resource use predictable. Futures still poll on
 /// the UI executor, where the store and reactive state belong.
 pub fn refresh_all() {
+    sync_auto_now();
     let st = state();
     if st.refresh_progress.get_untracked().is_some() {
         return; // already running
@@ -1051,6 +1075,18 @@ impl Drop for UpdatingFeed {
 }
 
 async fn refresh_one(id: u64, url: String) -> bool {
+    if let Ok(w) = ready_worker().await {
+        let managed = w
+            .read(move |c| {
+                Ok(c.try_get::<daynews_db::Feed>(id)?
+                    .is_some_and(|f| f.sync_account().peek().is_some()))
+            })
+            .await;
+        if matches!(managed, Ok(true)) {
+            sync_auto_now();
+            return true;
+        }
+    }
     let store = store();
     if !store.scheduled_feeds.borrow_mut().insert(id) {
         return true;
@@ -1253,7 +1289,8 @@ pub async fn import_opml(text: &str) -> std::result::Result<(usize, usize), Stri
                     existing += 1;
                     continue;
                 }
-                d.add_feed(&url, &feed.display_title(), folder);
+                let id = d.add_feed(&url, &feed.display_title(), folder);
+                d.sync_adopt_local(id)?;
                 added += 1;
             }
             Ok((added, existing))

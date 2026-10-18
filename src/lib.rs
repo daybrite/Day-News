@@ -6,6 +6,8 @@
 
 use day::prelude::*;
 
+#[cfg(not(target_arch = "wasm32"))]
+mod accounts;
 mod commands;
 mod dashboard;
 mod extraction;
@@ -138,6 +140,11 @@ pub fn root() -> impl Piece {
     let prefs = settings::install();
     day::on_lifecycle(Lifecycle::WillTerminate, refresh_schedule::stop);
     feed_icons::init();
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        daynews_core::sync_install();
+        day::on_lifecycle(Lifecycle::DidBecomeActive, daynews_core::sync_auto_now);
+    }
     // The undo history rides the container's change log; the platform bridge gives it ⌘Z,
     // the Edit menu, and the mobile gestures.
     #[cfg(target_arch = "wasm32")]

@@ -5,6 +5,10 @@ edition = "2024"
 license = "Apache-2.0"
 
 [dependencies]
+daynews-sync = { path = "../daynews-sync" }
+daynews-credentials = { path = "../daynews-credentials" }
+day-async = { git = "https://github.com/daybrite/day.git" }
+log = "0.4"
 futures-util = "0.3"
 daynews-db = { path = "../daynews-db" }
 daynews-time = { path = "../daynews-time" }

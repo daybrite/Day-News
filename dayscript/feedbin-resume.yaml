@@ -1,0 +1,22 @@
+# Run against the same store after feedbin-sync.yaml, in a NEW process.
+# Add DAY_NEWS_SYNC_TEST_SECURE_STORE=1 to both launches to exercise the native vault.
+name: feedbin-resume
+description: Restore credentials after relaunch, synchronize, disconnect, and reject invalid login.
+flow:
+  - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: prefs-group-accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: sync-account, skip_on: [web-dom] }
+  - pause: { secs: 3, skip_on: [web-dom] }
+  - assert_text: { id: sync-status, key: sync_ready, timeout_secs: 25, skip_on: [web-dom] }
+  - screenshot: { name: sync-restored, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-restored, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: sync-disconnect, skip_on: [web-dom] }
+  - wait_for: { id: sync-username, skip_on: [web-dom] }
+  - pause: { secs: 1, skip_on: [web-dom] }
+  - input: { id: sync-username, text: fixture@example.invalid, skip_on: [web-dom] }
+  - input: { id: sync-password, text: invalid-fixture-password, skip_on: [web-dom] }
+  - tap: { id: sync-sign-in, skip_on: [web-dom] }
+  - pause: { secs: 1, skip_on: [web-dom] }
+  - assert_text: { id: sync-status, key: sync_auth_error, skip_on: [web-dom] }
+  - assert_missing: { id: sync-preview, skip_on: [web-dom] }

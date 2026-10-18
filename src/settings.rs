@@ -86,8 +86,14 @@ pub fn install() -> Prefs {
         .group(articles_group())
         .group(reader_group())
         .group(browser_group())
-        .group(feeds_group(pruned))
-        .install();
+        .group(feeds_group(pruned));
+    #[cfg(not(target_arch = "wasm32"))]
+    let prefs = prefs.group(
+        Group::new("accounts", res::str::settings_accounts())
+            .icon(res::vectors::manage_accounts)
+            .custom(crate::accounts::page),
+    );
+    let prefs = prefs.install();
     // These outlive any window, like the prefs' own persistence watches.
     day::reactive::Scope::root().enter(|| {
         // daynews-core publishes the grouping flag the timeline reads; it has no view of the

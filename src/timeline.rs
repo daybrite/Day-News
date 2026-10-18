@@ -411,6 +411,8 @@ pub fn timeline_pane() -> impl Piece {
                 .grow_w()
             },
         ),
+        #[cfg(not(target_arch = "wasm32"))]
+        crate::accounts::sync_progress(),
         // Refresh progress, shown only while a refresh is running.
         when(
             move || st.refresh_progress.get().is_some(),

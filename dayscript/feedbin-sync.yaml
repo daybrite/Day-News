@@ -1,0 +1,32 @@
+# Run with DAY_NEWS_SYNC_TEST=1 and a fresh DAY_NEWS_DATA_DIR.
+# The synthetic server intercepts the production day-part-http client.
+name: feedbin-sync
+description: Native account login, preview, article import and reading.
+flow:
+  - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: prefs-group-accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: sync-username, skip_on: [web-dom] }
+  - screenshot: { name: sync-login, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-login, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - input: { id: sync-username, text: fixture@example.invalid, skip_on: [web-dom] }
+  - input: { id: sync-password, text: fixture-password, skip_on: [web-dom] }
+  - tap: { id: sync-sign-in, skip_on: [web-dom] }
+  - wait_for: { id: sync-preview, skip_on: [web-dom] }
+  - screenshot: { name: sync-preview, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-preview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - tap: { id: sync-connect, skip_on: [web-dom] }
+  - wait_for: { id: sync-account, skip_on: [web-dom] }
+  - pause: { secs: 3, skip_on: [web-dom] }
+  - assert_text: { id: sync-status, key: sync_ready, timeout_secs: 25, skip_on: [web-dom] }
+  - screenshot: { name: sync-connected, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-connected, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - close_window: { window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: "feed:3155635484843577116", skip_on: [web-dom] }
+  - wait_for: { id: article-row-0, skip_on: [web-dom] }
+  - screenshot: { name: sync-articles, skip_on: [web-dom] }
+  - select: { id: timeline, index: 0, skip_on: [web-dom] }
+  - wait_for: { id: reader-web, skip_on: [web-dom] }
+  - screenshot: { name: sync-reader, skip_on: [web-dom] }

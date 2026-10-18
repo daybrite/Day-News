@@ -298,3 +298,55 @@ reader_script_save = Save Script
 reader_script_saved = Script saved. It will be used the next time full content is loaded.
 reader_script_invalid_source = Enter a nonempty script, at most 256 KiB, without NUL characters.
 reader_script_failed = The custom reader script failed. Check its extract function and return value, or remove the override in Reader Script settings to restore the default.
+
+# Account synchronization
+settings_accounts = Accounts
+sync_feedbin = Feedbin
+sync_description = Synchronize subscriptions and read/unread status between your devices using Feedbin.
+sync_username = Email address
+sync_password = Password
+sync_sign_in = Sign In
+sync_preview = Subscriptions in Feedbin: { $remote }. Eligible local subscriptions: { $local }.
+sync_read_state_import = Feedbin’s reading state will be used for synchronized articles. Existing unmatched local history stays on this device.
+sync_merge = Also upload my local subscriptions to Feedbin
+sync_connect = Connect and Synchronize
+sync_cancel = Cancel
+sync_account = Connected as { $username }
+sync_pending = Changes waiting to synchronize: { $count }
+sync_last = Last synchronized: { $time }
+sync_never = Not synchronized yet
+sync_now = Sync Now
+sync_disconnect = Disconnect
+sync_disconnect_note = Disconnecting keeps downloaded articles on this device and leaves your Feedbin account unchanged.
+sync_auth_error = Sign-in failed or your credentials have expired. Please sign in again.
+sync_storage_error = Secure credentials or account data could not be saved. Check that your device’s credential store is available and unlocked.
+sync_network_error = Unable to reach Feedbin. Your changes are saved and will be retried.
+sync_failed = Some changes could not be synchronized. Your pending changes have been kept. Try again.
+sync_working = Synchronizing…
+sync_ready = Synchronization is up to date
+
+sync_waiting = Changes are waiting to synchronize…
+
+sync_cancel_transfer = Cancel Synchronization
+sync_paused = Synchronization cancelled. Downloaded articles and pending changes are kept. Choose Sync Now to resume.
+sync_reset = Clear Local Data and Re-synchronize…
+sync_reset_title = Clear local data and re-synchronize?
+sync_reset_message = This deletes all local subscriptions, articles, saved reader content, stars, folders, tags, pending changes, and undo history on this device. Unsynchronized changes will be lost. Your Feedbin account, saved login, and app preferences are kept. Nothing is deleted from Feedbin; subscriptions, articles, and read/unread status will be downloaded again.
+sync_reset_confirm = Clear and Re-synchronize
+sync_progress_preparing = Preparing synchronization…
+sync_progress_upload = Uploading local changes: { $done }/{ $total }
+sync_progress_subscriptions = Synchronizing subscriptions: { $count } feeds received
+sync_progress_read = Synchronizing read/unread status…
+sync_progress_articles = Downloading articles: page { $page }/{ $total } · { $articles ->
+    [one] 1 article saved
+   *[other] { $articles } articles saved
+    }
+sync_progress_articles_unknown = Downloading articles · Pages: { $pages } · Articles saved: { $articles }
+sync_progress_feed = Current page includes: { $title }
+sync_progress_missing = Downloading missing unread articles: { $done }/{ $total }
+sync_progress_finalizing = Updating reading state and saving synchronization checkpoint…
+sync_progress_complete = Synchronization complete
+sync_progress_resetting = Clearing local library…
+sync_progress_duration = { $minutes }m { $seconds }s
+sync_progress_eta = Elapsed { $elapsed } · About { $remaining } remaining in this stage
+sync_progress_estimating = Elapsed { $elapsed } · Estimating time remaining…

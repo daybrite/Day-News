@@ -53,6 +53,7 @@ day = { git = "https://github.com/daybrite/day.git", features = ["model"] }
 day-piece-webview = { git = "https://github.com/daybrite/day-piece-webview.git" }
 daynews-feed = { path = "crates/daynews-feed" }
 daynews-core = { path = "crates/daynews-core" }
+daynews-sync = { path = "crates/daynews-sync" }
 daynews-time = { path = "crates/daynews-time" }
 daynews-db = { path = "crates/daynews-db" }
 daynews-opml = { path = "crates/daynews-opml" }
@@ -70,6 +71,8 @@ members = [
     "crates/daynews-feed",
     "crates/daynews-opml",
     "crates/daynews-time",
+    "crates/daynews-sync",
+    "crates/daynews-credentials",
 ]
 
 [workspace.package]

@@ -260,7 +260,8 @@ mod tests {
                 .any(|sql| sql.contains("FROM articles a WHERE")),
             "a successful conditional check must reuse article aggregates"
         );
-        db.set_read(crate::article_id(url, "fixture-one"), true);
+        db.set_read(crate::article_id(url, "fixture-one"), true)
+            .unwrap();
         statements.lock().unwrap().clear();
         let changed = db
             .dashboard_cached(Scope::Feed(feed), 200, &mut cache)
