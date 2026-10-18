@@ -38,6 +38,20 @@ fn document(a: &StoredArticle, control_above: bool) -> String {
             )
         };
     }
+    if cfg!(any(feature = "uikit", feature = "mdc", feature = "arkui"))
+        && let Some(script) = resource(crate::res::assets::reader::swipe_js)
+    {
+        // The document owns the recognizer so it can yield to selection, zoom and
+        // horizontally scrollable publication content. It also works in Reader Mode.
+        document = document.replace(
+            "</body></html>",
+            &format!(
+                "<script data-article-id=\"{}\">{}</script></body></html>",
+                a.id,
+                String::from_utf8_lossy(script.as_slice())
+            ),
+        );
+    }
     document
 }
 
@@ -354,6 +368,18 @@ fn reader_body(
             .go(go)
             .reload(reload)
             .on_external_link(move |url| {
+                if let Some((forward, id)) = swipe_navigation(url) {
+                    // An outgoing document can still deliver a gesture while the next
+                    // article is loading. Never let it skip another article or reopen
+                    // a reader that the user just dismissed with the edge-back gesture.
+                    if cfg!(any(feature = "uikit", feature = "mdc", feature = "arkui"))
+                        && scene.reader_open.get_untracked()
+                        && scene.selected.get_untracked() == Some(id)
+                    {
+                        crate::commands::open_adjacent_article(forward);
+                    }
+                    return day_piece_webview::LinkPolicy::Ignore;
+                }
                 if let Some(id) = url
                     .strip_prefix("day-news-reader://error/")
                     .and_then(|id| id.parse::<u64>().ok())
@@ -399,6 +425,19 @@ fn reader_body(
             .grow()
             .any()
     }
+}
+
+fn swipe_navigation(url: &str) -> Option<(bool, u64)> {
+    [
+        ("day-news-reader://next/", true),
+        ("day-news-reader://previous/", false),
+    ]
+    .into_iter()
+    .find_map(|(prefix, forward)| {
+        url.strip_prefix(prefix)
+            .and_then(|id| id.parse().ok())
+            .map(|id| (forward, id))
+    })
 }
 
 /// The article as pieces: the masthead order the document uses (source, headline, date) and
@@ -668,6 +707,26 @@ pub fn reader_pane() -> impl Piece {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn swipe_links_bind_direction_to_the_source_article() {
+        assert_eq!(
+            super::swipe_navigation("day-news-reader://next/42"),
+            Some((true, 42))
+        );
+        assert_eq!(
+            super::swipe_navigation("day-news-reader://previous/42"),
+            Some((false, 42))
+        );
+        for invalid in [
+            "https://example.invalid/next/42",
+            "day-news-reader://next/",
+            "day-news-reader://next/42/1",
+            "day-news-reader://load/42",
+        ] {
+            assert_eq!(super::swipe_navigation(invalid), None);
+        }
+    }
+
     #[test]
     fn document_escapes_metadata_and_resolves_publication_links() {
         // Synthetic publication data, not app-owned UI strings.

@@ -487,6 +487,18 @@ missing selections disable movement, while no selection starts at the first/last
 The existing selection binding scrolls and highlights the native row. Both commands live in
 Go and in the reader toolbar; Next Unread has a distinct double-chevron image.
 
+On iOS, Android and HarmonyOS, the reader document also recognizes horizontal single-finger
+swipes: left opens Next Article and right opens Previous Article through the same selection
+path. The bundled `reader/swipe.js` yields to vertical scrolling, horizontal scroll containers,
+text selection, controls, pinch zoom and system edge gestures. A gesture must travel at least
+64 CSS pixels within one second; cancelled, diagonal and short drags do not navigate. Links
+remain tappable but do not open when swiped. The source article ID travels as a string in the
+internal resource link; Rust rejects gestures from an outgoing document or a closed reader.
+The recognizer stays active for appended and replacement Reader Mode content. Desktop reader
+documents do not install it. `tests/reader-swipes.cjs` covers arbitration with DOM events and
+real Chromium touch input; `dayscript/reader-swipes.yaml` covers next/previous selection in
+mobile WebViews alongside the CI walkthrough.
+
 Copy Article Link uses the displayed article URL and Day's asynchronous clipboard API, started
 inside the user action for browser permissions. It is available in Article and the secondary
 reader toolbar. Article context menus are built when summoned, show state-appropriate actions,

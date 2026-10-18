@@ -121,6 +121,16 @@ fn adjacent_article(forward: bool) -> Option<u64> {
         .with(|rows| adjacent_id(rows.iter().map(|a| a.id), selected, forward))
 }
 
+/// Shared by keyboard/menu navigation and mobile reader swipes.
+pub(crate) fn open_adjacent_article(forward: bool) {
+    if let Some(id) = adjacent_article(forward) {
+        daynews_core::open_article(id);
+        if cfg!(feature = "appkit") {
+            daynews_core::scene().timeline_focused.set(true);
+        }
+    }
+}
+
 pub(crate) fn navigate_article(forward: bool) -> CommandHandle {
     Command {
         id: if forward {
@@ -133,14 +143,7 @@ pub(crate) fn navigate_article(forward: bool) -> CommandHandle {
         } else {
             res::str::menu_previous_article()
         },
-        action: move || {
-            if let Some(id) = adjacent_article(forward) {
-                daynews_core::open_article(id);
-                if cfg!(feature = "appkit") {
-                    daynews_core::scene().timeline_focused.set(true);
-                }
-            }
-        },
+        action: move || open_adjacent_article(forward),
     }
     .build()
     .icon(if forward { Symbol::Down } else { Symbol::Up })

@@ -45,6 +45,21 @@ reader page in an isolated macOS test app, set `window.scrollTo(0,0)` through `d
 The helper requires macOS Accessibility permission and sends a real wheel event to the app's
 visible content pane. This check passed on AppKit, GTK, and Qt. It does change desktop focus.
 
+For mobile article paging, run `dayscript/reader-swipes.yaml` after seeding. It sends touch
+events into the actual mobile WebView and checks left/next, right/previous, and the first
+article boundary. `PLAYWRIGHT_MODULE=/path/to/node_modules/playwright node tests/reader-swipes.cjs`
+tests the bundled recognizer's handling of controls, selection, pinch zoom, link taps, cancelled
+and diagonal gestures, plus real Chromium input for vertical and horizontal content scrolling.
+The recognizer deliberately leaves 40 CSS pixels at both edges for system back gestures.
+
+OS-level validation used the isolated Field Notes fixture on iPhone 15 Pro (iOS 17 simulator)
+and Android. On a 1080×2400 Android emulator, `adb shell input swipe 800 800 280 800 250`
+must change the monarch article to the honeybee article; reverse the coordinates to return.
+`adb shell input swipe 540 1600 540 700 350` must scroll the monarch article without changing
+its title. Check title and `window.scrollY` through `day drive`/`web_eval`, since a successful
+input command alone does not prove navigation. UIKit is checked with XCTest window coordinates
+at 75%→25% width and 35% height, then the reverse, using a 0.05-second press followed by drag.
+
 For article scroll reset, start `python3 tests/reader-view-server.py 28763`, then launch with
 a fresh isolated store and `--script dayscript/reader-scroll-navigation.yaml`. It opens long
 synthetic articles and checks Next Unread (the Cmd-/ command), Next, Previous, and direct
