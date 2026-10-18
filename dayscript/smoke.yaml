@@ -19,4 +19,4 @@ flow:
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: refresh-interval-picker }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }

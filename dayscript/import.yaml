@@ -26,6 +26,6 @@ flow:
       { path: "${project}/crates/daynews-opml/tests/data/daynews.opml" }
   - pause: { secs: 2 }
   - assert_text: { id: feeds-count, text: "7 feeds" }
-  - screenshot: { name: imported, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - screenshot: { name: imported, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - screenshot: { name: imported, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }

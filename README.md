@@ -71,7 +71,7 @@ publishes the results to the [gallery](https://daybrite.dev/gallery/Day-News/).
 
 | Windows · XAML | Linux · GTK | Linux · Qt |
 |:---:|:---:|:---:|
-| <kbd><img src="https://daybrite.github.io/Day-News/gallery/windows-xaml/en/article.png" width="300" alt="All Articles on Windows"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/linux-gtk/en/timeline.png" width="300" alt="Timeline on GTK"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/linux-qt/en/timeline.png" width="300" alt="Timeline on Qt"></kbd> |
+| <kbd><img src="https://daybrite.github.io/Day-News/gallery/windows-winui/en/article.png" width="300" alt="All Articles on Windows"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/linux-gtk/en/timeline.png" width="300" alt="Timeline on GTK"></kbd> | <kbd><img src="https://daybrite.github.io/Day-News/gallery/linux-qt/en/timeline.png" width="300" alt="Timeline on Qt"></kbd> |
 
 | Web · DOM | Android · Material |
 |:---:|:---:|

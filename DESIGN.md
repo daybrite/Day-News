@@ -4,7 +4,7 @@ A feed reader on the [Day](https://daybrite.dev) framework, modeled on
 [NetNewsWire](https://github.com/Ranchero-Software/NetNewsWire): subscriptions on the left, a
 timeline in the middle, the article on the right — collapsing to push navigation on a phone.
 
-Targets: `macos-appkit`, `macos-gtk`, `macos-qt`, `windows-xaml`, `ios-uikit`, `android-mdc`,
+Targets: `macos-appkit`, `macos-gtk`, `macos-qt`, `windows-winui`, `ios-uikit`, `android-mdc`,
 `web-dom`, `harmony-arkui`.
 
 > `web-dom` builds and runs the whole shell, but a browser may only fetch feeds that send CORS

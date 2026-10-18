@@ -23,7 +23,7 @@ id = "dev.daybrite.news"
 scheme = "daynews"
 title = "Day News"
 build = 8
-targets = ["macos-appkit", "macos-gtk", "macos-qt", "windows-winui", "windows-xaml", "ios-uikit", "android-mdc", "web-dom", "harmony-arkui"]
+targets = ["macos-appkit", "macos-gtk", "macos-qt", "windows-winui", "ios-uikit", "android-mdc", "web-dom", "harmony-arkui"]
 
 [window]
 width = 1440

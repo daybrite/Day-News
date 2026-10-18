@@ -10,12 +10,12 @@ flow:
   - select: { id: preview-lines-picker, index: 3 }
   # Slider values are driven where the row's id is on the control itself; the UIKit, ArkUI
   # GTK and XAML settings rows put it on the layout wrapper, which a probe cannot read.
-  - set_value: { id: list-size-slider, value: 170, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
+  - set_value: { id: list-size-slider, value: 170, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: reader-size-slider }
-  - set_value: { id: reader-size-slider, value: 160, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui, windows-xaml] }
+  - set_value: { id: reader-size-slider, value: 160, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - select: { id: reader-font-picker, index: 1 }
   - input: { id: reader-background-color, text: '#fff2d5' }
   - input: { id: reader-text-color, text: '#243448' }

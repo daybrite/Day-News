@@ -19,7 +19,7 @@ flow:
   - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: language-picker }
   - select: { id: theme-picker, index: 0, only_on: [macos-appkit, ios-uikit] }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: 'feed:9105033381806695217' }
   # Keep the publisher link available even when a prior walkthrough marked every story read.
   - wait_for: { id: article-row-0 }
@@ -78,7 +78,7 @@ flow:
   - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: language-picker }
   - select: { id: theme-picker, index: 1, only_on: [macos-appkit, ios-uikit] }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: 'feed:9105033381806695217' }
   - toolbar: { item: feed-overview }
   - wait_for: { id: dashboard-habits-chart }
@@ -89,7 +89,7 @@ flow:
   - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: language-picker }
   - select: { id: theme-picker, index: 2, only_on: [macos-appkit, ios-uikit] }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml] }
+  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: all }
   - toolbar: { item: feed-overview }
   - wait_for: { id: dashboard-publisher-chart }
