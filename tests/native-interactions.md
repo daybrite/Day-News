@@ -129,3 +129,33 @@ Back/Up cycles; wide section replacement, wide reader Back and wide-to-compact
 reader navigation, and committed native edge Back swipes. Phone and tablet screenshots inspected. Predictive gesture
 cancellation, physical foldables and process-death restoration require additional
 acceptance coverage; system Back key coverage does not establish those behaviors.
+
+### Smart-feed activation and native pull-to-refresh (October 2026)
+
+`tests/ios-navigation` contains an XCTest runner using actual UIKit taps and pulls.
+`testEmptySmartFeeds` expects an isolated, empty English library on the feeds root;
+it checks all four smart feeds and repeated Today → Back → Today. It asserts that the
+empty label is **hittable**, not merely present in UIKit's retained offscreen columns.
+Generate the runner with `xcodegen generate --spec tests/ios-navigation/project.yml`,
+then build and run it using `xcodebuild build-for-testing` / `test-without-building`,
+an explicit simulator destination and a derived-data directory outside the repository.
+Use `-only-testing:NavigationProbe/NavigationTests/testEmptySmartFeeds` for this case.
+
+For `testPullToRefresh`, run `python3 tests/feed-refresh-server.py`, then launch with
+an isolated `DAY_NEWS_DATA_DIR` and `--script dayscript/pull-refresh-seed.yaml`.
+On Android also use `adb -s SERIAL reverse tcp:28762 tcp:28762`, select that same device
+with `--android-device SERIAL`, and run `tests/android-pull-refresh.py --adb PATH --serial SERIAL`.
+On iOS select `-only-testing:NavigationProbe/NavigationTests/testPullToRefresh`.
+Run the two gesture suites sequentially because both assert the fixture server's HTTP counts.
+The iOS case verifies refresh, completion, a subsequent pull and article navigation;
+XCTest waits for native animation quiescence, so the Android case checks a second pull
+*during* loading does not duplicate work. Screenshots capture the native active/completed
+indicators. Day's `crates/day-pieces/tests/nav_refresh.rs` additionally checks declined
+requests, external busy-state writes, disposal and same-route activation without rebuilding.
+
+The slow-feed seed also selects Starred immediately after native Back while refresh is
+active, verifies the synchronizing message, then checks it returns to the ordinary empty
+state. This reproduced UIKit's exception from pushing the same supplementary controller
+twice during a transition. Day now coalesces column requests, waits for transitions, and
+checks the native stack before showing the column. The fixed simulator also completed
+32 consecutive section/Back cycles without a failure.

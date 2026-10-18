@@ -4,6 +4,7 @@ nav_all_unread = All Unread
 nav_all_articles = All Articles
 nav_starred = Starred
 timeline_empty = No articles
+timeline_synchronizing = Articles synchronizing…
 timeline_empty_unread = All caught up
 reader_empty = Select an article
 reader_no_content = This article has no content. Open it in your browser to read it.

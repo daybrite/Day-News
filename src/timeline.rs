@@ -473,7 +473,9 @@ fn timeline_rows(
                         spacer(),
                         // An empty unread scope is an achievement, not an absence.
                         label(move || {
-                            if sc.scope.get() == Scope::Unread {
+                            if crate::commands::refreshing() {
+                                crate::res::str::timeline_synchronizing().format()
+                            } else if sc.scope.get() == Scope::Unread {
                                 crate::res::str::timeline_empty_unread().format()
                             } else {
                                 crate::res::str::timeline_empty().format()

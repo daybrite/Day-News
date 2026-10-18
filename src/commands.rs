@@ -16,18 +16,32 @@ pub(crate) fn preview_site() -> CommandHandle {
     .enabled(|| crate::site_browser::selected_feed().is_some_and(crate::site_browser::can_preview))
 }
 
+pub(crate) fn refreshing() -> bool {
+    let refreshing = daynews_core::state().refresh_progress.get().is_some();
+    #[cfg(not(target_arch = "wasm32"))]
+    let refreshing = refreshing || daynews_core::sync_status().get().busy;
+    refreshing
+}
+
+pub(crate) fn refresh_now() {
+    // Explicit gestures/commands resume cancelled sync; automatic timers keep it paused.
+    #[cfg(not(target_arch = "wasm32"))]
+    daynews_core::sync_now();
+    daynews_core::refresh_all();
+}
+
 pub(crate) fn refresh() -> CommandHandle {
     Command {
         id: "refresh",
         label: res::str::refresh_action(),
-        action: daynews_core::refresh_all,
+        action: refresh_now,
     }
     .build()
     .icon(Symbol::Refresh)
     .shortcut(Shortcut::new("r"))
     .enabled(|| {
         let st = daynews_core::state();
-        st.refresh_progress.get().is_none() && st.feeds.with(|feeds| !feeds.is_empty())
+        !refreshing() && st.feeds.with(|feeds| !feeds.is_empty())
     })
 }
 

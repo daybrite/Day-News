@@ -410,6 +410,17 @@ is why the timeline pins a uniform pitch and why a wrapped title can clip its fo
 
 ### Feed refresh and sidebar identity
 
+The mobile feeds root uses Day's `Nav::refreshable` with native UIKit/Android pull controls.
+Its busy state combines RSS refresh and account synchronization, so the indicator ends on
+completion, failure or cancellation, and pulls during active work do not start duplicates.
+Explicit refresh commands and pulls resume paused account sync; automatic timers respect
+cancellation. Other platforms retain their Refresh command. Empty article scopes remain
+navigable and display a localized synchronizing message while work is active. Smart-feed
+reselection clears the reader just like feed reselection; Day presents the resident middle
+column on every compact native row activation, including an already-selected route.
+`tests/ios-navigation` exercises actual taps and slow-network pulls; route injection alone
+cannot establish that UIKit brought the destination onscreen.
+
 `daynews-feed::fetch_cached_with_progress` returns either a parsed feed with replacement HTTP
 validators and a SHA-256 fingerprint, or `NotModified`. A 304 merges supplied validators with
 stored ones; a byte-identical 200 skips parsing, sanitization and article existence queries,

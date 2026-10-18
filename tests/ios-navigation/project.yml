@@ -1,0 +1,21 @@
+name: NavigationProbe
+options:
+  bundleIdPrefix: dev.daybrite.probes
+settings:
+  base:
+    IPHONEOS_DEPLOYMENT_TARGET: '17.0'
+    SWIFT_VERSION: '5.0'
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGNING_ALLOWED: NO
+targets:
+  NavigationProbe:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [NavigationTests.swift]
+schemes:
+  NavigationProbe:
+    build:
+      targets:
+        NavigationProbe: [test]
+    test:
+      targets: [NavigationProbe]

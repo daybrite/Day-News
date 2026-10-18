@@ -93,7 +93,7 @@ impl Binding<Option<String>> for FeedSelection {
     }
     fn write(&self, key: Option<String>) {
         if self.section.get_untracked() == key
-            && key.as_deref().is_some_and(|key| key.starts_with("feed:"))
+            && key.as_deref().and_then(crate::scope_for_key).is_some()
         {
             batch(|| {
                 self.scene.selected.set(None);

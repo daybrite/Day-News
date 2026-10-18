@@ -1,0 +1,22 @@
+name: pull-refresh-seed
+description: Seed an isolated library for native pull-to-refresh gestures using the local fixture server.
+flow:
+  - toolbar: { item: new-feed }
+  - wait_for: { id: feed-url }
+  - input: { id: feed-url, text: 'http://127.0.0.1:28762/progress/known' }
+  - tap: { id: feed-verify }
+  - pause: { secs: 8 } # The synthetic response deliberately streams for six seconds.
+  - wait_for: { id: feed-subscribe }
+  - tap: { id: feed-subscribe }
+  - pause: { secs: 8 }
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - nav_back: { native: true }
+  - toolbar: { item: refresh }
+  - navigate: { route: starred }
+  - assert_text: { id: timeline-empty, key: timeline_synchronizing }
+  - screenshot: empty-while-synchronizing
+  - pause: { secs: 8 }
+  - assert_text: { id: timeline-empty, key: timeline_empty }
+  - nav_back: { native: true }
+  - screenshot: pull-refresh-root

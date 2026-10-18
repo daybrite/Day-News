@@ -196,6 +196,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
                 if st.feeds.with_untracked(|feeds| feeds.iter().any(|feed| feed.id == id)))
         })
         .title(res::str::app_title())
+        .refreshable(commands::refreshing, commands::refresh_now)
         .header(move || {
             label(move || res::str::feeds_count(st.feeds.with(|feeds| feeds.len()) as f64).format())
                 .font(Font::Caption)
