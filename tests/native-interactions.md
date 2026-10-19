@@ -214,3 +214,20 @@ and tapping the actual visible Up control. Assertions check its touch-target bou
 native detail pane's position after returning, rather than trusting retained sidebar labels.
 The root search must not leak into compact destinations. These cases complement, rather than
 replace, the cold-launch, smart-feed, reader, system Back and tablet checks above.
+
+
+`NavigationProbe/NavigationTests/testTabletToolbarColumns` uses the same isolated iPad
+fixture. It verifies that Refresh and Show Only Unread Feeds belong to the middle bar,
+that its duplicate Day News title is absent, that visible buttons have usable widths,
+and that filtering does not change the M/N subscription count. UIKit's older plain-bar
+fallback also has host unit tests in `day-uikit/src/toolbar_policy.rs`. Validate iOS 15
+on hardware: the reader should expose its primary actions plus a visible ellipsis menu,
+with remaining commands available in that menu rather than squeezed into the bar.
+
+Android favicon regression: use a library with cached PNGs under `feed-icons-v1`, and
+inspect both the root feed rows and grouped timeline publisher headings. Bundled RSS
+fallback glyphs must remain present for feeds without cached artwork; downloaded logos
+must show their original colors. An image view's mere visibility is insufficient: the
+old resolver created a correctly sized but blank view for an absolute file path. Verified
+on day-ci-medium-phone with the same pre-existing cache before/after replacing the APK;
+no cache deletion or re-download was required.

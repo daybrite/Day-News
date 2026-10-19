@@ -32,6 +32,7 @@ feeds_count =
 nav_today = Today
 nav_smart_feeds = Smart Feeds
 nav_feeds_section = Feeds
+nav_feeds_section_counts = Feeds · { $unread }/{ $total } feeds
 menu_file = File
 menu_go = Go
 menu_new_feed = New Feed…

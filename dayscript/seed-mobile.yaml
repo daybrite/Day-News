@@ -50,7 +50,7 @@ flow:
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 4 }
-  - assert_text: { id: feeds-count, text: "7 feeds" }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/7 feeds" }
   - navigate: { route: unread }
   - pause: { secs: 3 }
   - screenshot: seeded

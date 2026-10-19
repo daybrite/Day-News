@@ -202,12 +202,6 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         })
         .title(res::str::app_title())
         .refreshable(commands::refreshing, commands::refresh_now)
-        .header(move || {
-            label(move || res::str::feeds_count(st.feeds.with(|feeds| feeds.len()) as f64).format())
-                .font(Font::Caption)
-                .id("feeds-count")
-                .padding(Insets::symmetric(12.0, 4.0))
-        })
         .reorder_items(
             |key: &Option<String>| key.as_deref().is_some_and(|k| k.starts_with("feed:")),
             |from, to| {
@@ -298,7 +292,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         .icon_tint(Color::hex(0x5E5CE6))
         .badge(move || count(st.total_articles.get()))
         // One row per subscription, re-derived whenever the feed list or its counts change.
-        .section(res::str::nav_feeds_section())
+        .section_id("feeds", feed_list::section_title)
         .items(
             move || {
                 let unread_only = feed_list::FeedList::app().unread_only.get();
@@ -416,7 +410,25 @@ mod navigation_tests {
 
     #[test]
     fn navigation_counts_follow_locale_changes() {
+        res::locales::install();
         let previous = day::locale().get_untracked();
+        let feeds = daynews_core::state().feeds;
+        let original = feeds.get_untracked();
+        feeds.set(
+            (0..12_345)
+                .map(|id| daynews_core::FeedRow {
+                    id,
+                    title: "Synthetic feed".into(),
+                    unread: if id < 1_234 { 99 } else { 0 },
+                    folder_id: None,
+                    has_error: false,
+                    site_url: None,
+                    feed_url: String::new(),
+                    icon_url: None,
+                    has_fetched: true,
+                })
+                .collect(),
+        );
         for (locale, expected) in [
             ("en-US", "72,811"),
             ("fr-FR", "72\u{202f}811"),
@@ -425,7 +437,26 @@ mod navigation_tests {
             day::locale().set(locale.to_string());
             assert_eq!(count(72_811), expected);
             assert_eq!(count(0), "");
+            let expected_counts = format!(
+                "{}/{}",
+                day::format_decimal(1_234.0, 0),
+                day::format_decimal(12_345.0, 0)
+            );
+            assert!(
+                feed_list::section_title()
+                    .replace(['\u{2068}', '\u{2069}'], "")
+                    .contains(&expected_counts),
+                "{:?}",
+                feed_list::section_title()
+            );
         }
+        feeds.set(Vec::new());
+        assert!(
+            feed_list::section_title()
+                .replace(['\u{2068}', '\u{2069}'], "")
+                .contains("0/0")
+        );
+        feeds.set(original);
         day::locale().set(previous);
     }
 

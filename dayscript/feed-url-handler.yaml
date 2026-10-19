@@ -10,13 +10,13 @@ flow:
   - assert_text: { id: feed-verification-status, key: subscribe_preview_ready, args: { count: 1 } }
   - screenshot: feed-verification-preview
   # No subscription until explicit confirmation.
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 0 } }
+  - assert_hidden: { id: "sidebar:header:feeds" }
   - tap: { id: feed-subscribe }
   - wait_for: { id: article-row-0 }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 1 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/1 feeds" }
   - open_url: { url: 'feed:javascript:alert(1)' }
   - wait_for: { id: feed-url }
   - tap: { id: feed-verify }
   - assert_text: { id: feed-verification-status, key: subscribe_failed }
   - tap: { id: feed-cancel }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 1 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/1 feeds" }

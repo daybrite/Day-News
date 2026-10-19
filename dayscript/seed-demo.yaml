@@ -62,7 +62,7 @@ flow:
   - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
   # By Fluent key, so the count reads correctly in whatever locale the run uses.
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 7 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/7 feeds" }
   - navigate: { route: all }
   - wait_for: { id: article-row-0, timeout_secs: 20 }
   - screenshot: seeded-demo

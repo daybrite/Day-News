@@ -33,13 +33,10 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
             .icon(Symbol::Add)
             .action(crate::subscriptions::begin_new_feed)
             .placement(ToolbarPlacement::Secondary),
-        crate::commands::refresh()
-            .toolbar_item()
-            .placement(ToolbarPlacement::Navigation),
-        crate::commands::unread_feeds_only()
-            .toolbar_item()
-            .placement(ToolbarPlacement::Navigation),
     ];
+    if !wide_uikit() {
+        items.extend(list_controls());
+    }
     if sc.article.with(|a| a.is_none()) {
         if !crate::settings::TOOLBAR_SETTINGS {
             items.push(
@@ -124,9 +121,27 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
     items
 }
 
-/// Grouping belongs above the article list; feed filtering stays beside Refresh in the sidebar.
+fn wide_uikit() -> bool {
+    cfg!(feature = "uikit")
+        && day::size_class().is_some_and(|size| size.width != WidthClass::Compact)
+}
+
+fn list_controls() -> Vec<ToolbarEntry> {
+    vec![
+        crate::commands::refresh()
+            .toolbar_item()
+            .placement(ToolbarPlacement::Navigation),
+        crate::commands::unread_feeds_only()
+            .toolbar_item()
+            .placement(ToolbarPlacement::Navigation),
+    ]
+}
+
+/// On iPad the list owns Refresh and Filter; a phone keeps them with navigation.
 pub fn list_items() -> Vec<ToolbarEntry> {
-    if cfg!(feature = "appkit") {
+    if wide_uikit() {
+        list_controls()
+    } else if cfg!(feature = "appkit") {
         vec![crate::commands::group_by_feeds().toolbar_item()]
     } else {
         Vec::new()

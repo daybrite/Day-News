@@ -50,6 +50,39 @@ final class NavigationTests: XCTestCase {
         visible(search)
     }
 
+    func testTabletToolbarColumns() {
+        continueAfterFailure = false
+        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-mobile-chrome"
+        app.launchEnvironment["DAY_NEWS_SYNC_TEST"] = "1"
+        app.launch()
+        XCTAssertGreaterThan(app.frame.width, 600)
+        let all = app.staticTexts["All Articles"].firstMatch
+        visible(all)
+        all.tap()
+        let refresh = app.navigationBars.buttons["Refresh"].firstMatch
+        let filter = app.navigationBars.buttons["Show Only Unread Feeds"].firstMatch
+        visible(refresh)
+        visible(filter)
+        // The commands belong to the middle column, and its title must not repeat Day News.
+        let bars = app.navigationBars.allElementsBoundByIndex.filter { $0.isHittable }
+            .sorted { $0.frame.minX < $1.frame.minX }
+        XCTAssertEqual(bars.count, 3)
+        XCTAssertTrue(bars[1].frame.contains(refresh.frame))
+        XCTAssertTrue(bars[1].frame.contains(filter.frame))
+        XCTAssertFalse(bars[1].staticTexts["Day News"].exists)
+        XCTAssertEqual(app.navigationBars.buttons.matching(identifier: "Refresh").count, 1)
+        for button in app.navigationBars.buttons.allElementsBoundByIndex where button.isHittable {
+            XCTAssertGreaterThanOrEqual(button.frame.width, 28, "Compressed toolbar: \(button.label)")
+        }
+        photograph("Toolbar ownership across iPad columns")
+        let count = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Feeds · '")).firstMatch
+        visible(count)
+        let before = count.label
+        filter.tap()
+        XCTAssertEqual(count.label, before, "Filtering must not change subscription totals")
+        filter.tap()
+    }
+
     func testRootReachableFromSmartFeeds() {
         continueAfterFailure = false
         app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-navigation-up-empty"

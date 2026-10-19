@@ -9,7 +9,7 @@ flow:
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 1 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/1 feeds" }
   - assert_route: { route: 'feed:1442691631189166321' }
   - wait_for: { id: article-row-0 }
   - toolbar: { item: new-feed }
@@ -18,7 +18,7 @@ flow:
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 2 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/2 feeds" }
   - assert_route: { route: 'feed:2226428218085183488' }
   - wait_for: { id: article-row-0 }
   - toolbar: { item: new-feed }
@@ -27,7 +27,7 @@ flow:
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 3 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/3 feeds" }
   - assert_route: { route: 'feed:7108728110427175209' }
   - wait_for: { id: article-row-0 }
   - toolbar: { item: new-feed }
@@ -38,7 +38,7 @@ flow:
   - respond: { button: 1 }
   - tap: { id: feed-subscribe }
   - pause: { secs: 1 }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 4 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/4 feeds" }
   - assert_route: { route: 'feed:101536170517251688' }
   - wait_for: { id: article-row-0 }
   - screenshot: new-feed-selected
@@ -48,7 +48,7 @@ flow:
   - tap: { id: feed-verify }
   - assert_text: { id: feed-verification-status, key: subscribe_failed }
   - tap: { id: feed-cancel }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 4 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/4 feeds" }
   - reorder: { id: nav-reorder-list, from: 6, to: 9 }
   - pause: { secs: 1 }
   - assert_route: { route: 'feed:101536170517251688' }
@@ -59,7 +59,7 @@ flow:
   - tap: { id: feed-verify }
   - assert_text: { id: feed-verification-status, key: subscribe_failed }
   - tap: { id: feed-cancel }
-  - assert_text: { id: feeds-count, key: feeds_count, args: { count: 4 } }
+  - assert_text: { id: "sidebar:header:feeds", contains: "/4 feeds" }
   - toolbar: { item: unread-feeds-only, on: true }
   - toolbar: { item: new-feed }
   - wait_for: { id: feed-url }
