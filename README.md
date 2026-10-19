@@ -278,6 +278,11 @@ Network regressions: run `python3 tests/feed-refresh-server.py`, then launch aga
 macOS with `--script dayscript/feed-refresh-relaunch.yaml`; `/stats` on port 28762 should show
 additional 304s, no new icon downloads, and at most four active feed requests.
 
+On Windows, launch with `day launch -t windows-winui --locale en`, keep the sidebar expanded,
+and run `powershell -File scripts/test-winui-sidebar.ps1`. This checks real mouse clicks on
+both the text and padding of each smart-feed destination, verifying that the article scope
+changes. It complements the dayscripts, whose navigation commands bypass native hit testing.
+
 
 Feed dashboards include **Preview Site or Login** and **Forget all site information**.
 **Preview Site or Login** is also available in a feed's context menu and the **Feed** app menu
