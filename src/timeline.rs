@@ -451,21 +451,7 @@ pub fn timeline_pane() -> impl Piece {
             },
         ),
         #[cfg(not(target_arch = "wasm32"))]
-        when(
-            || {
-                crate::settings::SHOW_SYNC_STATUS.get()
-                    && daynews_core::sync_status().get().busy
-                    && daynews_core::sync_status().get().progress.is_some()
-            },
-            || {
-                column((
-                    divider(),
-                    crate::accounts::sync_progress().padding(Insets::symmetric(12.0, 4.0)),
-                ))
-                .id("sync-status-footer")
-                .grow_w()
-            },
-        ),
+        crate::accounts::sync_status_footer("sync-status-footer"),
     ))
     .background(move || palette().bg_alt)
     .toolbar(crate::toolbar::list_items)

@@ -158,7 +158,26 @@ pub fn page() -> impl Piece {
     .grow_w()
 }
 
-/// Shared by Accounts and the article list, so a toolbar-triggered sync is observable too.
+/// Shared status footer for the article column and compact mobile feeds page.
+pub fn sync_status_footer(id: &'static str) -> impl Piece {
+    when(
+        || {
+            let status = daynews_core::sync_status().get();
+            crate::settings::SHOW_SYNC_STATUS.get() && status.busy && status.progress.is_some()
+        },
+        move || {
+            column((
+                divider(),
+                sync_progress().padding(Insets::symmetric(12.0, 4.0)),
+            ))
+            .id(id)
+            .background(move || crate::theme::palette().bg_alt)
+            .grow_w()
+        },
+    )
+}
+
+/// Shared by Accounts, the article list and the compact mobile feeds page.
 pub fn sync_progress() -> impl Piece {
     let status = daynews_core::sync_status();
     when(

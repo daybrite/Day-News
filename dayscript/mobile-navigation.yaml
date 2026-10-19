@@ -1,8 +1,10 @@
 # Mobile only. Seed demo articles and connect the synthetic Feedbin account first.
 # Launch with DAY_NEWS_SYNC_TEST=1 DAY_NEWS_SYNC_TEST_LATENCY_MS=1500 in an isolated store.
 name: mobile-navigation
-description: In-place unread filtering, toolbar Settings, and compact sync footer visibility.
+description: In-place unread filtering, toolbar Settings, and sync footers on both compact lists.
 flow:
+  # Let the launch-triggered fixture sync finish before issuing Refresh.
+  - pause: { secs: 8 }
   - navigate: { route: all }
   - wait_for: { id: article-row-0 }
   - nav_back: {}
@@ -20,8 +22,12 @@ flow:
   - close_window: { window: day.preferences }
   - pause: { secs: 1 }
   - assert_route: { route: "" }
-  - navigate: { route: all }
+  # Reading-state uploads may have been queued by the preceding navigation.
+  - pause: { secs: 8 }
   - toolbar: { item: refresh }
+  - pause: { secs: 1 }
+  - assert_missing: { id: feeds-sync-status-footer }
+  - navigate: { route: all }
   - pause: { secs: 1 }
   - assert_missing: { id: sync-status-footer }
   - pause: { secs: 8 }
@@ -38,3 +44,20 @@ flow:
   - tap: { id: sync-cancel-transfer }
   - pause: { secs: 1 }
   - assert_missing: { id: sync-status-footer }
+  - nav_back: {}
+  - assert_route: { route: "" }
+  - toolbar: { item: refresh }
+  - wait_for: { id: feeds-sync-status-footer }
+  - screenshot: mobile-feeds-sync-footer
+  - tap: { id: sync-cancel-transfer }
+  - pause: { secs: 1 }
+  - assert_missing: { id: feeds-sync-status-footer }
+  # Navigate while syncing: each page owns its footer, with progress preserved on Back.
+  - toolbar: { item: refresh }
+  - wait_for: { id: feeds-sync-status-footer }
+  - navigate: { route: all }
+  - assert_visible: { id: sync-status-footer }
+  - nav_back: {}
+  - assert_visible: { id: feeds-sync-status-footer }
+  - pause: { secs: 15 }
+  - assert_missing: { id: feeds-sync-status-footer }

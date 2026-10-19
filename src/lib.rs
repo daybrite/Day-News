@@ -249,6 +249,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         // desktop and inline above the list on a phone. The signal is still the shared one the
         // timeline filters on.
         .searchable(toolbar::search())
+        .search_hides_on_scroll(true)
         .search_prompt(res::str::search_placeholder())
         // The article list is the content-list pane (docs/navigation.md): its own column
         // between the sidebar and the reader where the toolkit has one (a real `contentList`
@@ -361,6 +362,16 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
             Some("settings") => Either::Left(prefs.page()),
             _ => Either::Right(reader_dest()),
         });
+    #[cfg(not(target_arch = "wasm32"))]
+    let navigation = navigation.footer(|| {
+        when(
+            || {
+                crate::settings::TOOLBAR_SETTINGS
+                    && day::size_class().is_none_or(|size| size.width == WidthClass::Compact)
+            },
+            || accounts::sync_status_footer("feeds-sync-status-footer"),
+        )
+    });
     column((
         navigation.id("nav").grow(),
         site_browser::browser_cover(),

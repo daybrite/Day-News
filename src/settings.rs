@@ -23,7 +23,7 @@ const SOURCE: &str = "https://github.com/daybrite/Day-News";
 
 /// Whether the timeline shows a heading per feed (the Feed menu toggles it too).
 pub static GROUP_BY_FEED: Pref<bool> = Pref::new("news.articles.group_by_feed", || true);
-/// Show the compact synchronization footer beneath the article list.
+/// Show synchronization beneath the article list and the compact mobile feeds list.
 #[cfg(not(target_arch = "wasm32"))]
 pub static SHOW_SYNC_STATUS: Pref<bool> = Pref::new("news.articles.show_sync_status", || true);
 /// The article list's text size, in percent of the platform's body size.

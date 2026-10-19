@@ -186,3 +186,31 @@ state. This reproduced UIKit's exception from pushing the same supplementary con
 twice during a transition. Day now coalesces column requests, waits for transitions, and
 checks the native stack before showing the column. The fixed simulator also completed
 32 consecutive section/Back cycles without a failure.
+
+
+For scrolling feed chrome and adaptive Settings, seed the synthetic demo/Feedbin library at
+`/tmp/day-news-theme-sync-validation`, then run `python3 tests/seed-mobile-chrome.py`.
+The generated `/tmp/day-news-mobile-chrome` library has enough offline fixture feed rows to
+scroll on an iPad. Run
+`NavigationProbe/NavigationTests/testScrollingFeedChromeAndAdaptiveSettings` on both phone
+and tablet simulators. It checks real swipes, search/large-title collapse and restoration,
+Settings width, and Done dismissal. `dayscript/tablet-sync-layout.yaml` additionally verifies
+that only the article column has a sync footer on a wide mobile display; use the synthetic
+Feedbin account with `DAY_NEWS_SYNC_TEST_LATENCY_MS=1500`.
+
+On Android, run `python3 tests/android-mobile-chrome.py --adb /path/to/adb --serial emulator-5554`
+after seeding an isolated English library and returning to the root. It uses native swipes to
+check scroll-away/quick-return, verifies Today retains Up navigation, then temporarily widens
+the emulator to check sidebar search collapse/return with pinned toolbar actions, verifies
+article-pane scrolling leaves sidebar search alone, inspects Settings, and restores the
+original display size in `finally`.
+
+Run `python3 tests/android-collapsed-navigation.py --adb /path/to/adb --serial emulator-5554`
+on a compact English install with enough feeds to scroll. It navigates without opening articles
+or changing subscriptions. The first case opens a feed directly from a collapsed root and
+fails on the old build with `Destination has no visible Up`. Subsequent cases cover expanded,
+partially collapsed, and repeated collapsed entry, scrolling the destination in both directions,
+and tapping the actual visible Up control. Assertions check its touch-target bounds and the
+native detail pane's position after returning, rather than trusting retained sidebar labels.
+The root search must not leak into compact destinations. These cases complement, rather than
+replace, the cold-launch, smart-feed, reader, system Back and tablet checks above.

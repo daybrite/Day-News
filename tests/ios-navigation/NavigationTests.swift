@@ -5,6 +5,51 @@ import XCTest
 final class NavigationTests: XCTestCase {
     let app = XCUIApplication(bundleIdentifier: "dev.daybrite.news")
 
+    func testScrollingFeedChromeAndAdaptiveSettings() {
+        continueAfterFailure = false
+        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-mobile-chrome"
+        app.launchEnvironment["DAY_NEWS_SYNC_TEST"] = "1"
+        app.launch()
+        let back = app.navigationBars.buttons.matching(
+            NSPredicate(format: "label == 'Back' OR label == 'Day News'")).firstMatch
+        if back.waitForExistence(timeout: 2) && back.isHittable { back.tap() }
+        let search = app.searchFields.firstMatch
+        // Pull down first: the previous session may have left the list scrolled.
+        let feeds = app.collectionViews.firstMatch
+        visible(feeds)
+        feeds.swipeDown()
+        visible(search)
+        let bar = app.navigationBars.firstMatch
+        let expanded = bar.frame.height
+        photograph("Expanded feeds search and title")
+        feeds.swipeUp()
+        let collapsed = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in bar.frame.height < expanded - 20 }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [collapsed], timeout: 5), .completed)
+        XCTAssertFalse(search.isHittable)
+        photograph("Collapsed feeds search and title")
+        feeds.swipeDown()
+        feeds.swipeDown()
+        visible(search)
+        let settings = app.buttons["Settings"].firstMatch
+        visible(settings)
+        settings.tap()
+        let settingsBar = app.navigationBars["Settings"]
+        visible(settingsBar)
+        let width = app.frame.width
+        if width >= 600 {
+            XCTAssertLessThan(settingsBar.frame.width, width - 80)
+            XCTAssertGreaterThan(settingsBar.frame.minX, 20)
+        } else {
+            XCTAssertEqual(settingsBar.frame.width, width, accuracy: 2)
+        }
+        photograph("Adaptive Settings presentation")
+        let done = app.buttons["Done"].firstMatch
+        visible(done)
+        done.tap()
+        visible(search)
+    }
+
     func testRootReachableFromSmartFeeds() {
         continueAfterFailure = false
         app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-navigation-up-empty"

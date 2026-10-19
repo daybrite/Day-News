@@ -1,0 +1,17 @@
+# Wide mobile window, synthetic Feedbin account connected, 1500 ms fixture latency.
+name: tablet-sync-layout
+description: One sync footer in the article column and modal Settings over a tablet window.
+flow:
+  - pause: { secs: 8 }
+  - navigate: { route: all }
+  - toolbar: { item: refresh }
+  - wait_for: { id: sync-status-footer }
+  - assert_missing: { id: feeds-sync-status-footer }
+  - screenshot: tablet-sync-footer
+  - tap: { id: sync-cancel-transfer }
+  - pause: { secs: 1 }
+  - toolbar: { item: settings }
+  - wait_for: { id: prefs-group-general }
+  - screenshot: tablet-settings-sheet
+  - close_window: { window: day.preferences }
+  - assert_missing: { id: prefs-group-general }
