@@ -9,6 +9,9 @@ use crate::res;
 use day::prelude::*;
 use day_piece_settings::prelude::*;
 
+/// Mobile Settings is reached from the toolbar and presented by Day as a native cover.
+pub const TOOLBAR_SETTINGS: bool = cfg!(any(feature = "uikit", feature = "mdc", feature = "arkui"));
+
 /// The project site the About window links to.
 const WEBSITE: &str = "https://daybrite.github.io/Day-News";
 /// The repository the About window links to.
@@ -20,6 +23,9 @@ const SOURCE: &str = "https://github.com/daybrite/Day-News";
 
 /// Whether the timeline shows a heading per feed (the Feed menu toggles it too).
 pub static GROUP_BY_FEED: Pref<bool> = Pref::new("news.articles.group_by_feed", || true);
+/// Show the compact synchronization footer beneath the article list.
+#[cfg(not(target_arch = "wasm32"))]
+pub static SHOW_SYNC_STATUS: Pref<bool> = Pref::new("news.articles.show_sync_status", || true);
 /// The article list's text size, in percent of the platform's body size.
 pub static LIST_SCALE: Pref<f64> = Pref::new("news.list.scale", || DEFAULT_LIST_SCALE);
 pub const DEFAULT_LIST_SCALE: f64 = 120.0;
@@ -101,6 +107,8 @@ pub fn install() -> Prefs {
         let st = daynews_core::state();
         st.group_by_feed.set(GROUP_BY_FEED.get_untracked());
         GROUP_BY_FEED.watch(move |on| st.group_by_feed.set(*on));
+        #[cfg(not(target_arch = "wasm32"))]
+        daynews_core::set_sync_retention_days(RETENTION_DAYS.get_untracked());
         // Retention: prune at launch per the stored window, and again on every change so the
         // choice visibly acts.
         day::task(async {
@@ -108,6 +116,8 @@ pub fn install() -> Prefs {
         });
         RETENTION_DAYS.watch(move |days| {
             let days = *days;
+            #[cfg(not(target_arch = "wasm32"))]
+            daynews_core::set_sync_retention_days(days);
             day::task(async move {
                 pruned.set(daynews_core::prune(days).await);
             });
@@ -126,7 +136,7 @@ fn articles_group() -> Group {
         };
         (n, label)
     });
-    Group::new("articles", res::str::settings_articles())
+    let group = Group::new("articles", res::str::settings_articles())
         .icon(res::vectors::dashboard_all)
         .row(rows::toggle(&GROUP_BY_FEED, res::str::group_by_feeds()).id("group-by-feeds-picker"))
         .row(
@@ -142,7 +152,13 @@ fn articles_group() -> Group {
         .row(
             rows::choice(&PREVIEW_LINES, res::str::settings_preview_lines(), lines)
                 .id("preview-lines-picker"),
-        )
+        );
+    #[cfg(not(target_arch = "wasm32"))]
+    let group = group.row(
+        rows::toggle(&SHOW_SYNC_STATUS, res::str::settings_show_sync_status())
+            .id("show-sync-status"),
+    );
+    group
 }
 
 fn reader_group() -> Group {

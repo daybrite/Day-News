@@ -17,6 +17,7 @@ pub fn page() -> impl Piece {
                 column((
                     label(res::str::sync_username()),
                     text_field(username)
+                        .input_purpose(InputPurpose::Email)
                         .placeholder(res::str::sync_username())
                         .id("sync-username")
                         .grow_w(),
@@ -163,98 +164,110 @@ pub fn sync_progress() -> impl Piece {
     when(
         move || status.get().busy && status.get().progress.is_some(),
         move || {
+            // Keep one stable layout for every phase: the indicator, activity, feed and timing
+            // lines never appear/disappear as the server supplies different progress data.
             column((
-                when(
-                    move || {
-                        status
-                            .get()
-                            .progress
-                            .as_ref()
-                            .and_then(|p| p.fraction())
-                            .is_some()
-                    },
-                    move || {
-                        progress(move || {
+                row((
+                    when(
+                        move || {
                             status
                                 .get()
                                 .progress
                                 .as_ref()
                                 .and_then(|p| p.fraction())
-                                .unwrap_or(0.0)
-                        })
-                        .id("sync-progress-bar")
-                        .grow_w()
-                    },
-                ),
-                when(
-                    move || {
-                        status
-                            .get()
-                            .progress
-                            .as_ref()
-                            .and_then(|p| p.fraction())
-                            .is_none()
-                    },
-                    spinner,
-                ),
-                label(move || progress_text(&status.get().progress.unwrap_or_default()))
-                    .font(Font::Footnote)
-                    .id("sync-progress-activity"),
-                when(
-                    move || {
-                        status
-                            .get()
-                            .progress
-                            .as_ref()
-                            .is_some_and(|p| p.feed.is_some())
-                    },
-                    move || {
-                        label(move || {
-                            res::str::sync_progress_feed(
+                                .is_some()
+                        },
+                        move || {
+                            progress(move || {
                                 status
                                     .get()
                                     .progress
-                                    .and_then(|p| p.feed)
-                                    .unwrap_or_default(),
-                            )
-                            .format()
+                                    .as_ref()
+                                    .and_then(|p| p.fraction())
+                                    .unwrap_or(0.0)
+                            })
+                            .id("sync-progress-bar")
+                            .grow_w()
+                        },
+                    ),
+                    when(
+                        move || {
+                            status
+                                .get()
+                                .progress
+                                .as_ref()
+                                .and_then(|p| p.fraction())
+                                .is_none()
+                        },
+                        spinner,
+                    ),
+                ))
+                .height(20.0)
+                .grow_w(),
+                row((
+                    column((
+                        label(move || progress_text(&status.get().progress.unwrap_or_default()))
+                            .font(Font::Caption)
+                            .single_line()
+                            .color(move || crate::theme::palette().text)
+                            .id("sync-progress-activity")
+                            .grow_w(),
+                        label(move || {
+                            status
+                                .get()
+                                .progress
+                                .and_then(|p| p.feed)
+                                .map(|feed| res::str::sync_progress_feed(feed).format())
+                                .unwrap_or_default()
                         })
                         .font(Font::Caption)
+                        .single_line()
+                        .color(move || crate::theme::palette().text_muted)
+                        // Reserve a line even before the first feed arrives, using the
+                        // caption's actual font metrics (including accessibility scaling).
+                        .reserving(res::str::sync_progress_feed(String::new()).format())
                         .id("sync-progress-feed")
-                    },
-                ),
-                label(move || {
-                    let s = status.get();
-                    let duration = |seconds: u64| {
-                        res::str::sync_progress_duration(
-                            (seconds / 60) as f64,
-                            (seconds % 60) as f64,
-                        )
-                        .format()
-                    };
-                    match s.remaining_seconds {
-                        Some(seconds) => res::str::sync_progress_eta(
-                            duration(s.elapsed_seconds),
-                            duration(seconds),
-                        )
-                        .format(),
-                        None => {
-                            res::str::sync_progress_estimating(duration(s.elapsed_seconds)).format()
-                        }
-                    }
-                })
-                .font(Font::Caption)
-                .id("sync-progress-time"),
-                when(
-                    move || status.get().cancellable,
-                    || {
-                        button(res::str::sync_cancel_transfer())
-                            .action(daynews_core::sync_cancel)
-                            .id("sync-cancel-transfer")
-                    },
-                ),
+                        .grow_w(),
+                        label(move || {
+                            let s = status.get();
+                            let duration = |seconds: u64| {
+                                res::str::sync_progress_duration(
+                                    (seconds / 60) as f64,
+                                    (seconds % 60) as f64,
+                                )
+                                .format()
+                            };
+                            match s.remaining_seconds {
+                                Some(seconds) => res::str::sync_progress_eta(
+                                    duration(s.elapsed_seconds),
+                                    duration(seconds),
+                                )
+                                .format(),
+                                None => {
+                                    res::str::sync_progress_estimating(duration(s.elapsed_seconds))
+                                        .format()
+                                }
+                            }
+                        })
+                        .font(Font::Caption)
+                        .single_line()
+                        .color(move || crate::theme::palette().text_muted)
+                        .id("sync-progress-time")
+                        .grow_w(),
+                    ))
+                    .spacing(2.0)
+                    .align(HAlign::Leading)
+                    .grow_w(),
+                    button(res::str::sync_cancel())
+                        .action(daynews_core::sync_cancel)
+                        .enabled(move || status.get().cancellable)
+                        .id("sync-cancel-transfer"),
+                ))
+                .spacing(8.0)
+                .align(VAlign::Center)
+                .grow_w(),
             ))
-            .spacing(6.0)
+            .spacing(2.0)
             .align(HAlign::Leading)
             .grow_w()
         },

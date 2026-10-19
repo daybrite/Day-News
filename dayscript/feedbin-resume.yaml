@@ -4,7 +4,7 @@ name: feedbin-resume
 description: Restore credentials after relaunch, synchronize, disconnect, and reject invalid login.
 flow:
   - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: prefs-group-accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: sync-account, skip_on: [web-dom] }
   - pause: { secs: 3, skip_on: [web-dom] }

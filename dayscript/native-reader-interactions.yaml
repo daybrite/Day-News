@@ -27,7 +27,8 @@ flow:
   - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).display', text: 'none' }
   - screenshot: reader-native-appended-stable
   - toolbar: { item: star, on: true }
-  - toolbar: { item: read, on: false }
+  - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
+  - toolbar: { item: read, only_on: [ios-uikit] }
   - web_eval: { id: reader-web, script: 'window.regressionMarker', text: retained }
   - web_eval: { id: reader-web, script: 'Math.abs(scrollY-window.regressionScroll) < 2', text: 'true' }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "collapsed"', text: collapsed }

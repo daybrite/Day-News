@@ -144,6 +144,18 @@ pub trait Provider {
     }
     fn authenticate(&self) -> Call<'_, ()>;
     fn subscriptions(&self) -> Call<'_, Changes<Subscription>>;
+    /// Configure a creation/arrival-time history window for this cycle, after restoring the
+    /// durable checkpoint. `None` requests all history. Return true when the window widened
+    /// or a delta/lookback is being scanned in full; the engine must then continue past
+    /// previously known pages. Providers can keep time watermarks in their opaque checkpoint.
+    /// ID-based recovery of unread entries is deliberately outside this window.
+    fn prepare_history(&self, since: Option<i64>) -> Result<bool> {
+        if since.is_some() {
+            Err(Error::Unsupported)
+        } else {
+            Ok(false)
+        }
+    }
     fn entries(&self, cursor: Option<String>) -> Call<'_, Page<Entry>>;
     fn entries_by_id(&self, ids: Vec<String>) -> Call<'_, Vec<Entry>>;
     fn read_state(&self) -> Call<'_, ReadChanges>;

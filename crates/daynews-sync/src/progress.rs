@@ -20,6 +20,7 @@ pub struct Progress {
     /// Completed units in the current phase (operations, pages, or missing articles).
     pub completed: usize,
     pub total: Option<usize>,
+    /// Newly inserted articles, not the number of entries received from the provider.
     pub articles: usize,
     pub subscriptions: usize,
     /// A publication represented in the current page, not a claim that its history is complete.

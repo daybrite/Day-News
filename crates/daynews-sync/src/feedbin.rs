@@ -12,11 +12,21 @@ pub struct Feedbin {
     client: Client,
     credentials: Credentials,
     checkpoint: std::cell::RefCell<FeedbinCheckpoint>,
+    subscriptions_changed: std::cell::Cell<bool>,
+    last_backdate: std::cell::Cell<Option<i64>>,
 }
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 struct FeedbinCheckpoint {
     entries_etag: Option<String>,
+    /// Missing on older checkpoints, which covered unrestricted history.
+    #[serde(default)]
+    entries_since: Option<i64>,
     subscriptions: Vec<String>,
+    #[serde(default)]
+    history_since: Option<i64>,
+    /// Server Date from the first page of the last fully committed scan.
+    #[serde(default)]
+    last_fetch: Option<i64>,
 }
 impl Feedbin {
     pub fn new(credentials: Credentials) -> Self {
@@ -33,6 +43,8 @@ impl Feedbin {
             client,
             credentials,
             checkpoint: Default::default(),
+            subscriptions_changed: Default::default(),
+            last_backdate: Default::default(),
         }
     }
     async fn request(&self, method: Method, path: &str, body: Option<Value>) -> Result<Response> {
@@ -219,6 +231,7 @@ impl Provider for Feedbin {
         }
     }
     fn restore_checkpoint(&self, checkpoint: Option<String>) -> Result<()> {
+        self.subscriptions_changed.set(false);
         *self.checkpoint.borrow_mut() = match checkpoint {
             Some(value) => serde_json::from_str(&value).map_err(|_| Error::InvalidResponse)?,
             None => FeedbinCheckpoint::default(),
@@ -256,11 +269,50 @@ impl Provider for Feedbin {
                 // A new feed may add history behind the unchanged first page.
                 checkpoint.entries_etag = None;
                 checkpoint.subscriptions = ids;
+                self.subscriptions_changed.set(true);
             }
             Ok(Changes::Snapshot(rows))
         }
         .boxed_local()
     }
+    fn prepare_history(&self, since: Option<i64>) -> Result<bool> {
+        if since.is_some_and(|at| chrono::DateTime::from_timestamp(at, 0).is_none()) {
+            return Err(Error::InvalidResponse);
+        }
+        let mut checkpoint = self.checkpoint.borrow_mut();
+        let expanded = checkpoint
+            .history_since
+            .is_some_and(|old| since.is_none_or(|new| new < old));
+        let backfill = expanded || self.subscriptions_changed.get();
+        let query_since = match checkpoint.last_fetch.filter(|_| !backfill) {
+            Some(last) => {
+                // NetNewsWire's policy: one day of overlap on the first refresh after launch,
+                // then once per day. Use server time, never a device clock as the watermark.
+                let backdate = self
+                    .last_backdate
+                    .get()
+                    .is_none_or(|at| last.saturating_sub(at) >= 86_400);
+                let from = if backdate {
+                    self.last_backdate.set(Some(last));
+                    last.saturating_sub(86_400)
+                } else {
+                    last
+                };
+                Some(since.map_or(from, |floor| from.max(floor)))
+            }
+            None => since,
+        };
+        if checkpoint.entries_since != query_since {
+            // Validators belong to a specific query, including its time window.
+            checkpoint.entries_etag = None;
+            checkpoint.entries_since = query_since;
+        }
+        checkpoint.history_since = since;
+        // Scan the whole small delta/lookback, even through known pages. A wider history
+        // or changed subscription set must likewise reach older, previously excluded items.
+        Ok(backfill || checkpoint.last_fetch.is_some())
+    }
+
     fn entries(&self, cursor: Option<String>) -> Call<'_, Page<Entry>> {
         async move {
             let page = cursor.as_deref().map(numeric).transpose()?.unwrap_or(1);
@@ -269,14 +321,32 @@ impl Provider for Feedbin {
             } else {
                 None
             };
+            let mut path = format!("entries.json?page={page}&per_page=100");
+            if let Some(since) = self.checkpoint.borrow().entries_since {
+                let date = chrono::DateTime::from_timestamp(since, 0)
+                    .ok_or(Error::InvalidResponse)?
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+                let query = url::form_urlencoded::Serializer::new(String::new())
+                    .append_pair("since", &date)
+                    .finish();
+                path.push('&');
+                path.push_str(&query);
+            }
             let r = self
-                .request_validated(
-                    Method::Get,
-                    &format!("entries.json?page={page}&per_page=100"),
-                    None,
-                    etag,
-                )
+                .request_validated(Method::Get, &path, None, etag)
                 .await?;
+            if page == 1
+                && matches!(r.status, 200 | 304)
+                && let Some(at) = r
+                    .headers
+                    .iter()
+                    .find(|(k, _)| k.eq_ignore_ascii_case("date"))
+                    .and_then(|(_, value)| httpdate::parse_http_date(value).ok())
+                    .and_then(|at| at.duration_since(std::time::UNIX_EPOCH).ok())
+                    .and_then(|d| i64::try_from(d.as_secs()).ok())
+            {
+                self.checkpoint.borrow_mut().last_fetch = Some(at);
+            }
             if r.status == 304 {
                 return Ok(Page {
                     values: vec![],

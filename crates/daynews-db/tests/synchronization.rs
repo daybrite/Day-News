@@ -103,7 +103,7 @@ impl Storage for Replica {
     fn missing(&self, ids: Vec<String>) -> Call<'_, Vec<String>> {
         async move { Ok(self.db.sync_missing(self.account, ids)) }.boxed_local()
     }
-    fn entries(&self, e: Vec<Entry>, s: ReadChanges) -> Call<'_, bool> {
+    fn entries(&self, e: Vec<Entry>, s: ReadChanges) -> Call<'_, daynews_sync::engine::Imported> {
         async move { self.saved(self.db.sync_import_entries(self.account, e, &s)) }.boxed_local()
     }
     fn reading(&self, s: ReadChanges) -> Call<'_, ()> {
@@ -210,6 +210,84 @@ fn partial_acknowledgement_retains_failure_and_downloads_continue() {
     assert!(a.read("1001"));
     assert!(server.unread().contains(&1001));
     assert!(!server.unread().contains(&1002));
+}
+
+#[test]
+fn failed_subscription_does_not_replay_history_after_restart() {
+    use day_reactive::Binding;
+    use daynews_db::sync::AccountFields;
+    let path = std::env::temp_dir().join(format!(
+        "daynews-sync-upload-failure-{}-{}.sqlite",
+        std::process::id(),
+        daynews_time::now_epoch_ms()
+    ));
+    let server = Server::new();
+    {
+        let a = Replica::from_db(Db::open(&path).unwrap());
+        a.db.sync_queue_subscribe(a.account, "https://fixture.invalid/rejected")
+            .unwrap();
+        let report = wait(synchronize(&server.provider(), &a)).unwrap();
+        assert_eq!(report.pending_error, Some(Error::Rejected));
+        assert_eq!((report.entries, report.imported), (2, 2));
+        assert_eq!(a.db.sync_pending_count(a.account), 1);
+        let account = a.db.container.get::<Account>(a.account).unwrap();
+        assert!(!account.importing().peek());
+        assert!(account.last_sync().peek().is_some());
+        assert!(wait(a.checkpoint()).unwrap().is_some());
+    }
+    let before = server.simulation.requests().len();
+    {
+        let a = Replica::from_db(Db::open(&path).unwrap());
+        // The same rejected upload is retried, while reading state still comes through.
+        server.set_read(1001, true);
+        let report = wait(synchronize(&server.provider(), &a)).unwrap();
+        assert_eq!(report.pending_error, Some(Error::Rejected));
+        assert_eq!((report.entries, report.imported), (0, 0));
+        assert!(a.read("1001"));
+        assert_eq!(a.db.sync_pending_count(a.account), 1);
+    }
+    let requests = server.simulation.requests();
+    let article_requests: Vec<_> = requests[before..]
+        .iter()
+        .filter(|r| r.url.contains("/entries.json"))
+        .collect();
+    assert_eq!(
+        article_requests.len(),
+        1,
+        "no second history page or body re-download"
+    );
+    // The fixture only returns an empty page for a matching If-None-Match (304).
+    assert!(article_requests[0].url.contains("page=1&"));
+    let _ = std::fs::remove_file(path);
+}
+
+#[test]
+fn known_boundary_page_does_not_rewrite_records_or_count_as_new() {
+    use day_reactive::Binding;
+    use daynews_db::sync::AccountFields;
+    use daynews_sync::engine::synchronize_with_progress;
+    let server = Server::new();
+    let a = Replica::new();
+    wait(synchronize(&server.provider(), &a)).unwrap();
+    // Simulate a changed first-page validator with no new entries on that page.
+    let account = a.db.container.get::<Account>(a.account).unwrap();
+    let mut checkpoint: serde_json::Value =
+        serde_json::from_str(&account.checkpoint().peek().unwrap()).unwrap();
+    checkpoint["entries_etag"] = serde_json::Value::Null;
+    account.checkpoint().write(Some(checkpoint.to_string()));
+    a.db.container.save().unwrap();
+    let links = a.db.container.cache::<EntryLink>();
+    let articles = a.db.container.cache::<Article>();
+    let versions = (links.version(), articles.version());
+    let events = std::cell::RefCell::new(Vec::new());
+    let report = wait(synchronize_with_progress(&server.provider(), &a, |p| {
+        events.borrow_mut().push(p);
+        Ok(())
+    }))
+    .unwrap();
+    assert_eq!((report.entries, report.imported), (1, 0));
+    assert_eq!(versions, (links.version(), articles.version()));
+    assert!(events.borrow().iter().all(|p| p.articles == 0));
 }
 
 #[test]
@@ -705,4 +783,263 @@ fn interrupted_incremental_scan_does_not_stop_at_a_previously_imported_first_pag
     assert_eq!(a.db.container.query::<Article>().live().ids().len(), 2);
     assert!(a.read("1002"));
     assert!(!account.importing().peek());
+}
+
+// Synthetic Feedbin wire records: one recent read article, an old unread article and an
+// old read article. Fixture transport deliberately pages one item at a time.
+fn historical_server() -> Server {
+    let server = Server::new();
+    server.set_read(1001, true);
+    server.replace_entries(vec![
+        historical_entry(1001, "2026-10-18T12:00:00Z"),
+        historical_entry(1002, "2026-01-02T12:00:00Z"),
+        historical_entry(1003, "2026-01-01T12:00:00Z"),
+    ]);
+    server
+}
+fn historical_entry(id: u64, date: &str) -> serde_json::Value {
+    serde_json::json!({"id":id,"feed_id":11,"title":format!("History fixture {id}"),
+        "url":format!("https://fixture.invalid/history/{id}"),"content":"<p>Synthetic history.</p>",
+        "summary":"Synthetic history", "published":date,"created_at":date})
+}
+const HISTORY_CUTOFF: i64 = 1_784_592_000; // 2026-07-21 UTC
+
+#[test]
+fn retention_limits_network_history_but_recovers_old_unread_in_bulk() {
+    use daynews_sync::engine::synchronize_with_history;
+    let server = historical_server();
+    let a = Replica::new();
+    let p = server.provider();
+    let report = wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert_eq!(report.entries, 2);
+    assert_eq!(report.imported, 2);
+    assert!(a.read("1001"));
+    assert!(!a.read("1002"));
+    assert_eq!(wait(a.missing(vec!["1003".into()])).unwrap(), vec!["1003"]);
+    let requests = server.simulation.requests();
+    let history: Vec<_> = requests
+        .iter()
+        .filter(|r| r.url.contains("entries.json?page="))
+        .collect();
+    assert_eq!(history.len(), 1); // Never requests the historical read body or page 2.
+    assert!(history[0].url.contains("since=2026-07-21T00%3A00%3A00Z"));
+    assert!(
+        requests
+            .iter()
+            .any(|r| r.url.ends_with("entries.json?ids=1002"))
+    );
+    let repeat = wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert_eq!(repeat.entries, 0); // Same window can reuse its HTTP validator.
+}
+
+#[test]
+fn widening_retention_backfills_past_known_pages_and_cancelled_backfills_resume() {
+    use daynews_sync::{engine::synchronize_with_history, progress::Phase};
+    let server = historical_server();
+    let a = Replica::new();
+    let p = server.provider();
+    wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    let checkpoint = wait(a.checkpoint()).unwrap();
+    let result = wait(synchronize_with_history(&p, &a, None, |progress| {
+        if progress.phase == Phase::Articles && progress.completed == 1 {
+            Err(Error::Cancelled)
+        } else {
+            Ok(())
+        }
+    }));
+    assert!(matches!(result, Err(Error::Cancelled)));
+    assert_eq!(wait(a.checkpoint()).unwrap(), checkpoint);
+    let report = wait(synchronize_with_history(&p, &a, None, |_| Ok(()))).unwrap();
+    assert_eq!(report.entries, 3); // First two are known; third must still download.
+    assert_eq!(report.imported, 1);
+    assert!(a.read("1003"));
+    assert_eq!(a.db.container.query::<Article>().live().ids().len(), 3);
+}
+
+#[test]
+fn incremental_history_uses_server_watermark_with_launch_and_daily_lookback() {
+    use daynews_sync::engine::synchronize_with_history;
+    let server = historical_server();
+    let a = Replica::new();
+    let p = server.provider();
+    server.set_response_date(1_792_368_000); // 2026-10-19 UTC
+    wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    server.set_response_date(1_792_368_060);
+    let lookback = wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert_eq!(lookback.entries, 1);
+    let latest = || {
+        server
+            .simulation
+            .requests()
+            .into_iter()
+            .rev()
+            .find(|r| r.url.contains("entries.json?page="))
+            .unwrap()
+            .url
+    };
+    assert!(latest().contains("since=2026-10-18T00%3A00%3A00Z"));
+    let incremental = wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert_eq!(incremental.entries, 0);
+    assert!(latest().contains("since=2026-10-19T00%3A01%3A00Z"));
+    // A fresh provider models relaunch: the durable server watermark survives, and the
+    // first refresh deliberately looks back a day, as NetNewsWire does.
+    wait(synchronize_with_history(
+        &server.provider(),
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert!(latest().contains("since=2026-10-18T00%3A01%3A00Z"));
+    server.set_response_date(1_792_454_460); // Next day; move the successful server watermark.
+    wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert!(latest().contains("since=2026-10-19T00%3A01%3A00Z"));
+}
+
+#[test]
+fn lookback_updates_content_without_erasing_local_read_star_or_tags() {
+    use day_reactive::Binding;
+    use daynews_db::{ArticleBody, ArticleBodyFields, ArticleRelations};
+    use daynews_sync::engine::synchronize_with_history;
+    let server = historical_server();
+    let a = Replica::new();
+    let p = server.provider();
+    server.set_response_date(1_792_368_000);
+    wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    let id = a.article("1001");
+    let article = a.db.container.get::<Article>(id).unwrap();
+    let arrival = article.first_seen_at().peek();
+    a.db.set_starred(id, true);
+    let tag = a.db.add_tag("Synthetic retained tag");
+    a.db.set_tagged(id, tag, true);
+    a.db.container.save().unwrap();
+    let mut changed = historical_entry(1001, "2026-10-18T12:00:00Z");
+    changed["content"] = serde_json::json!("<p>Corrected synthetic content.</p>");
+    changed["title"] = serde_json::json!("Corrected fixture");
+    server.replace_entries(vec![
+        changed,
+        historical_entry(1002, "2026-01-02T12:00:00Z"),
+    ]);
+    wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert_eq!(article.title().peek().as_deref(), Some("Corrected fixture"));
+    assert_eq!(article.first_seen_at().peek(), arrival);
+    assert!(article.is_read().peek());
+    assert!(article.is_starred().peek());
+    assert!(article.tags().contains(tag));
+    assert_eq!(
+        a.db.container
+            .get::<ArticleBody>(id)
+            .unwrap()
+            .content_html()
+            .peek(),
+        "<p>Corrected synthetic content.</p>"
+    );
+}
+
+#[test]
+fn newly_subscribed_feed_backfills_within_retention_behind_known_recent_pages() {
+    use daynews_sync::engine::synchronize_with_history;
+    let server = historical_server();
+    let a = Replica::new();
+    let p = server.provider();
+    server.set_response_date(1_792_368_000);
+    wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    let outcomes = wait(p.apply(vec![Operation {
+        revision: 99,
+        mutation: Mutation::Subscribe {
+            url: "https://fixture.invalid/new-history".into(),
+        },
+    }]))
+    .unwrap();
+    let feed_id = match &outcomes[0] {
+        Outcome::Applied {
+            subscription: Some(sub),
+            ..
+        } => sub.feed_id.parse::<u64>().unwrap(),
+        _ => panic!("synthetic subscription was not accepted"),
+    };
+    let mut added = historical_entry(1004, "2026-08-01T12:00:00Z");
+    added["feed_id"] = serde_json::json!(feed_id);
+    server.replace_entries(vec![
+        historical_entry(1001, "2026-10-18T12:00:00Z"),
+        added,
+        historical_entry(1002, "2026-01-02T12:00:00Z"),
+    ]);
+    let report = wait(synchronize_with_history(
+        &p,
+        &a,
+        Some(HISTORY_CUTOFF),
+        |_| Ok(()),
+    ))
+    .unwrap();
+    assert_eq!(report.entries, 2);
+    assert_eq!(report.imported, 1);
+    assert!(wait(a.missing(vec!["1004".into()])).unwrap().is_empty());
 }

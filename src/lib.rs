@@ -91,7 +91,11 @@ fn scope_for_key(key: &str) -> Option<Scope> {
 
 /// A sidebar count, blank when there is nothing unread; an empty badge draws nothing.
 fn count(n: i64) -> String {
-    if n > 0 { n.to_string() } else { String::new() }
+    if n > 0 {
+        day::format_decimal(n as f64, 0)
+    } else {
+        String::new()
+    }
 }
 
 pub fn root() -> impl Piece {
@@ -291,6 +295,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
             reader_dest,
         )
         .icon_tint(Color::hex(0x5E5CE6))
+        .badge(move || count(st.total_articles.get()))
         // One row per subscription, re-derived whenever the feed list or its counts change.
         .section(res::str::nav_feeds_section())
         .items(
@@ -342,7 +347,13 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         .items(
             {
                 let prefs = prefs.clone();
-                move || prefs.nav_keys(Some("settings".to_string()))
+                move || {
+                    if crate::settings::TOOLBAR_SETTINGS {
+                        Vec::new()
+                    } else {
+                        prefs.nav_keys(Some("settings".to_string()))
+                    }
+                }
             },
             |key: &Option<String>| item(key.clone(), res::str::nav_settings()),
         )
@@ -391,6 +402,21 @@ fn bind_sidebar_scope(section: Signal<Option<String>>, sc: daynews_core::NewsSce
 #[cfg(test)]
 mod navigation_tests {
     use super::*;
+
+    #[test]
+    fn navigation_counts_follow_locale_changes() {
+        let previous = day::locale().get_untracked();
+        for (locale, expected) in [
+            ("en-US", "72,811"),
+            ("fr-FR", "72\u{202f}811"),
+            ("de-DE", "72.811"),
+        ] {
+            day::locale().set(locale.to_string());
+            assert_eq!(count(72_811), expected);
+            assert_eq!(count(0), "");
+        }
+        day::locale().set(previous);
+    }
 
     #[test]
     fn sidebar_selection_keeps_its_scene_when_reactions_run_elsewhere() {

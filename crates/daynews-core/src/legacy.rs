@@ -113,6 +113,7 @@ pub struct SheetsState {
     pub total_unread: Signal<i64>,
     pub total_starred: Signal<i64>,
     pub total_today: Signal<i64>,
+    pub total_articles: Signal<i64>,
     /// A short transient message ("Imported 145 feeds", "3 feeds failed").
     pub status: Signal<String>,
 }
@@ -199,6 +200,7 @@ impl Ambient for SheetsState {
             total_unread: Signal::new(0),
             total_starred: Signal::new(0),
             total_today: Signal::new(0),
+            total_articles: Signal::new(0),
             status: Signal::new(String::new()),
         }
     }
@@ -367,6 +369,7 @@ fn wire_app_state() {
     store_with(|s| {
         let _ = s.totals.set([unread_total.clone(), starred_total.clone()]);
     });
+    let articles_total = with_db(|db| db.count(Scope::All)).expect("open");
     let today_total = with_db(|db| db.unread_count(Scope::Today)).expect("open");
 
     // The sidebar lists are standing queries too: the container holds a live query weakly, so
@@ -411,6 +414,7 @@ fn wire_app_state() {
         Effect::new(move || st.total_unread.set(unread_total.get() as i64));
         Effect::new(move || st.total_starred.set(starred_total.get() as i64));
         Effect::new(move || st.total_today.set(today_total.get() as i64));
+        Effect::new(move || st.total_articles.set(articles_total.get() as i64));
     });
 }
 

@@ -5,7 +5,7 @@ description: Progress, cancellation, paused scheduler, and confirmed local reset
 flow:
   - dialog_mode: { mode: scripted }
   - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: prefs-group-accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - input: { id: sync-username, text: fixture@example.invalid, skip_on: [web-dom] }
   - input: { id: sync-password, text: fixture-password, skip_on: [web-dom] }

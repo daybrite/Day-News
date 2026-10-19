@@ -411,8 +411,6 @@ pub fn timeline_pane() -> impl Piece {
                 .grow_w()
             },
         ),
-        #[cfg(not(target_arch = "wasm32"))]
-        crate::accounts::sync_progress(),
         // Refresh progress, shown only while a refresh is running.
         when(
             move || st.refresh_progress.get().is_some(),
@@ -450,6 +448,22 @@ pub fn timeline_pane() -> impl Piece {
             move |slot| {
                 let (lines, percent, grouped) = slot.get();
                 timeline_rows(lines, percent as f64 / 100.0, sc, grouped)
+            },
+        ),
+        #[cfg(not(target_arch = "wasm32"))]
+        when(
+            || {
+                crate::settings::SHOW_SYNC_STATUS.get()
+                    && daynews_core::sync_status().get().busy
+                    && daynews_core::sync_status().get().progress.is_some()
+            },
+            || {
+                column((
+                    divider(),
+                    crate::accounts::sync_progress().padding(Insets::symmetric(12.0, 4.0)),
+                ))
+                .id("sync-status-footer")
+                .grow_w()
             },
         ),
     ))

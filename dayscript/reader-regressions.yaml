@@ -8,7 +8,8 @@ flow:
   - wait_for: { id: article-row-0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - toolbar: { item: read, on: false }
+  - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
+  - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
   - menu: { id: mark-all-read }
   - pause: { secs: 1 }
@@ -36,7 +37,8 @@ flow:
   - assert_focused: { id: timeline, only_on: [macos-appkit] }
   - screenshot: next-unread-cross-scope
   # Preserve deliberately unread current articles; Next Unread skips them.
-  - toolbar: { item: read, on: false }
+  - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
+  - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
   - toolbar: { item: next-unread }
   - pause: { secs: 2 }

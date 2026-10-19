@@ -459,7 +459,11 @@ impl Db {
         account: u64,
         entries: Vec<Entry>,
         read: &ReadChanges,
-    ) -> Result<bool, DbError> {
+    ) -> Result<daynews_sync::engine::Imported, DbError> {
+        if entries.is_empty() {
+            return Ok(Default::default());
+        }
+        let mut added = 0;
         let links = self
             .container
             .query::<SubscriptionLink>()
@@ -524,7 +528,40 @@ impl Db {
                 }
             };
             let current = pending.get(&e.id).copied().unwrap_or(confirmed);
-            if self.container.get::<Article>(local).is_none() {
+            if let Some(article) = self.container.get::<Article>(local) {
+                // A bounded lookback can deliver publisher corrections. Update content without
+                // disturbing read/star/tag intent or the original local arrival date. Unchanged
+                // values must not dirty models or wake the timeline on every sync.
+                macro_rules! update {
+                    ($field:ident, $value:expr) => {
+                        if article.$field().peek() != $value {
+                            article.$field().write($value);
+                        }
+                    };
+                }
+                update!(title, e.title);
+                update!(url, e.url);
+                update!(author, e.author);
+                update!(summary, e.summary);
+                update!(published_at, e.published);
+                if let Some(html) = e.content {
+                    if let Some(body) = self.container.get::<ArticleBody>(local) {
+                        if body.content_html().peek() != html {
+                            update!(word_count, Some(dashboard::word_count(&html)));
+                            body.content_html().write(html);
+                        }
+                    } else {
+                        update!(word_count, Some(dashboard::word_count(&html)));
+                        self.container.insert(ArticleBody {
+                            id: local,
+                            article: One::to(local),
+                            content_html: html,
+                        });
+                    }
+                }
+            } else {
+                all_known = false;
+                added += 1;
                 self.container.insert(Article {
                     id: local,
                     feed: One::to(feed),
@@ -547,16 +584,31 @@ impl Db {
                     });
                 }
             }
-            self.container.insert(EntryLink {
+            let link = EntryLink {
                 id: identity,
                 account,
                 remote: e.id,
                 remote_feed: e.feed_id,
                 article: local,
                 confirmed_read: confirmed,
-            });
+            };
+            // Replayed history and incremental boundary pages must not dirty unchanged
+            // links, flush them to SQLite, or invalidate subscribed UI queries.
+            if self
+                .container
+                .try_get::<EntryLink>(identity)?
+                .is_none_or(|old| {
+                    old.account().peek() != link.account
+                        || old.remote().peek() != link.remote
+                        || old.remote_feed().peek() != link.remote_feed
+                        || old.article().peek() != link.article
+                        || old.confirmed_read().peek() != link.confirmed_read
+                })
+            {
+                self.container.insert(link);
+            }
         }
-        Ok(all_known)
+        Ok(daynews_sync::engine::Imported { all_known, added })
     }
     pub fn sync_apply_read(&self, account: u64, changes: ReadChanges) -> Result<(), DbError> {
         let pending: HashMap<_, _> = self

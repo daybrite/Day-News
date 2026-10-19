@@ -1,0 +1,20 @@
+# Run on iOS after seed-demo.yaml. Repeat under light and dark system appearance;
+# screenshots must show an opaque navigation/status-bar background while text scrolls.
+name: reader-header
+description: Reader scrolling keeps navigation controls clear of article text.
+flow:
+  - navigate: { route: 'feed:5756297993796914528' }
+  - wait_for: { id: timeline }
+  - select: { id: timeline, index: 0 }
+  - wait_for: { id: reader-web }
+  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 0); true', text: 'true' }
+  - pause: { secs: 1 }
+  - screenshot: reader-header-top
+  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 500); true', text: 'true' }
+  - pause: { secs: 1 }
+  - web_eval: { id: reader-web, script: 'window.scrollY > 0', text: 'true' }
+  - screenshot: reader-header-scrolled
+  - web_eval: { id: reader-web, script: 'window.scrollTo(0, document.documentElement.scrollHeight); true', text: 'true' }
+  - pause: { secs: 1 }
+  - screenshot: reader-header-bottom
+  - nav_back: {}

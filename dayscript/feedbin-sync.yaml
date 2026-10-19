@@ -4,7 +4,7 @@ name: feedbin-sync
 description: Native account login, preview, article import and reading.
 flow:
   - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: prefs-group-accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: sync-username, skip_on: [web-dom] }
   - screenshot: { name: sync-login, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
@@ -21,12 +21,18 @@ flow:
   - assert_text: { id: sync-status, key: sync_ready, timeout_secs: 25, skip_on: [web-dom] }
   - screenshot: { name: sync-connected, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - screenshot: { name: sync-connected, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - close_window: { window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - close_window: { window: day.preferences, skip_on: [web-dom] }
   - navigate: { route: "feed:3155635484843577116", skip_on: [web-dom] }
   - wait_for: { id: article-row-0, skip_on: [web-dom] }
   - screenshot: { name: sync-articles, skip_on: [web-dom] }
   - select: { id: timeline, index: 0, skip_on: [web-dom] }
   - wait_for: { id: reader-web, skip_on: [web-dom] }
   - screenshot: { name: sync-reader, skip_on: [web-dom] }
+  # iOS uses a plain command: its circle changes with the stored read state,
+  # without UIKit's selected bar-button background.
+  - toolbar: { item: read, only_on: [ios-uikit] }
+  - pause: { secs: 1, only_on: [ios-uikit] }
+  - screenshot: { name: sync-reader-unread, only_on: [ios-uikit] }
+  - toolbar: { item: read, only_on: [ios-uikit] }
+  - pause: { secs: 1, only_on: [ios-uikit] }
+  - screenshot: { name: sync-reader-read, only_on: [ios-uikit] }

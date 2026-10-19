@@ -1,0 +1,40 @@
+# Mobile only. Seed demo articles and connect the synthetic Feedbin account first.
+# Launch with DAY_NEWS_SYNC_TEST=1 DAY_NEWS_SYNC_TEST_LATENCY_MS=1500 in an isolated store.
+name: mobile-navigation
+description: In-place unread filtering, toolbar Settings, and compact sync footer visibility.
+flow:
+  - navigate: { route: all }
+  - wait_for: { id: article-row-0 }
+  - nav_back: {}
+  - assert_route: { route: "" }
+  - toolbar: { item: unread-feeds-only, on: true }
+  - assert_route: { route: "" }
+  - screenshot: mobile-filtered-feed-counts
+  - toolbar: { item: unread-feeds-only, on: false }
+  - assert_route: { route: "" }
+  - toolbar: { item: settings }
+  - wait_for: { id: prefs-group-articles }
+  - screenshot: mobile-toolbar-settings
+  - tap: { id: prefs-group-articles }
+  - toggle: { id: show-sync-status, value: false }
+  - close_window: { window: day.preferences }
+  - pause: { secs: 1 }
+  - assert_route: { route: "" }
+  - navigate: { route: all }
+  - toolbar: { item: refresh }
+  - pause: { secs: 1 }
+  - assert_missing: { id: sync-status-footer }
+  - pause: { secs: 8 }
+  - toolbar: { item: settings }
+  - wait_for: { id: prefs-group-articles }
+  - tap: { id: prefs-group-articles }
+  - toggle: { id: show-sync-status, value: true }
+  - close_window: { window: day.preferences }
+  - pause: { secs: 1 }
+  - toolbar: { item: refresh }
+  - pause: { secs: 1 }
+  - assert_visible: { id: sync-status-footer }
+  - screenshot: mobile-sync-footer
+  - tap: { id: sync-cancel-transfer }
+  - pause: { secs: 1 }
+  - assert_missing: { id: sync-status-footer }

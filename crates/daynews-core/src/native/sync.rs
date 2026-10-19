@@ -48,12 +48,14 @@ struct Session {
     installed: Cell<bool>,
     next_attempt: Cell<i64>,
     failures: Cell<u32>,
+    retention_days: Cell<u32>,
 }
 thread_local! {static SESSION:Session=Session {
     run:RefCell::new(None),
     status:Signal::new_in(day_reactive::Scope::root(),SyncStatus::default()),
     provider:RefCell::new(None),candidate:RefCell::new(None),generation:Cell::new(0),account:Cell::new(None),
     installed:Cell::new(false),next_attempt:Cell::new(0),failures:Cell::new(0),
+    retention_days:Cell::new(DEFAULT_RETENTION_DAYS),
 };}
 pub fn sync_status() -> Signal<SyncStatus> {
     SESSION.with(|s| s.status)
@@ -497,6 +499,17 @@ pub fn sync_reset_local() {
     });
 }
 
+/// The app's persisted Keep Articles preference; read once at the next sync boundary.
+pub fn set_sync_retention_days(days: u32) {
+    SESSION.with(|s| s.retention_days.set(days));
+}
+
+fn history_since(days: u32, now: i64) -> Option<i64> {
+    // Round down to UTC midnight: at most one day of grace, with a stable query/ETag for
+    // repeated syncs that day. Zero is the existing Keep Forever setting.
+    (days != 0).then(|| now.div_euclid(86_400) * 86_400 - i64::from(days) * 86_400)
+}
+
 pub fn sync_now() {
     let status = sync_status().get_untracked();
     if status.busy || !status.connected {
@@ -543,6 +556,11 @@ pub fn sync_now() {
             });
         }
     });
+    let days = SESSION.with(|s| s.retention_days.get());
+    let since = history_since(days, daynews_time::now_unix());
+    log::info!(
+        "sync history retention_days={days} since={since:?}; unread recovery is age-independent"
+    );
     day_core::task(async move {
         let phase = Cell::new(Phase::Preparing);
         let phase_started = Cell::new(started);
@@ -554,7 +572,7 @@ pub fn sync_now() {
                 generation: g,
                 cancelled,
             };
-            let report = engine::synchronize_with_progress(provider.as_ref(), &store, |p| {
+            let report = engine::synchronize_with_history(provider.as_ref(), &store, since, |p| {
                 if !active(g) { return Err(Error::Cancelled); }
                 if phase.replace(p.phase) != p.phase { phase_started.set(Instant::now()); }
                 let remaining = p.remaining(phase_started.get().elapsed());
@@ -591,9 +609,10 @@ pub fn sync_now() {
                 });
             }
             log::info!(
-                "sync provider={} imported={} acknowledged={} pending={} elapsed_ms={}",
+                "sync provider={} downloaded={} imported={} acknowledged={} pending={} elapsed_ms={}",
                 provider.kind(),
                 report.entries,
+                report.imported,
                 report.acknowledged,
                 pending,
                 started.elapsed().as_millis()
@@ -721,7 +740,7 @@ impl Storage for WorkerStorage {
     fn missing(&self, ids: Vec<String>) -> Call<'_, Vec<String>> {
         async move { self.write(move |db, a| Ok(db.sync_missing(a, ids))).await }.boxed_local()
     }
-    fn entries(&self, e: Vec<Entry>, s: ReadChanges) -> Call<'_, bool> {
+    fn entries(&self, e: Vec<Entry>, s: ReadChanges) -> Call<'_, daynews_sync::engine::Imported> {
         async move {
             self.write(move |db, a| db.sync_import_entries(a, e, &s))
                 .await
@@ -744,5 +763,22 @@ impl Storage for WorkerStorage {
             .await
         }
         .boxed_local()
+    }
+}
+
+#[cfg(test)]
+mod retention_tests {
+    use super::history_since;
+
+    #[test]
+    fn cutoff_tracks_retention_and_remains_stable_during_the_day() {
+        let midnight = 1_792_368_000; // Synthetic 2026-10-19 UTC.
+        assert_eq!(history_since(90, midnight + 43_200), Some(1_784_592_000));
+        assert_eq!(
+            history_since(90, midnight),
+            history_since(90, midnight + 86_399)
+        );
+        assert_eq!(history_since(30, midnight), Some(midnight - 30 * 86_400));
+        assert_eq!(history_since(0, midnight), None);
     }
 }

@@ -67,7 +67,7 @@ settings_reader = Reader
 settings_browser = Browser
 settings_feeds = Feeds
 settings_retention_label = Keep articles
-settings_retention_note = Read articles older than this are removed at launch. Starred and tagged articles are always kept.
+settings_retention_note = Limits Feedbin history downloads; unread articles still synchronize regardless of age. Old read articles are removed at launch. Locally starred and tagged articles are always kept.
 retention_30 = For one month
 retention_90 = For three months
 retention_180 = For six months
@@ -339,10 +339,10 @@ sync_progress_upload = Uploading local changes: { $done }/{ $total }
 sync_progress_subscriptions = Synchronizing subscriptions: { $count } feeds received
 sync_progress_read = Synchronizing read/unread status…
 sync_progress_articles = Downloading articles: page { $page }/{ $total } · { $articles ->
-    [one] 1 article saved
-   *[other] { $articles } articles saved
+    [one] 1 new article saved
+   *[other] { $articles } new articles saved
     }
-sync_progress_articles_unknown = Downloading articles · Pages: { $pages } · Articles saved: { $articles }
+sync_progress_articles_unknown = Downloading articles · Pages: { $pages } · New articles saved: { $articles }
 sync_progress_feed = Current page includes: { $title }
 sync_progress_missing = Downloading missing unread articles: { $done }/{ $total }
 sync_progress_finalizing = Updating reading state and saving synchronization checkpoint…
@@ -355,3 +355,5 @@ sync_progress_estimating = Elapsed { $elapsed } · Estimating time remaining…
 reader_page_loading = Loading article…
 reader_page_unavailable = This article is no longer available.
 reader_page_failed = Unable to load this article. Return to the article list to try again.
+
+settings_show_sync_status = Show synchronization status

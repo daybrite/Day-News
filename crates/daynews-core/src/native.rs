@@ -114,6 +114,7 @@ pub struct SheetsState {
     pub total_unread: Signal<i64>,
     pub total_starred: Signal<i64>,
     pub total_today: Signal<i64>,
+    pub total_articles: Signal<i64>,
     /// A short transient message ("Imported 145 feeds", "3 feeds failed").
     pub status: Signal<String>,
 }
@@ -233,6 +234,7 @@ impl Ambient for SheetsState {
             total_unread: Signal::new(0),
             total_starred: Signal::new(0),
             total_today: Signal::new(0),
+            total_articles: Signal::new(0),
             status: Signal::new(String::new()),
         }
     }
@@ -429,7 +431,7 @@ pub fn init(format_status: fn(StatusMessage) -> String) {
         while let Some(result) = projection.next().await {
             match result {
                 Ok(snapshot) => batch(|| {
-                    let (feeds, folders, tags, unread, starred, today) = snapshot.value;
+                    let (feeds, folders, tags, unread, starred, today, articles) = snapshot.value;
                     let state = state();
                     state.feeds.set_if_changed(feeds);
                     state.folders.set_if_changed(folders);
@@ -437,6 +439,7 @@ pub fn init(format_status: fn(StatusMessage) -> String) {
                     state.total_unread.set_if_changed(unread);
                     state.total_starred.set_if_changed(starred);
                     state.total_today.set_if_changed(today);
+                    state.total_articles.set_if_changed(articles);
                 }),
                 Err(e) => report(e),
             }
@@ -479,7 +482,15 @@ fn edit(f: impl FnOnce(&Db) -> Result<(), DbError> + Send + 'static) {
     });
 }
 
-type SidebarSnapshot = (Vec<FeedRow>, Vec<FolderRow>, Vec<TagRow>, i64, i64, i64);
+type SidebarSnapshot = (
+    Vec<FeedRow>,
+    Vec<FolderRow>,
+    Vec<TagRow>,
+    i64,
+    i64,
+    i64,
+    i64,
+);
 fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
     use daynews_db::{Feed, Folder, Tag};
     let mut unread = HashMap::new();
@@ -550,6 +561,7 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
         unread.values().sum(),
         d.count(Scope::Starred).try_get()? as i64,
         d.unread_count(Scope::Today).try_get()? as i64,
+        d.count(Scope::All).try_get()? as i64,
     ))
 }
 fn timeline_snapshot(
@@ -1664,6 +1676,7 @@ mod tests {
         let sidebar = wait(worker.read(sidebar_snapshot)).unwrap();
         assert_eq!(sidebar.0[0].unread, 1);
         assert_eq!(sidebar.3, 1);
+        assert_eq!(sidebar.6, 2);
         let filtered = wait(
             worker.read(|db| timeline_snapshot(db, Scope::Unread, "moon", &[article_id(URL, "1")])),
         )

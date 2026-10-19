@@ -146,7 +146,11 @@ saved in the same database-worker transaction. The cycle sends pending changes f
 subscriptions, applies reading state, downloads article pages and missing unread entries, and
 then reconciles reading state again. Local pending intent overlays remote snapshots. Each
 acknowledgement removes only its exact revision, so an older response cannot erase a newer edit.
-A failed individual operation remains queued without blocking unrelated downloads. Bulk marking
+A failed individual operation remains queued without blocking unrelated downloads. A completed
+import persists its checkpoint even when an independent upload is rejected, so that failed
+intent cannot cause another full history scan. Canceled or incomplete imports never advance
+the checkpoint. Progress counts newly inserted articles separately from downloaded records;
+known entry links are only rewritten when their identity or confirmed state actually changes. Bulk marking
 captures the current article IDs; articles arriving later are not accidentally marked read.
 
 Pending local read/unread intent wins until acknowledged; after acknowledgement the server's
@@ -343,7 +347,11 @@ The sidebar opens on four smart feeds — Today, All Unread, Starred, All Articl
 per subscription and one per tag. Unread counts are real badges (`.badge(…)`), right-aligned and
 de-emphasized by each toolkit, and the three blocks sit under their own `.section(…)` headers;
 both were gaps in Day's `nav` when this app started and were built in the framework rather
-than faked in the row label.
+than faked in the row label. The mobile renderers display the same badge strings, including
+All Articles' total count. Counts use Day's tracked locale-aware decimal formatter so digit
+grouping changes with the locale. On mobile, a Settings gear in the trailing toolbar opens
+Day's modal preferences surface; Settings is no longer a feed navigation row. The unread-only
+filter uses a funnel with an unread dot and updates the rows without activating a destination.
 
 `watch` fires on CHANGE, so the shell applies the opening scope itself (`OPENING_SECTION`).
 Without that the sidebar highlighted Today while the timeline still showed the scope the store
@@ -521,6 +529,11 @@ without discarding completed content. Returning to an adjacent article preserves
 a page recycled out of the three-slot window starts fresh. The old document touch recognizer
 is removed, so native paging cannot also trigger a second JavaScript navigation. Native back
 edges, vertical WebView scrolling and native touch arbitration remain platform-owned.
+On iOS, Day's opaque navigation-bar appearances keep scrolled article text out of the
+status/title/control area, including compact landscape bars. The native system background
+tracks light/dark appearance. `dayscript/reader-header.yaml` captures the top, middle and
+bottom of a scrolled demo article for visual regression checks in both appearances.
+
 `dayscript/reader-swipes.yaml` tests the shared selection/retention contract; actual gestures,
 cancellation and boundaries are covered by `tests/ios-navigation` and
 `tests/android-reader-paging.py`. Harmony runtime gesture validation belongs in CI.
@@ -762,3 +775,43 @@ The next cycle downloads subscriptions and remote reading state without a condit
 `dayscript/feedbin-progress.yaml` exercises cancellation, a scheduler interval while paused,
 resume, dismissed reset confirmation, and accepted reset through the ordinary HTTP interface.
 Its explicit fixture latency is test-only (`DAY_NEWS_SYNC_TEST_LATENCY_MS`, requires fixture mode).
+
+The article list shows synchronization in a compact bottom footer with single-line activity,
+feed and timing labels. The indicator and feed line reserve their geometry across phases.
+`news.articles.show_sync_status` (Settings → Articles) persists footer visibility; Accounts
+continues to show sync progress and cancellation even when the list footer is hidden.
+
+### Feedbin history windows and incremental fetching
+
+Feedbin-connected accounts use Feedbin's cached RSS/Atom article bodies and stable entry IDs;
+local-only feeds still poll publishers directly. Full webpage/reader extraction remains separate.
+This follows NetNewsWire's FeedbinAPICaller and FeedbinAccountDelegate implementation.
+
+The persisted Keep Articles preference is installed into the sync session before account startup.
+Each cycle captures one cutoff (90 days by default, 0 = unlimited), rounded down to UTC midnight
+for at most one day of grace. Feedbin filters ordinary history at the server using `since`, which
+means its `created_at` arrival date, not the publisher's potentially backdated `published` date.
+Unread IDs outside the window still recover missing bodies in batches of 100. Existing local
+stars/tags and reading-state intent are preserved; the window does not delete account history.
+
+After a successful scan, the opaque provider checkpoint records the first page's HTTP Date.
+Subsequent scans use that server-time watermark, with a one-day lookback on the first incremental
+fetch of a provider session and then once daily, following NetNewsWire. Lookback pages are scanned
+through known entries so publisher corrections can update content without changing local flags,
+tags or arrival dates. Missing Date headers fall back to bounded history and known-page stopping.
+Changing a query invalidates its ETag. Increasing retention (including Keep Forever) or changing
+subscriptions requests a complete scan of the desired window instead of stopping at a known page.
+Every page keeps the same cutoff. Cancellation/failure leaves the durable checkpoint unchanged;
+resumption cannot skip older pages. Provider-neutral `prepare_history` owns protocol-specific
+query/watermark decisions; the shared engine owns cancellation and transaction boundaries.
+
+Tests in `daynews-db/tests/synchronization.rs` exercise real provider/engine/database flows through
+`day-part-http` interception: excluded old read bodies never enter the response stream, old unread
+recovery, query-specific validators, widening and cancellation, incremental/launch/daily lookback,
+new-feed backfills and content corrections with local read/star/tag state preserved.
+
+On iPhone and iPad, the reader's read/unread command is a plain toolbar button, following
+NetNewsWire: an outlined circle means read, and a filled center inside a ring means unread.
+It has no selected background. The stored article drives both its icon and localized action
+label; taps toggle the database value on the persistence queue, avoiding stale UI snapshots.
+Desktop and other backends retain their existing toolbar toggle behavior.

@@ -17,7 +17,8 @@ flow:
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: opml-import }
   - tap: { id: opml-import }
@@ -28,4 +29,4 @@ flow:
   - assert_text: { id: feeds-count, text: "7 feeds" }
   - screenshot: { name: imported, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - screenshot: { name: imported, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }

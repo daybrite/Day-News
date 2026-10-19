@@ -22,6 +22,9 @@ struct State {
     unread: BTreeSet<u64>,
     reject: BTreeSet<u64>,
     next_id: u64,
+    entries: Vec<Value>,
+    entries_version: u64,
+    response_date: Option<String>,
 }
 impl Default for Server {
     fn default() -> Self {
@@ -41,6 +44,9 @@ impl Server {
             unread: [1001, 1002].into_iter().collect(),
             reject: BTreeSet::new(),
             next_id: 102,
+            entries: vec![entry(1001), entry(1002)],
+            entries_version: 1,
+            response_date: None,
         }));
         let captured = state.clone();
         let auth = Request::get("https://api.feedbin.com/v2/authentication.json")
@@ -77,6 +83,11 @@ impl Server {
                         let Some(url) = body["feed_url"].as_str() else {
                             return Ok(Reply::new(422, vec![]));
                         };
+                        // Synthetic permanent rejection used to exercise independent upload
+                        // retries and download checkpoints through the production HTTP client.
+                        if url == "https://fixture.invalid/rejected" {
+                            return Ok(Reply::new(422, vec![]));
+                        }
                         if let Some(old) = s.subscriptions.iter().find(|r| r["feed_url"] == url) {
                             (302, old.clone())
                         } else {
@@ -117,36 +128,39 @@ impl Server {
                                 .filter_map(|i| i.parse::<u64>().ok())
                                 .collect::<Vec<_>>()
                         });
-                        let page = query.get("page").map(|v| v.as_ref()).unwrap_or("1");
-                        if !query.contains_key("ids")
-                            && page == "1"
-                            && request.headers.iter().any(|(k, v)| {
-                                k.eq_ignore_ascii_case("if-none-match")
-                                    && v == "\"fixture-entries-v1\""
-                            })
-                        {
-                            return Ok(Reply::new(304, vec![]));
+                        let page = query.get("page").and_then(|v| v.parse::<usize>().ok()).unwrap_or(1);
+                        let etag = format!("\"fixture-entries-v{}\"", s.entries_version);
+                        if ids.is_none() && page == 1 && request.headers.iter().any(|(k, v)| {
+                            k.eq_ignore_ascii_case("if-none-match") && v == &etag
+                        }) {
+                            let mut reply = Reply::new(304, vec![]);
+                            if let Some(date) = &s.response_date { reply = reply.header("Date", date); }
+                            return Ok(reply);
                         }
-
-                        let rows = if let Some(ids) = ids {
-                            ids.into_iter()
-                                .filter(|i| [1001, 1002].contains(i))
-                                .map(entry)
-                                .collect()
-                        } else if page == "1" {
-                            vec![entry(1001)]
-                        } else {
-                            vec![entry(1002)]
+                        let since = query.get("since").map(|v| {
+                            chrono::DateTime::parse_from_rfc3339(v).expect("fixture since timestamp")
+                        });
+                        let filtered: Vec<_> = s.entries.iter().filter(|row| {
+                            if let Some(ids) = &ids {
+                                return row["id"].as_u64().is_some_and(|id| ids.contains(&id));
+                            }
+                            since.is_none_or(|since| {
+                                chrono::DateTime::parse_from_rfc3339(row["created_at"].as_str().unwrap()).unwrap() > since
+                            })
+                        }).cloned().collect();
+                        // Deliberately one article per fixture page to exercise pagination.
+                        let total = filtered.len();
+                        let rows = if ids.is_some() { filtered } else {
+                            filtered.into_iter().skip(page.saturating_sub(1)).take(1).collect()
                         };
                         let mut reply = Reply::new(200, serde_json::to_vec(&rows).unwrap())
                             .header("Content-Type", "application/json")
-                            .header("ETag", "\"fixture-entries-v1\"");
-                        if !query.contains_key("ids") && page == "1" {
-                            reply = reply.header(
-                                "Link",
-                                "<https://api.feedbin.com/v2/entries.json?page=2>; rel=\"next\", <https://api.feedbin.com/v2/entries.json?page=2>; rel=\"last\"",
-                            );
+                            .header("ETag", etag);
+                        if ids.is_none() && page < total {
+                            reply = reply.header("Link", format!(
+                                "<https://api.feedbin.com/v2/entries.json?page={}>; rel=\"next\", <https://api.feedbin.com/v2/entries.json?page={total}>; rel=\"last\"", page + 1));
                         }
+                        if let Some(date) = &s.response_date { reply = reply.header("Date", date); }
                         return Ok(reply);
                     }
                     _ if path.starts_with("/v2/subscriptions/") => {
@@ -194,6 +208,17 @@ impl Server {
             },
             self.client(),
         )
+    }
+    /// Synthetic wire records, newest arrival first; lets tests model historical backfills.
+    pub fn replace_entries(&self, entries: Vec<Value>) {
+        let mut state = self.state.lock().unwrap();
+        state.entries = entries;
+        state.entries_version += 1;
+    }
+    pub fn set_response_date(&self, timestamp: u64) {
+        self.state.lock().unwrap().response_date = Some(httpdate::fmt_http_date(
+            std::time::UNIX_EPOCH + std::time::Duration::from_secs(timestamp),
+        ));
     }
     pub fn unread(&self) -> BTreeSet<u64> {
         self.state.lock().unwrap().unread.clone()

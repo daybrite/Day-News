@@ -25,7 +25,7 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
     // A phone's narrow reader bar prioritizes reading actions. Sidebar commands
     // remain one native Back away on the timeline.
     let compact = day::size_class().is_none_or(|size| size.width == WidthClass::Compact);
-    if cfg!(target_os = "ios") && compact && sc.reader_open.get() {
+    if crate::settings::TOOLBAR_SETTINGS && compact && sc.reader_open.get() {
         return Vec::new();
     }
     let mut items = vec![
@@ -41,14 +41,28 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
             .placement(ToolbarPlacement::Navigation),
     ];
     if sc.article.with(|a| a.is_none()) {
-        items.push(
-            crate::commands::dashboard()
-                .toolbar_item()
-                .placement(ToolbarPlacement::Secondary),
-        );
+        if !crate::settings::TOOLBAR_SETTINGS {
+            items.push(
+                crate::commands::dashboard()
+                    .toolbar_item()
+                    .placement(ToolbarPlacement::Secondary),
+            );
+        }
         items.push(crate::commands::next_unread().toolbar_item());
     }
+    if crate::settings::TOOLBAR_SETTINGS {
+        items.push(settings_item());
+    }
     items
+}
+
+fn settings_item() -> ToolbarEntry {
+    toolbar_button("settings", res::str::nav_settings())
+        .icon(Symbol::Settings)
+        .action(|| {
+            day_piece_settings::open();
+        })
+        .placement(ToolbarPlacement::Primary)
 }
 
 /// The open article's commands. Declared on the reader, so they arrive with the article and
@@ -57,7 +71,29 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
     let (id, starred, read) = (article.id, article.is_starred, article.is_read);
     let star_state = Signal::new(starred);
     let read_state = Signal::new(read);
-    vec![
+    let read_label = if read {
+        res::str::mark_unread()
+    } else {
+        res::str::mark_read()
+    };
+    // Like NetNewsWire, iOS expresses read status in the icon, not UIKit's
+    // selected bar-button background. The reader rebuilds these items when
+    // the stored article changes, including changes received through sync.
+    let read_item = if cfg!(feature = "uikit") {
+        let button = toolbar_button("read", read_label);
+        let button = if read {
+            button.icon(Symbol::Circle)
+        } else {
+            button.image(res::vectors::article_unread)
+        };
+        button.action(move || daynews_core::toggle_read(id))
+    } else {
+        toolbar_toggle("read", read_label, read_state)
+            .icon(Symbol::CircleFilled)
+            .action(move || daynews_core::set_read(id, read_state.get_untracked()))
+    }
+    .placement(ToolbarPlacement::Primary);
+    let mut items = vec![
         crate::commands::navigate_article(false).toolbar_item(),
         crate::commands::navigate_article(true).toolbar_item(),
         crate::commands::next_unread().toolbar_item(),
@@ -72,18 +108,7 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
         )
         .icon(Symbol::Star)
         .action(move || daynews_core::set_starred(id, star_state.get_untracked())),
-        toolbar_toggle(
-            "read",
-            if read {
-                res::str::mark_unread()
-            } else {
-                res::str::mark_read()
-            },
-            read_state,
-        )
-        .icon(Symbol::CircleFilled)
-        .placement(ToolbarPlacement::Primary)
-        .action(move || daynews_core::set_read(id, read_state.get_untracked())),
+        read_item,
         crate::commands::open_in_browser().toolbar_item(),
         crate::commands::reader_view().toolbar_item(),
         crate::commands::dashboard()
@@ -92,7 +117,11 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
         crate::commands::copy_article_link()
             .toolbar_item()
             .placement(ToolbarPlacement::Secondary),
-    ]
+    ];
+    if crate::settings::TOOLBAR_SETTINGS {
+        items.push(settings_item());
+    }
+    items
 }
 
 /// Grouping belongs above the article list; feed filtering stays beside Refresh in the sidebar.

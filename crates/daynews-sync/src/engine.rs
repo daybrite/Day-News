@@ -1,6 +1,14 @@
 //! Scheduling-independent sync cycle, shared by production and two-installation tests.
 use crate::*;
 
+#[derive(Default, Debug)]
+pub struct Imported {
+    /// Every entry was already stored, and a complete earlier import exists.
+    pub all_known: bool,
+    /// Articles actually inserted, excluding previously downloaded or adopted articles.
+    pub added: usize,
+}
+
 pub trait Storage {
     fn checkpoint(&self) -> Call<'_, Option<String>>;
     /// Mark a durable import in progress; return true when resuming an interrupted scan.
@@ -9,14 +17,16 @@ pub trait Storage {
     fn outcomes(&self, outcomes: Vec<Outcome>) -> Call<'_, ()>;
     fn subscriptions(&self, changes: Changes<Subscription>) -> Call<'_, ()>;
     fn missing(&self, ids: Vec<String>) -> Call<'_, Vec<String>>;
-    fn entries(&self, entries: Vec<Entry>, state: ReadChanges) -> Call<'_, bool>;
+    fn entries(&self, entries: Vec<Entry>, state: ReadChanges) -> Call<'_, Imported>;
     fn reading(&self, state: ReadChanges) -> Call<'_, ()>;
     fn finished(&self, checkpoint: Option<String>) -> Call<'_, ()>;
 }
 
 #[derive(Default, Debug)]
 pub struct Report {
+    /// Entries received over the network, including already stored articles.
     pub entries: usize,
+    pub imported: usize,
     pub acknowledged: usize,
     pub pending_error: Option<Error>,
 }
@@ -32,6 +42,18 @@ pub async fn synchronize(provider: &dyn Provider, store: &dyn Storage) -> Result
 pub async fn synchronize_with_progress(
     provider: &dyn Provider,
     store: &dyn Storage,
+    observe: impl Fn(progress::Progress) -> Result<()>,
+) -> Result<Report> {
+    synchronize_with_history(provider, store, None, observe).await
+}
+
+/// As above, but restrict ordinary history downloads to entries arriving after `since`.
+/// Unread recovery remains unbounded, matching retention's unread exception. Capture the
+/// cutoff once per cycle so every page and its checkpoint describe the same query.
+pub async fn synchronize_with_history(
+    provider: &dyn Provider,
+    store: &dyn Storage,
+    since: Option<i64>,
     observe: impl Fn(progress::Progress) -> Result<()>,
 ) -> Result<Report> {
     use progress::{Phase, Progress};
@@ -85,6 +107,7 @@ pub async fn synchronize_with_progress(
     let state = provider.read_state().await?;
     // Reading state has priority over history downloads.
     store.reading(state.clone()).await?;
+    let scan_all_pages = provider.prepare_history(since)?;
     let resuming = store.begin_entries().await?;
     let mut cursor = None;
     let mut visited = std::collections::HashSet::new();
@@ -99,9 +122,11 @@ pub async fn synchronize_with_progress(
             .and_then(|e| titles.get(&e.feed_id))
             .cloned();
         report.entries += page.values.len();
-        let known = store.entries(page.values, state.clone()).await? && !resuming;
+        let imported = store.entries(page.values, state.clone()).await?;
+        report.imported += imported.added;
+        let known = imported.all_known && !resuming && !scan_all_pages;
         progress.completed += 1;
-        progress.articles = report.entries;
+        progress.articles = report.imported;
         cursor = page.next;
         if known || cursor.is_none() {
             progress.total = Some(progress.completed);
@@ -124,9 +149,9 @@ pub async fn synchronize_with_progress(
             observe(progress.clone())?;
             let entries = provider.entries_by_id(chunk.to_vec()).await?;
             report.entries += entries.len();
-            store.entries(entries, state.clone()).await?;
+            report.imported += store.entries(entries, state.clone()).await?.added;
             progress.completed += chunk.len();
-            progress.articles = report.entries;
+            progress.articles = report.imported;
             observe(progress.clone())?;
         }
     }
@@ -134,8 +159,12 @@ pub async fn synchronize_with_progress(
     observe(progress.clone())?;
     // An article can be read on another device while its body is downloading.
     store.reading(provider.read_state().await?).await?;
+    // Upload failures belong to the durable intent journal. They must not invalidate a
+    // fully imported download: otherwise even one rejected subscription makes every
+    // retry download the entire history. Incomplete/cancelled downloads still return
+    // above without advancing this checkpoint. Keep reporting upload errors to the UI.
+    store.finished(provider.checkpoint()).await?;
     if report.pending_error.is_none() {
-        store.finished(provider.checkpoint()).await?;
         progress.phase = Phase::Complete;
         observe(progress)?;
     }

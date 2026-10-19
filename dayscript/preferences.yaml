@@ -4,7 +4,8 @@ description: Native preferences and live appearance changes on Apple platforms.
 flow:
   # General explicitly: a reopened desktop window keeps the group it last showed.
   - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: theme-picker }
   - assert_visible: { id: language-picker }
@@ -35,6 +36,10 @@ flow:
   - wait_for: { id: incognito-mode-picker }
   - assert_visible: { id: browser-picker, only_on: [macos-appkit] }
   - select: { id: browser-picker, index: 0, only_on: [macos-appkit] }
-  - close_window: { window: day.preferences, only_on: [macos-appkit] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - tap: { id: prefs-group-articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - assert_visible: { id: show-sync-status, skip_on: [web-dom] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
   - navigate: { route: all }
   - wait_for: { id: article-row-0 }

@@ -6,7 +6,8 @@ flow:
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
   - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: prefs-group-articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: group-by-feeds-picker }
   - toggle: { id: group-by-feeds-picker, value: true }
@@ -15,7 +16,7 @@ flow:
   - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: refresh-interval-picker }
   - select: { id: refresh-interval-picker, index: 0 }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: all }
   - wait_for: { id: article-row-0 }
   - assert_missing: { id: floating-feed-name }
@@ -33,8 +34,9 @@ flow:
   - reorder: { id: nav-reorder-list, from: 6, to: 8 }
   - pause: { secs: 1 }
   - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - navigate: { route: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, only_on: [web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: prefs-group-articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - wait_for: { id: group-by-feeds-picker }
   - toggle: { id: group-by-feeds-picker, value: false }
-  - close_window: { window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
