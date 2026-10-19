@@ -244,6 +244,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         // timeline filters on.
         .searchable(toolbar::search())
         .search_hides_on_scroll(true)
+        .search_initially_hidden(true)
         .search_prompt(res::str::search_placeholder())
         // The article list is the content-list pane (docs/navigation.md): its own column
         // between the sidebar and the reader where the toolkit has one (a real `contentList`

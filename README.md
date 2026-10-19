@@ -101,6 +101,24 @@ day launch -t android-mdc        # needs a JDK and a running emulator or device
 day launch -t web-dom            # serves the WebAssembly build locally
 ```
 
+To build and launch on every connected physical Android phone, iPhone, and iPad:
+
+```sh
+~/bin/day.launch.connected --dry-run  # preview devices and commands
+~/bin/day.launch.connected            # build once per platform, install, launch
+```
+
+The script preserves existing app data, supports the iOS 15 iPad as well as newer iPhones,
+and reports failures while continuing with other devices. Android emulators are excluded
+unless `--include-emulators` is passed. Use `--skip-build` to deploy existing debug builds.
+On macOS it needs Xcode, `libimobiledevice`, and `ideviceinstaller` (`brew install
+libimobiledevice ideviceinstaller`), with trusted/unlocked devices and an Apple development
+account configured in Xcode. Android needs the SDK and authorized USB debugging. The default
+Apple team comes from the Xcode project; set it with `--team TEAM_ID` or `IOS_TEAM`.
+The generic launcher uses `day.cli` from PATH (or `~/bin/day.cli`) to run the source-checkout
+CLI. `DAY_CLI` and `ADB` can override tool paths. Run inside any Day app checkout, or pass
+`--project /path/to/app`. Deployment logs are saved under `build/day/connected-devices/`.
+
 A bare `cargo build` uses the crate's default `mock` backend, which is what lets rust-analyzer and
 `cargo check` work with no flags. To pick a toolkit from plain cargo, turn the default off first:
 
