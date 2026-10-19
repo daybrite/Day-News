@@ -59,7 +59,7 @@ def assert_destination(title):
         # Hidden sidebar children are still in the accessibility tree. The native
         # detail pane must actually be off-screen, or this could be the blank root.
         hierarchy = adb("shell", "dumpsys", "activity", "top")
-        pane = re.search(r"SlidingPaneLayout\{[^\n]*? (\d+),\d+-(\d+),\d+\}", hierarchy)
+        pane = re.search(r"(?:SlidingPaneLayout|DayNavHost\$\d+)\{[^\n]*? (\d+),\d+-(\d+),\d+\}", hierarchy)
         detail = re.search(r"SlidingPaneLayout\$TouchBlocker\{[^\n]*? (\d+),\d+-(\d+),\d+\}", hierarchy)
         assert pane and detail, "Native adaptive pane hierarchy missing"
         width = int(pane[2]) - int(pane[1])

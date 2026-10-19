@@ -5,6 +5,30 @@ import XCTest
 final class NavigationTests: XCTestCase {
     let app = XCUIApplication(bundleIdentifier: "dev.daybrite.news")
 
+    func testRootReachableFromSmartFeeds() {
+        continueAfterFailure = false
+        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-navigation-up-empty"
+        app.launch()
+        // A compact initial selection may show the list or the root. Either way,
+        // a visible list must provide UIKit's Back, not just a scripted nav_back.
+        let back = app.navigationBars.buttons.matching(
+            NSPredicate(format: "label == 'Back' OR label == 'Day News'")).firstMatch
+        if app.staticTexts["No articles"].waitForExistence(timeout: 3) {
+            visible(back)
+            back.tap()
+        }
+        for title in ["Today", "All Unread", "Starred", "All Articles", "Today"] {
+            let row = app.staticTexts[title].firstMatch
+            visible(row)
+            row.tap()
+            visible(app.staticTexts[title == "All Unread" ? "All caught up" : "No articles"].firstMatch)
+            visible(back)
+            photograph("Back from \(title)")
+            back.tap()
+            visible(app.staticTexts["All Articles"].firstMatch)
+        }
+    }
+
     func visible(_ element: XCUIElement) {
         let expectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "hittable == true"), object: element)

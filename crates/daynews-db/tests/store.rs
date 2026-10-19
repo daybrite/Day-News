@@ -237,16 +237,8 @@ fn retention_prunes_old_read_articles_but_never_starred_or_tagged() {
         item("old-unread", "Old unread", "x", old),
         item("fresh", "Fresh", "x", daynews_db::start_of_today()),
     ];
-    // `first_seen_at` is stamped at insert; backdate it through the field so the pruner sees
-    // rows old enough to prune.
+    // Import old history now: a recent local arrival must not restart retention.
     db.upsert_articles(f, url, &items);
-    let store = db.container.cache::<Article>();
-    for guid in ["old-read", "old-starred", "old-tagged", "old-unread"] {
-        let id = article_id(url, guid);
-        let _ = db.container.get::<Article>(id);
-        use day_reactive::Binding;
-        store.elem(id).first_seen_at().write(old);
-    }
     db.set_read(article_id(url, "old-read"), true).unwrap();
     db.set_read(article_id(url, "old-starred"), true).unwrap();
     db.set_read(article_id(url, "old-tagged"), true).unwrap();
@@ -268,6 +260,38 @@ fn retention_prunes_old_read_articles_but_never_starred_or_tagged() {
     );
     assert!(left.contains(&"Fresh".to_string()));
     assert!(!left.contains(&"Old read".to_string()));
+}
+
+#[test]
+fn shortening_retention_prunes_recently_imported_history_and_updates_counts() {
+    let db = Db::open_in_memory().unwrap();
+    let url = "https://e.example/retention";
+    let f = db.add_feed(url, "Retention fixture", None);
+    let today = daynews_db::start_of_today();
+    let mut undated = item("undated", "Undated", "x", today);
+    undated.published = None;
+    db.upsert_articles(
+        f,
+        url,
+        &[
+            item("history", "History", "x", today - 60 * 86_400),
+            undated,
+        ],
+    );
+    db.set_read_all(Scope::All, true).unwrap();
+    let count = db.count(Scope::All);
+    assert_eq!(count.get(), 2);
+    assert_eq!(db.prune_older_than(0), 0, "Keep Forever");
+    assert_eq!(db.prune_older_than(90), 0);
+    assert_eq!(db.prune_older_than(30), 1);
+    assert_eq!(count.get(), 1, "live badges must reflect cleanup");
+    assert_eq!(titles(&db, Scope::All, ""), vec!["Undated"]);
+    assert!(
+        db.container
+            .get::<daynews_db::ArticleBody>(article_id(url, "history"))
+            .is_none()
+    );
+    assert_eq!(db.prune_older_than(30), 0, "repeated cleanup is idempotent");
 }
 
 #[test]

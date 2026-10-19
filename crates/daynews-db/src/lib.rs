@@ -786,7 +786,12 @@ impl Db {
 
     /// Delete read, unstarred, untagged articles older than `days`: the retention pass.
     /// Starred and tagged articles are the user's; they stay whatever their age.
+    /// Age is the publication date (arrival date for undated items), not time spent
+    /// on this installation: importing history must not restart its retention clock.
     pub fn prune_older_than(&self, days: u32) -> usize {
+        if days == 0 {
+            return 0;
+        }
         let cutoff = now() - i64::from(days) * 86_400;
         let doomed: Vec<ModelId<Article>> = self
             .container
@@ -795,7 +800,6 @@ impl Db {
                 Article::is_read().eq(true)
                     & Article::is_starred().eq(false)
                     & Article::published_at().lt(cutoff)
-                    & Article::first_seen_at().lt(cutoff)
                     & Article::tags().is_empty(),
             )
             .live()

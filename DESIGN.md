@@ -794,6 +794,12 @@ means its `created_at` arrival date, not the publisher's potentially backdated `
 Unread IDs outside the window still recover missing bodies in batches of 100. Existing local
 stars/tags and reading-state intent are preserved; the window does not delete account history.
 
+Local retention runs at launch and when Keep Articles changes. It removes read, unstarred,
+untagged articles by publication age; undated articles use their stored arrival date. A recent
+`first_seen_at` does not grant imported history another full retention period. Zero means Keep
+Forever. Store regression tests cover shortening 90 to 30 days after importing older articles,
+live count invalidation, body deletion, and protected articles.
+
 After a successful scan, the opaque provider checkpoint records the first page's HTTP Date.
 Subsequent scans use that server-time watermark, with a one-day lookback on the first incremental
 fetch of a provider session and then once daily, following NetNewsWire. Lookback pages are scanned

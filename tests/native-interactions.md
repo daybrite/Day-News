@@ -1,5 +1,17 @@
 # Native interaction regression tests
 
+For the Android cold-launch Up-button regression, run
+`python3 tests/android-up.py --adb /path/to/adb --serial emulator-5554` against an English
+install. It cold-launches Today three times, uses native toolbar taps from every smart feed,
+checks Settings dismissal, and verifies that narrowing a tiled window restores Up. It does
+not mark articles or change subscriptions. It rejects stale accessibility snapshots during
+launch and verifies the native detail pane no longer covers the root after Up.
+
+UIKit's `NavigationTests.testRootReachableFromSmartFeeds` launches an isolated empty library
+and taps Today, All Unread, Starred, and All Articles, asserting a hittable native Back button
+and a return to the root each time. Run it with `xcodebuild test` on the NavigationProbe
+scheme, selecting `NavigationProbe/NavigationTests/testRootReachableFromSmartFeeds`.
+
 Use throwaway stores; these scripts mark articles read/unread and change synthetic feeds' reader
 preferences. Never run them against a personal subscription database.
 
