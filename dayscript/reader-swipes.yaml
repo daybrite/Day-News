@@ -1,54 +1,25 @@
-# Run after seed-demo.yaml in an isolated store. These inject DOM touch events into
-# the real mobile WebView; complement them with OS-level touch input (tests/native-interactions.md).
-name: day-news-reader-swipes
-description: Mobile swipes follow the visible articles without wrapping or leaving the reader.
+# Programmatic pager selection verifies the shared commit/cache contract on all mobile
+# backends. Real gestures are covered separately by the XCTest and Android input tests.
+name: day-news-reader-paging
+description: Mobile paging retains prepared documents and commits the selected article.
 flow:
-  - toolbar: { item: unread-feeds-only, on: false, only_on: [ios-uikit, android-mdc] }
-  - navigate: { route: 'feed:5756297993796914528', only_on: [ios-uikit, android-mdc] }
-  - wait_for: { id: timeline, only_on: [ios-uikit, android-mdc] }
-  - select: { id: timeline, index: 0, only_on: [ios-uikit, android-mdc] }
-  - pause: { secs: 1, only_on: [ios-uikit, android-mdc] }
-  # Swiping right at the first article stays put. Safari/Chromium must both install
-  # the recognizer from the generated asset resource and route its internal link.
+  - toolbar: { item: unread-feeds-only, on: false, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: 'feed:5756297993796914528', only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: timeline, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: reader-web, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - web_eval:
       id: reader-web
-      only_on: [ios-uikit, android-mdc]
-      script: &right |
-        (() => {
-          const target = document.getElementById('reader-title');
-          const touch = x => new Touch({ identifier: 1, target, clientX: x, clientY: 200 });
-          for (const [type, x] of [['touchstart',100], ['touchmove',140], ['touchmove',280], ['touchend',280]]) {
-            target.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
-              touches: type === 'touchend' ? [] : [touch(x)], changedTouches: [touch(x)] }));
-          }
-          return 'swiped';
-        })()
-      text: swiped
-  - web_eval:
-      id: reader-web
-      only_on: [ios-uikit, android-mdc]
-      script: &title document.getElementById('reader-title').textContent
+      only_on: [ios-uikit, android-mdc, harmony-arkui]
+      script: 'window.pagerRetention = "first-document"; document.getElementById("reader-title").textContent'
       text: How monarch butterflies find their way to Mexico
-  - web_eval:
-      id: reader-web
-      only_on: [ios-uikit, android-mdc]
-      script: &left |
-        (() => {
-          const target = document.getElementById('reader-title');
-          const touch = x => new Touch({ identifier: 1, target, clientX: x, clientY: 200 });
-          for (const [type, x] of [['touchstart',280], ['touchmove',240], ['touchmove',100], ['touchend',100]]) {
-            target.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
-              touches: type === 'touchend' ? [] : [touch(x)], changedTouches: [touch(x)] }));
-          }
-          return 'swiped';
-        })()
-      text: swiped
-  - pause: { secs: 1, only_on: [ios-uikit, android-mdc] }
-  - web_eval: { id: reader-web, script: *title, text: "What a honeybee's dance tells the hive", only_on: [ios-uikit, android-mdc] }
-  - assert_route: { route: 'feed:5756297993796914528', only_on: [ios-uikit, android-mdc] }
-  - screenshot: { name: reader-swipe-next, only_on: [ios-uikit, android-mdc] }
-  - web_eval: { id: reader-web, script: *right, text: swiped, only_on: [ios-uikit, android-mdc] }
-  - pause: { secs: 1, only_on: [ios-uikit, android-mdc] }
-  - web_eval: { id: reader-web, script: *title, text: How monarch butterflies find their way to Mexico, only_on: [ios-uikit, android-mdc] }
-  - screenshot: { name: reader-swipe-previous, only_on: [ios-uikit, android-mdc] }
-  - nav_back: { only_on: [ios-uikit, android-mdc] }
+  - select: { id: reader-pager, index: 1, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 1, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: "What a honeybee's dance tells the hive", only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_route: { route: 'feed:5756297993796914528', only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - screenshot: { name: reader-pager-next, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: reader-pager, index: 0, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - pause: { secs: 1, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - web_eval: { id: reader-web, script: window.pagerRetention, text: first-document, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - screenshot: { name: reader-pager-previous, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }

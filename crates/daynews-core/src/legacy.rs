@@ -553,6 +553,11 @@ fn build_tag_rows(q: &Query<daynews_db::Tag>) -> Vec<TagRow> {
         .collect()
 }
 
+/// Read-only page preparation, matching the native worker API.
+pub async fn preview_article(id: u64) -> Result<Option<StoredArticle>, day_persistence::DbError> {
+    Ok(build_reader_article(id))
+}
+
 fn build_reader_article(id: u64) -> Option<StoredArticle> {
     let a = with_db(|d| d.container.get::<Article>(id))??;
     let feed_key = a

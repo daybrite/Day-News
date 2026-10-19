@@ -1,6 +1,6 @@
 # Start tests/reader-view-server.py 28763 with a fresh isolated DAY_NEWS_DATA_DIR.
 name: reader-scroll-navigation
-description: New articles start at the top; flag changes retain the current document and scroll.
+description: New articles start at the top; flags and retained mobile pages preserve scroll.
 flow:
   - dialog_mode: { mode: scripted }
   - toolbar: { item: new-feed }
@@ -9,6 +9,7 @@ flow:
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
+  - toolbar: { item: feed-overview }
   - wait_for: { id: feed-inline-reader }
   - toggle: { id: feed-inline-reader, value: true }
   - toggle: { id: feed-auto-reader, value: false }
@@ -40,7 +41,8 @@ flow:
   - toolbar: { item: previous-article }
   - pause: { secs: 1 }
   - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: slow }
-  - web_eval: { id: reader-web, script: 'scrollY', text: '0' }
+  - web_eval: { id: reader-web, script: 'scrollY', text: '0', only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml, web-dom] }
+  - web_eval: { id: reader-web, script: 'scrollY > 500', text: 'true', only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - web_eval: { id: reader-web, script: 'window.scrollTo(0, 600); "scrolled"', text: scrolled }
   - pause: { secs: 0.3 }
   - web_eval: { id: reader-web, script: 'scrollY > 500', text: 'true' }

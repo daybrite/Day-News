@@ -18,6 +18,59 @@ final class NavigationTests: XCTestCase {
         add(attachment)
     }
 
+    func testArticlePaging() {
+        // XCTest may relaunch its target. Explicitly retain the isolated fixture store
+        // and navigate natively; never let an offscreen timeline label pass as an article.
+        continueAfterFailure = false
+        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-native-pager"
+        app.launchEnvironment["DAY_NEWS_HTTP_TEST"] = "1"
+        app.launch()
+        let feed = app.staticTexts["Field Notes"].firstMatch
+        visible(feed)
+        feed.tap()
+        let first = "How monarch butterflies find their way to Mexico"
+        let second = "What a honeybee's dance tells the hive"
+        let row = app.tables.staticTexts[first].firstMatch
+        visible(row)
+        row.tap()
+        visible(app.webViews.staticTexts[first].firstMatch)
+        func point(_ x: CGFloat) -> XCUICoordinate {
+            app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: 0.55))
+        }
+        // A short, deliberately slow drag must cancel, preserving the current article.
+        point(0.65).press(forDuration: 0.05, thenDragTo: point(0.58),
+                         withVelocity: XCUIGestureVelocity(rawValue: 60), thenHoldForDuration: 0.5)
+        visible(app.webViews.staticTexts[first].firstMatch)
+        photograph("Cancelled article page")
+        // A long slow drag exercises tracking rather than a completion-only flick.
+        point(0.85).press(forDuration: 0.05, thenDragTo: point(0.15),
+                         withVelocity: XCUIGestureVelocity(rawValue: 180), thenHoldForDuration: 0.1)
+        visible(app.webViews.staticTexts[second].firstMatch)
+        photograph("Next article page")
+        point(0.15).press(forDuration: 0.05, thenDragTo: point(0.85))
+        visible(app.webViews.staticTexts[first].firstMatch)
+        // Rotate every cached slot, then reverse, exercising UIKit's cached neighbors.
+        let titles = [first, second,
+                      "Three hearts and blue blood: inside the octopus",
+                      "Reading the tide pools: why the sea rises twice a day",
+                      "Trees that were growing when the Great Pyramid was built",
+                      "The Arctic tern's pole-to-pole commute"]
+        for title in titles.dropFirst() {
+            point(0.85).press(forDuration: 0.05, thenDragTo: point(0.15))
+            visible(app.webViews.staticTexts[title].firstMatch)
+        }
+        point(0.85).press(forDuration: 0.05, thenDragTo: point(0.15))
+        visible(app.webViews.staticTexts[titles.last!].firstMatch)
+        for title in titles.dropLast().reversed() {
+            point(0.15).press(forDuration: 0.05, thenDragTo: point(0.85))
+            visible(app.webViews.staticTexts[title].firstMatch)
+        }
+        photograph("Previous article page")
+        // No wrap at the first article.
+        point(0.15).press(forDuration: 0.05, thenDragTo: point(0.85))
+        visible(app.webViews.staticTexts[first].firstMatch)
+    }
+
     func testEmptySmartFeeds() {
         app.activate()
         // Today is selected initially. Repeat it after Back to cover same-route activation.

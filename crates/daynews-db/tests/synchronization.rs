@@ -162,6 +162,20 @@ fn two_installations_read_unread_and_restart_through_real_http_interface() {
 }
 
 #[test]
+fn unchanged_read_snapshot_does_not_dirty_library_rows() {
+    let server = Server::new();
+    let p = server.provider();
+    let a = Replica::new();
+    wait(synchronize(&p, &a)).unwrap();
+    let entries = a.db.container.cache::<EntryLink>();
+    let articles = a.db.container.cache::<Article>();
+    let before = (entries.version(), articles.version());
+    a.db.sync_apply_read(a.account, wait(p.read_state()).unwrap())
+        .unwrap();
+    assert_eq!(before, (entries.version(), articles.version()));
+}
+
+#[test]
 fn acknowledgement_cannot_clear_newer_local_intent() {
     let server = Server::new();
     let p = server.provider();

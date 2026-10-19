@@ -38,20 +38,7 @@ fn document(a: &StoredArticle, control_above: bool) -> String {
             )
         };
     }
-    if cfg!(any(feature = "uikit", feature = "mdc", feature = "arkui"))
-        && let Some(script) = resource(crate::res::assets::reader::swipe_js)
-    {
-        // The document owns the recognizer so it can yield to selection, zoom and
-        // horizontally scrollable publication content. It also works in Reader Mode.
-        document = document.replace(
-            "</body></html>",
-            &format!(
-                "<script data-article-id=\"{}\">{}</script></body></html>",
-                a.id,
-                String::from_utf8_lossy(script.as_slice())
-            ),
-        );
-    }
+
     document
 }
 
@@ -368,16 +355,7 @@ fn reader_body(
             .go(go)
             .reload(reload)
             .on_external_link(move |url| {
-                if let Some((forward, id)) = swipe_navigation(url) {
-                    // An outgoing document can still deliver a gesture while the next
-                    // article is loading. Never let it skip another article or reopen
-                    // a reader that the user just dismissed with the edge-back gesture.
-                    if cfg!(any(feature = "uikit", feature = "mdc", feature = "arkui"))
-                        && scene.reader_open.get_untracked()
-                        && scene.selected.get_untracked() == Some(id)
-                    {
-                        crate::commands::open_adjacent_article(forward);
-                    }
+                if !view.visible.get_untracked() {
                     return day_piece_webview::LinkPolicy::Ignore;
                 }
                 if let Some(id) = url
@@ -421,27 +399,22 @@ fn reader_body(
                 crate::settings::open_link(url);
                 day_piece_webview::LinkPolicy::Ignore
             })
-            .id("reader-web")
+            .id_of({
+                let slot = day_core::environment::<crate::reader_pager::PageSlot>();
+                move || {
+                    if view.visible.get() {
+                        "reader-web"
+                    } else {
+                        slot.map_or("reader-web", |slot| slot.web_id())
+                    }
+                    .to_owned()
+                }
+            })
             .grow()
             .any()
     }
 }
 
-fn swipe_navigation(url: &str) -> Option<(bool, u64)> {
-    [
-        ("day-news-reader://next/", true),
-        ("day-news-reader://previous/", false),
-    ]
-    .into_iter()
-    .find_map(|(prefix, forward)| {
-        url.strip_prefix(prefix)
-            .and_then(|id| id.parse().ok())
-            .map(|id| (forward, id))
-    })
-}
-
-/// The article as pieces: the masthead order the document uses (source, headline, date) and
-/// then its text, with the feed's markup reduced to headings and paragraphs.
 fn article_text() -> impl Piece {
     let st = daynews_core::scene();
     let view = crate::reader_view::ReaderView::ambient();
@@ -523,7 +496,27 @@ fn article_text() -> impl Piece {
 /// The article's commands are declared here (docs/toolbars.md): next-unread, star and mark-read
 /// all act on what this pane is showing, so they ride its chrome and leave when it does. The
 /// window's bar cannot see the open article, which is why they used to need mirror signals.
-pub fn reader_pane() -> impl Piece {
+pub fn reader_pane() -> AnyPiece {
+    if cfg!(any(feature = "uikit", feature = "mdc", feature = "arkui")) {
+        let scene = daynews_core::scene();
+        column((
+            when(
+                move || scene.selected.get().is_none(),
+                crate::dashboard::dashboard,
+            ),
+            when(
+                move || scene.selected.get().is_some(),
+                crate::reader_pager::reader_pager,
+            ),
+        ))
+        .grow()
+        .any()
+    } else {
+        reader_document(true).any()
+    }
+}
+
+pub(crate) fn reader_document(chrome: bool) -> impl Piece {
     let st = daynews_core::scene();
     let view = crate::reader_view::ReaderView::ambient();
     // The resource provider serves UI-thread-rendered HTML through every backend's
@@ -661,7 +654,35 @@ pub fn reader_pane() -> impl Piece {
     column((
         when(
             move || st.article.get().is_none(),
-            crate::dashboard::dashboard,
+            move || {
+                if chrome {
+                    crate::dashboard::dashboard().any()
+                } else {
+                    let load = day_core::environment::<crate::reader_pager::PageSlot>()
+                        .unwrap()
+                        .1;
+                    column((
+                        when(
+                            move || load.get() == crate::reader_pager::PageLoad::Loading,
+                            spinner,
+                        ),
+                        label(move || match load.get() {
+                            crate::reader_pager::PageLoad::Loading => {
+                                crate::res::str::reader_page_loading().format()
+                            }
+                            crate::reader_pager::PageLoad::Unavailable => {
+                                crate::res::str::reader_page_unavailable().format()
+                            }
+                            crate::reader_pager::PageLoad::Failed => {
+                                crate::res::str::reader_page_failed().format()
+                            }
+                        }),
+                    ))
+                    .spacing(12.0)
+                    .grow()
+                    .any()
+                }
+            },
         ),
         when(
             move || st.article.get().is_some(),
@@ -699,7 +720,7 @@ pub fn reader_pane() -> impl Piece {
     // The commands follow the open article: a new one re-derives the list with its own starred
     // and read state, and no article at all contributes nothing, so the bar carries them only
     // while there is something to act on (https://daybrite.dev/docs/toolbars).
-    .toolbar(move || match st.article.get() {
+    .toolbar(move || match st.article.get().filter(|_| chrome) {
         Some(a) => crate::toolbar::article_items(a),
         None => Vec::new(),
     })
@@ -707,26 +728,6 @@ pub fn reader_pane() -> impl Piece {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn swipe_links_bind_direction_to_the_source_article() {
-        assert_eq!(
-            super::swipe_navigation("day-news-reader://next/42"),
-            Some((true, 42))
-        );
-        assert_eq!(
-            super::swipe_navigation("day-news-reader://previous/42"),
-            Some((false, 42))
-        );
-        for invalid in [
-            "https://example.invalid/next/42",
-            "day-news-reader://next/",
-            "day-news-reader://next/42/1",
-            "day-news-reader://load/42",
-        ] {
-            assert_eq!(super::swipe_navigation(invalid), None);
-        }
-    }
-
     #[test]
     fn document_escapes_metadata_and_resolves_publication_links() {
         // Synthetic publication data, not app-owned UI strings.

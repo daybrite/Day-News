@@ -498,17 +498,32 @@ missing selections disable movement, while no selection starts at the first/last
 The existing selection binding scrolls and highlights the native row. Both commands live in
 Go and in the reader toolbar; Next Unread has a distinct double-chevron image.
 
-On iOS, Android and HarmonyOS, the reader document also recognizes horizontal single-finger
-swipes: left opens Next Article and right opens Previous Article through the same selection
-path. The bundled `reader/swipe.js` yields to vertical scrolling, horizontal scroll containers,
-text selection, controls, pinch zoom and system edge gestures. A gesture must travel at least
-64 CSS pixels within one second; cancelled, diagonal and short drags do not navigate. Links
-remain tappable but do not open when swiped. The source article ID travels as a string in the
-internal resource link; Rust rejects gestures from an outgoing document or a closed reader.
-The recognizer stays active for appended and replacement Reader Mode content. Desktop reader
-documents do not install it. `tests/reader-swipes.cjs` covers arbitration with DOM events and
-real Chromium touch input; `dayscript/reader-swipes.yaml` covers next/previous selection in
-mobile WebViews alongside the CI walkthrough.
+On iOS, Android and HarmonyOS, the reader uses `day-piece-pager`: a native horizontal
+page container with three stable slots for the current, previous and next articles. UIKit
+uses `UIPageViewController` (the same native scrolling architecture as NetNewsWire), Android
+uses AndroidX `ViewPager`, and Harmony uses ArkUI `Swiper`. A drag reveals the neighboring
+live document and can reverse or cancel interactively. Desktop retains its single reader.
+
+`reader_pager::Window` reconciles the scene's current filtered timeline by article ID. Slots
+shared by successive windows retain their WebView, scroll, and extracted Reader Mode content;
+only the far neighbor is recycled. This bounds retained article pages to three, rather than
+accumulating a reading history. The native pager owns animation frames. Its busy signal freezes
+slot reassignment until settlement; epoch-tagged completions reject obsolete presentations.
+Only a completed change calls `open_article`, so preparing a neighbor does not select it or mark
+it read. The asynchronous `preview_article` reads a snapshot through the persistence worker;
+stale/cancelled results cannot fill a reassigned slot. Missing/failed snapshots have localized
+empty states. Preview HTML may load publisher images, but automatic full-article extraction
+is enabled only for the selected, visible page.
+
+Each page has a scoped `ReaderView` and projected scene. The window's `ReaderView::shown`
+forwards toolbar/menu actions to the selected page. Hiding a page cancels pending extraction
+without discarding completed content. Returning to an adjacent article preserves its position;
+a page recycled out of the three-slot window starts fresh. The old document touch recognizer
+is removed, so native paging cannot also trigger a second JavaScript navigation. Native back
+edges, vertical WebView scrolling and native touch arbitration remain platform-owned.
+`dayscript/reader-swipes.yaml` tests the shared selection/retention contract; actual gestures,
+cancellation and boundaries are covered by `tests/ios-navigation` and
+`tests/android-reader-paging.py`. Harmony runtime gesture validation belongs in CI.
 
 Copy Article Link uses the displayed article URL and Day's asynchronous clipboard API, started
 inside the user action for browser permissions. It is available in Article and the secondary
@@ -723,6 +738,13 @@ when the extent is known, otherwise a spinner, with article/page counts, a repre
 elapsed time, and a throughput-based stage ETA after a measured sample. Estimates exclude unknown
 future work and may change. Each observation produces one escaped log line without credentials,
 URLs, or article bodies.
+
+Read-state snapshots compare both the confirmed remote state and the local state (including
+pending edits) before writing. An unchanged poll must not dirty every article and mapping:
+dirty rows are pinned in the persistence cache until commit. The persistence eviction gate
+also backs off when pinned rows prevent eviction, so large changed snapshots do not scan
+the entire growing cache on every fault. `unchanged_read_snapshot_does_not_dirty_library_rows`
+guards the app-side behavior; day-persistence's eviction regression counts cache scans.
 
 Cancel aborts the HTTP future, invalidates stale callbacks/queued writes, and pauses automatic
 triggers until Sync Now (or the next app launch). An already committing transaction may finish;

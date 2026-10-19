@@ -599,13 +599,18 @@ impl Db {
                     r.read
                 }
             };
-            if let Some(link) = self.container.get::<EntryLink>(l.id) {
+            // Remote snapshots repeat unchanged values on every poll. Do not dirty the
+            // entire library: dirty rows cannot leave the persistence working-set cache.
+            if l.confirmed_read != read
+                && let Some(link) = self.container.try_get::<EntryLink>(l.id)?
+            {
                 link.confirmed_read().write(read);
             }
-            if let Some(article) = self.container.get::<Article>(l.article) {
-                article
-                    .is_read()
-                    .write(pending.get(&l.remote).copied().unwrap_or(read));
+            let current = pending.get(&l.remote).copied().unwrap_or(read);
+            if let Some(article) = self.container.try_get::<Article>(l.article)?
+                && article.is_read().peek() != current
+            {
+                article.is_read().write(current);
             }
         }
         Ok(())

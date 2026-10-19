@@ -49,7 +49,8 @@ pub fn local_offset_seconds(at_unix: i64) -> Option<i32> {
     // `localtime_r` resolves the instant against the platform's time-zone database (the same
     // one `date` and every other program on the machine reads) and reports the offset it used in
     // `tm_gmtoff`. macOS, Linux, iOS, Android and OpenHarmony all carry that field.
-    let t = at_unix as libc::time_t;
+    // Infer the ABI type from localtime_r; libc deprecates the time_t alias on OHOS.
+    let t = at_unix as _;
     let mut tm: libc::tm = unsafe { std::mem::zeroed() };
     // SAFETY: `t` is a valid `time_t` and `tm` is a valid, writable `struct tm` for the duration
     // of the call. `localtime_r` fills it and answers null on failure, which is checked before

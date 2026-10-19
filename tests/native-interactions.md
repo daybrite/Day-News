@@ -45,26 +45,41 @@ reader page in an isolated macOS test app, set `window.scrollTo(0,0)` through `d
 The helper requires macOS Accessibility permission and sends a real wheel event to the app's
 visible content pane. This check passed on AppKit, GTK, and Qt. It does change desktop focus.
 
-For mobile article paging, run `dayscript/reader-swipes.yaml` after seeding. It sends touch
-events into the actual mobile WebView and checks left/next, right/previous, and the first
-article boundary. `PLAYWRIGHT_MODULE=/path/to/node_modules/playwright node tests/reader-swipes.cjs`
-tests the bundled recognizer's handling of controls, selection, pinch zoom, link taps, cancelled
-and diagonal gestures, plus real Chromium input for vertical and horizontal content scrolling.
-The recognizer deliberately leaves 40 CSS pixels at both edges for system back gestures.
+For mobile article paging, run `dayscript/reader-swipes.yaml` after seeding. It uses
+programmatic pager selection to check commit and document retention on all three mobile
+backends; it does not synthesize a native drag. For real Android gestures, run:
 
-OS-level validation used the isolated Field Notes fixture on iPhone 15 Pro (iOS 17 simulator)
-and Android. On a 1080×2400 Android emulator, `adb shell input swipe 800 800 280 800 250`
-must change the monarch article to the honeybee article; reverse the coordinates to return.
-`adb shell input swipe 540 1600 540 700 350` must scroll the monarch article without changing
-its title. Check title and `window.scrollY` through `day drive`/`web_eval`, since a successful
-input command alone does not prove navigation. UIKit is checked with XCTest window coordinates
-at 75%→25% width and 35% height, then the reverse, using a 0.05-second press followed by drag.
+```sh
+python3 tests/android-reader-paging.py --adb /path/to/adb --day /path/to/day --serial emulator-5554
+```
+
+Select that same emulator when launching the isolated app. The test checks a cancelled drag,
+repeated forward/back swipes, retained JavaScript state and scroll offset, all slot rotations,
+and both boundaries. On UIKit, seed `/tmp/day-news-native-pager` with `seed-demo.yaml`, then
+run the XCTest runner's `NavigationTests/testArticlePaging` (setup below). The test explicitly
+relaunches that fixture store, taps Field Notes and its first article, and asserts WebView text
+so offscreen timeline labels cannot pass. It uses actual screen-coordinate drags, including
+a slow cancelled gesture and forward/backward traversal of all six articles. Capture a screenshot during a long drag to inspect
+both live pages. Check vertical scrolling, links, text selection, pinch zoom and system Back
+on device as part of acceptance. Harmony builds locally; its native gesture acceptance runs
+in CI, not the local Intel emulator.
+
+Interactive pager validation (October 18, 2026): 145 app tests and two framework pager tests
+passed. Native XCTest traversed all six fixture articles forward and back, tested cancellation
+and both boundaries, and asserted the visible WebView. Android real-input tests additionally
+verified repeated reversal and retained document/scroll state. Full walkthroughs passed on
+UIKit (158 executed steps), Android (163), and AppKit (242); screenshots were inspected.
+The updated long-article scroll/navigation regression passed 48 Android steps.
+Harmony and web builds passed. Host, UIKit, Android and Harmony lint checks passed using the
+repository's documented cross-target flags. Harmony runtime, physical devices, and the
+remaining desktop backends were not exercised for this change.
 
 For article scroll reset, start `python3 tests/reader-view-server.py 28763`, then launch with
 a fresh isolated store and `--script dayscript/reader-scroll-navigation.yaml`. It opens long
 synthetic articles and checks Next Unread (the Cmd-/ command), Next, Previous, and direct
-selection all start at the top, while starring the current article preserves its document
-and scroll position.
+selection start at the top on desktop, while starring preserves the document and scroll
+position. Mobile paging intentionally preserves the position of retained adjacent pages;
+`reader-swipes.yaml` and the native pager tests cover that different contract.
 
 Android's article scrolling was checked with an actual
 `adb shell input swipe`. Such tests do not establish IME, VoiceOver/TalkBack, physical-device,

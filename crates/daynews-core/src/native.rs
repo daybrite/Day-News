@@ -602,6 +602,14 @@ fn timeline_snapshot(
         .try_get()?;
     Ok((result, count))
 }
+/// Read-only page preparation: never selects or marks an article read.
+pub async fn preview_article(id: u64) -> Result<Option<StoredArticle>, DbError> {
+    ready_worker()
+        .await?
+        .read(move |db| reader_snapshot(db, id))
+        .await
+}
+
 fn reader_snapshot(db: &ModelContainer, id: u64) -> Result<Option<StoredArticle>, DbError> {
     let Some(a) = db
         .try_get::<Article>(id)?
@@ -1705,6 +1713,30 @@ mod tests {
         );
         worker.close_blocking().unwrap();
     }
+    #[test]
+    fn preparing_a_page_does_not_select_or_mark_it_read() {
+        let scope = day_reactive::Scope::child();
+        scope.enter(|| {
+            let worker = seeded();
+            *store().worker.borrow_mut() = Some(worker.clone());
+            let scene = NewsScene::create();
+            day_reactive::Scope::current().provide(scene);
+            let id = article_id(URL, "1");
+            let preview = wait(preview_article(id)).unwrap().unwrap();
+            assert!(!preview.is_read);
+            assert_eq!(scene.selected.get_untracked(), None);
+            assert!(!scene.reader_open.get_untracked());
+            assert!(
+                !wait(worker.read(move |db| reader_snapshot(db, id)))
+                    .unwrap()
+                    .unwrap()
+                    .is_read
+            );
+            worker.close_blocking().unwrap();
+        });
+        scope.dispose();
+    }
+
     #[test]
     fn deleted_article_clears_reader_projection_after_commit() {
         let worker = seeded();

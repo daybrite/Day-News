@@ -8,7 +8,13 @@ use day_piece_webview::JsHandle;
 use std::{cell::Cell, rc::Rc};
 
 #[derive(Clone, Copy)]
+pub(crate) struct ReaderVisibility(pub Signal<bool>);
+
+#[derive(Clone, Copy)]
 pub struct ReaderView {
+    /// The window's mobile pager publishes its current page here for toolbar commands.
+    pub shown: Signal<Option<ReaderView>>,
+    pub visible: Signal<bool>,
     pub engine: JsHandle,
     pub ready: Signal<bool>,
     pub active: Signal<bool>,
@@ -25,6 +31,9 @@ impl Ambient for ReaderView {
         let pending = Rc::new(Cell::new(None::<day::TaskHandle>));
         let article_load = ArticleLoad::default();
         let state = Self {
+            shown: Signal::new(None),
+            visible: day_core::environment::<ReaderVisibility>()
+                .map_or_else(|| Signal::new(true), |v| v.0),
             engine: JsHandle::new(),
             ready: Signal::new(false),
             active: Signal::new(false),
@@ -78,13 +87,14 @@ impl Ambient for ReaderView {
             move || {
                 (
                     state.ready.get(),
+                    state.visible.get(),
                     scene.article.with(|a| {
                         a.as_ref()
                             .map(|a| (a.id, crate::reader_options::options(Some(a.feed_id))))
                     }),
                 )
             },
-            move |(ready, article), _| {
+            move |(ready, visible, article), _| {
                 let Some((id, options)) = article else {
                     return;
                 };
@@ -92,7 +102,8 @@ impl Ambient for ReaderView {
                     state.auto_article.set(None);
                 }
                 if *ready && day_piece_webview::eval_support() == Support::Native {
-                    let enabled = options.auto && state.auto_article.get_untracked() != Some(*id);
+                    let enabled =
+                        *visible && options.auto && state.auto_article.get_untracked() != Some(*id);
                     let task = day::task(async move {
                         let _ = state.engine.eval(format!(r#"(() => {{
                             window.readerAutoObserver?.disconnect();
@@ -108,6 +119,14 @@ impl Ambient for ReaderView {
                         }})()"#)).await;
                     });
                     day::reactive::Scope::current().on_cleanup(move || task.abort());
+                }
+            },
+        );
+        watch(
+            move || state.visible.get(),
+            move |visible, _| {
+                if !visible {
+                    state.cancel();
                 }
             },
         );
@@ -143,7 +162,8 @@ impl Ambient for ReaderView {
 
 impl ReaderView {
     pub fn current() -> Option<Self> {
-        Self::try_ambient().or_else(Self::focused)
+        let view = Self::try_ambient().or_else(Self::focused)?;
+        Some(view.shown.get().unwrap_or(view))
     }
 
     fn cancel(self) {
@@ -158,7 +178,8 @@ impl ReaderView {
         let Some(article) = scene.article.get_untracked() else {
             return;
         };
-        if self.ready.get_untracked()
+        if self.visible.get_untracked()
+            && self.ready.get_untracked()
             && scene.selected.get_untracked() == Some(article.id)
             && crate::reader_options::options(Some(article.feed_id)).auto
             && self.auto_article.get_untracked() != Some(article.id)
@@ -470,6 +491,42 @@ mod tests {
             day::reactive::flush_sync();
             assert!(!view.active.get());
             assert!(view.extracted.get().is_none());
+        });
+        scope.dispose();
+    }
+
+    #[test]
+    fn paging_visibility_preserves_extracted_content_and_only_cancels_pending_work() {
+        let scope = day::reactive::Scope::child();
+        scope.enter(|| {
+            let (scene, view) = scene();
+            view.extracted.set(Some((
+                1,
+                ExtractedArticle {
+                    content: "<p>Prepared full article</p>".into(),
+                    title: None,
+                    byline: None,
+                    url: "https://fixture.example/1".into(),
+                },
+            )));
+            view.active.set(true);
+            view.ready.set(true);
+            view.visible.set(false);
+            day::reactive::flush_sync();
+            assert!(view.active.get_untracked());
+            assert!(view.ready.get_untracked());
+            assert!(view.extracted.get_untracked().is_some());
+            view.auto_load(scene);
+            assert!(!view.loading.get_untracked());
+            view.visible.set(true);
+            day::reactive::flush_sync();
+            assert_eq!(
+                view.article(scene.article.get())
+                    .unwrap()
+                    .content_html
+                    .as_deref(),
+                Some("<p>Prepared full article</p>")
+            );
         });
         scope.dispose();
     }
