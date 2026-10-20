@@ -122,7 +122,7 @@ fn row_for(
                     .single_line()
                     .color(sub_color),
             ))
-            .spacing(8.0)
+            .spacing(Space::S)
             .grow_w(),
         ))
         .spacing(3.0)
@@ -143,7 +143,7 @@ fn row_for(
     .padding(Insets::symmetric(12.0, 8.0))
     // Taps are the native table's now (they select, and selection opens; see
     // `timeline_pane`), so the menu is the row's only gesture of its own.
-    .context_menu_fn(move |_| {
+    .context_menu(move || {
         // Snapshot the clicked row when the menu opens. A recycled cell or later selection
         // change must not redirect a menu action to a different article.
         let article = slot.get();
@@ -152,24 +152,24 @@ fn row_for(
         let browser_url = url.clone();
         vec![
             menu_item(if read {
-                crate::res::str::mark_unread().format()
+                crate::res::str::mark_unread()
             } else {
-                crate::res::str::mark_read().format()
+                crate::res::str::mark_read()
             })
             .id("row-toggle-read")
             .action(move || daynews_core::set_read(id, !read)),
             menu_item(if starred {
-                crate::res::str::unstar().format()
+                crate::res::str::unstar()
             } else {
-                crate::res::str::star().format()
+                crate::res::str::star()
             })
             .id("row-toggle-star")
             .action(move || daynews_core::set_starred(id, !starred)),
-            menu_item(crate::res::str::tag_action().format())
+            menu_item(crate::res::str::tag_action())
                 .id("row-tag")
                 .action(move || begin_tag(id)),
             menu_separator(),
-            menu_item(crate::res::str::menu_open_in_browser().format())
+            menu_item(crate::res::str::menu_open_in_browser())
                 .id("row-open-in-browser")
                 .enabled(url.is_some())
                 .action(move || {
@@ -177,7 +177,7 @@ fn row_for(
                         crate::settings::open_link(url);
                     }
                 }),
-            menu_item(crate::res::str::menu_copy_article_link().format())
+            menu_item(crate::res::str::menu_copy_article_link())
                 .id("row-copy-article-link")
                 .enabled(url.is_some())
                 .action(move || {
@@ -189,7 +189,7 @@ fn row_for(
     })
     // The positional id: a script addresses "the first row" without knowing which article
     // the network delivered. Reactive, so a recycled cell re-labels as it rebinds.
-    // Separation between rows is the list's (`.separators(true)` in `timeline_pane`), drawn
+    // Separation between rows is the list's (`.separators()` in `timeline_pane`), drawn
     // by the host at the row boundary; nothing else wraps the row.
     .id_of(move || {
         let id = id();
@@ -228,16 +228,11 @@ fn row_for(
 
 fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool) -> impl Piece {
     row((
-        each(
-            items(
-                move || {
-                    vec![crate::feed_icons::paths().with(|icons| icons.get(&feed().0).cloned())]
-                },
-                |path| path.clone(),
-            ),
-            |slot| {
-                if let Some(path) = slot.get() {
-                    image(path).decorative().frame(20.0, 20.0).any()
+        keyed(
+            move || Some(crate::feed_icons::paths().with(|icons| icons.get(&feed().0).cloned())),
+            |path| {
+                if let Some(path) = path {
+                    image(path.clone()).decorative().frame(20.0, 20.0).any()
                 } else {
                     vector(crate::res::vectors::dashboard_feed)
                         .tint(move || palette().accent)
@@ -260,7 +255,7 @@ fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool
             })
             .grow_w(),
     ))
-    .spacing(8.0)
+    .spacing(Space::S)
     .align(VAlign::Center)
     .padding(Insets::symmetric(12.0, 4.0))
     .height(32.0)
@@ -310,7 +305,7 @@ fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool
 pub(crate) fn begin_tag(article: u64) {
     day::task(async move {
         if let Some(name) = prompt(crate::res::str::tag_prompt_title())
-            .placeholder(crate::res::str::tag_prompt_placeholder().format())
+            .placeholder(crate::res::str::tag_prompt_placeholder())
             .await
         {
             daynews_core::toggle_tag(article, &name);
@@ -382,11 +377,11 @@ pub fn timeline_pane() -> impl Piece {
                         crate::commands::mark_all_read().button(),
                         crate::commands::next_unread().button(),
                     ))
-                    .spacing(8.0)
+                    .spacing(Space::S)
                 },
             ),
         ))
-        .spacing(8.0)
+        .spacing(Space::S)
         .align(VAlign::Center)
         .padding(Insets {
             top: 10.0,
@@ -419,13 +414,17 @@ pub fn timeline_pane() -> impl Piece {
                     spinner(),
                     label(move || {
                         let (done, total) = st.refresh_progress.get().unwrap_or((0, 0));
-                        crate::res::str::refresh_progress(done as f64, total as f64).format()
+                        crate::res::str::refresh_progress(crate::res::str::RefreshProgress {
+                            done: done as f64,
+                            total: total as f64,
+                        })
+                        .format()
                     })
                     .font(Font::Caption)
                     .color(move || palette().text_muted)
                     .id("refresh-progress"),
                 ))
-                .spacing(8.0)
+                .spacing(Space::S)
                 .align(VAlign::Center)
                 .padding(Insets::symmetric(12.0, 4.0))
                 .grow_w()
@@ -434,19 +433,15 @@ pub fn timeline_pane() -> impl Piece {
         divider(),
         // Rebuild just the native list when its display geometry changes; selection is
         // restored from the scene's stable article ID by the existing two-way binding.
-        each(
-            items(
-                move || {
-                    vec![(
-                        crate::settings::PREVIEW_LINES.get() as usize,
-                        crate::settings::LIST_SCALE.get().round() as usize,
-                        st.group_by_feed.get(),
-                    )]
-                },
-                |style| *style,
-            ),
-            move |slot| {
-                let (lines, percent, grouped) = slot.get();
+        keyed(
+            move || {
+                Some((
+                    crate::settings::PREVIEW_LINES.get() as usize,
+                    crate::settings::LIST_SCALE.get().round() as usize,
+                    st.group_by_feed.get(),
+                ))
+            },
+            move |&(lines, percent, grouped)| {
                 timeline_rows(lines, percent as f64 / 100.0, sc, grouped)
             },
         ),
@@ -585,7 +580,7 @@ fn timeline_rows(
                         Symbol::Circle
                     };
                     vec![
-                        swipe_action(text.format())
+                        swipe_action(text)
                             .symbol(symbol)
                             .tint(palette().accent)
                             .action(move || daynews_core::set_read(id, !read)),
@@ -604,7 +599,7 @@ fn timeline_rows(
                         crate::res::str::star()
                     };
                     vec![
-                        swipe_action(text.format())
+                        swipe_action(text)
                             .symbol(Symbol::Star)
                             .tint(palette().star)
                             .action(move || daynews_core::set_starred(id, !starred)),
@@ -612,9 +607,7 @@ fn timeline_rows(
                 })
                 // The host draws the row separators, at the row boundary, aligned with the
                 // native selection, and stationary while a swipe slides the row past them.
-                .separators(true)
-                // `.id` on the list itself (not a wrapper): `select:`/`swipe_row:` steps resolve
-                // the id's node and expect the list driver right there.
+                .separators()
                 .id("timeline")
                 .overlay_aligned(
                     Alignment::TopLeading,

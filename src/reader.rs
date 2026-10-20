@@ -484,7 +484,7 @@ fn article_text() -> impl Piece {
         ))
         .spacing(10.0)
         .align(HAlign::Leading)
-        .padding(24.0)
+        .padding(Space::XL)
         .grow_w(),
     )
     .id("reader-text")
@@ -678,7 +678,7 @@ pub(crate) fn reader_document(chrome: bool) -> impl Piece {
                             }
                         }),
                     ))
-                    .spacing(12.0)
+                    .spacing(Space::M)
                     .grow()
                     .any()
                 }
@@ -689,18 +689,13 @@ pub(crate) fn reader_document(chrome: bool) -> impl Piece {
             move || {
                 let provider = provider.clone();
                 let document_load = document_load.clone();
-                each(
-                    items(
-                        move || {
-                            st.article.with(|a| {
-                                a.as_ref()
-                                    .map(|a| crate::site_browser::profile(a.feed_id).storage_key())
-                                    .into_iter()
-                                    .collect::<Vec<_>>()
-                            })
-                        },
-                        |key| key.clone(),
-                    ),
+                keyed(
+                    move || {
+                        st.article.with(|a| {
+                            a.as_ref()
+                                .map(|a| crate::site_browser::profile(a.feed_id).storage_key())
+                        })
+                    },
                     move |_| {
                         reader_body(
                             provider.clone(),

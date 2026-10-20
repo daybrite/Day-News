@@ -42,18 +42,30 @@ pub fn begin_new_feed() {
     };
     let clipboard = day::clipboard::read(&["text/plain", "text/uri-list"]);
     day::task(async move {
-        let initial = clipboard
-            .await
-            .ok()
-            .flatten()
-            .and_then(|r| String::from_utf8(r.bytes.as_ref().clone()).ok())
-            .and_then(|s| {
-                incoming_url(&s)
-                    .or_else(|| daynews_feed::discovery::web_url(s.trim()).map(|u| u.to_string()))
-            })
-            .unwrap_or_default();
+        // A clipboard suggestion is optional. A slow provider or permission prompt must
+        // not keep the subscription form closed, and late data must not replace typed input.
+        let initial = clipboard_feed_url(clipboard, day::sleep(200)).await;
         sheet.open.set(Some(initial));
     });
+}
+
+async fn clipboard_feed_url(
+    clipboard: day::clipboard::ClipboardFuture<Option<day::clipboard::Representation>>,
+    deadline: impl std::future::Future<Output = ()>,
+) -> String {
+    use futures_util::future::{Either, select};
+    futures_util::pin_mut!(deadline);
+    let result = match select(clipboard, deadline).await {
+        Either::Left((result, _)) => result.ok().flatten(),
+        Either::Right(_) => None,
+    };
+    result
+        .and_then(|r| String::from_utf8(r.bytes.as_ref().clone()).ok())
+        .and_then(|s| {
+            incoming_url(&s)
+                .or_else(|| daynews_feed::discovery::web_url(s.trim()).map(|u| u.to_string()))
+        })
+        .unwrap_or_default()
 }
 fn is_feed_scheme(input: &str) -> bool {
     input.split_once(':').is_some_and(|(scheme, _)| {
@@ -114,8 +126,13 @@ async fn verify_url(input: &str) -> Result<(String, daynews_feed::FeedUpdate), (
                         .title
                         .as_deref()
                         .map(|title| {
-                            crate::res::str::subscribe_candidate(title, option.url.as_str())
-                                .format()
+                            crate::res::str::subscribe_candidate(
+                                crate::res::str::SubscribeCandidate {
+                                    title,
+                                    url: option.url.as_str(),
+                                },
+                            )
+                            .format()
                         })
                         .unwrap_or_else(|| option.url.clone());
                     dialog = dialog.button(label, option.url);
@@ -232,7 +249,7 @@ pub fn subscription_sheet() -> impl Piece {
                     })
                     .id("feed-verify"),
             ))
-            .spacing(8.0),
+            .spacing(Space::S),
             when(
                 move || busy.get(),
                 || label(crate::res::str::subscribe_verifying()).id("feed-verifying"),
@@ -260,7 +277,7 @@ pub fn subscription_sheet() -> impl Piece {
                     .max_lines(2),
                 ))
                 .align(HAlign::Leading)
-                .padding(8.0)
+                .padding(Space::S)
             })
             .row_height(RowHeight::Uniform(100.0))
             .id("feed-preview")
@@ -302,11 +319,11 @@ pub fn subscription_sheet() -> impl Piece {
                     })
                     .id("feed-subscribe"),
             ))
-            .spacing(8.0),
+            .spacing(Space::S),
         ))
-        .spacing(12.0)
+        .spacing(Space::M)
         .align(HAlign::Leading)
-        .padding(16.0)
+        .padding(Space::L)
         .grow()
         .id("subscription-sheet")
     })
@@ -356,7 +373,7 @@ async fn select_subscribed_feed(feed: u64) {
 pub fn begin_new_folder() {
     day::task(async {
         if let Some(name) = prompt(crate::res::str::new_folder_title())
-            .placeholder(crate::res::str::new_folder_placeholder().format())
+            .placeholder(crate::res::str::new_folder_placeholder())
             .await
         {
             let name = name.trim().to_string();
@@ -415,6 +432,25 @@ pub fn export_opml() {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn clipboard_suggestion_does_not_wait_past_the_form_deadline() {
+        use futures_util::FutureExt;
+        use std::future::{pending, ready};
+
+        let slow = super::clipboard_feed_url(Box::pin(pending()), ready(()));
+        assert_eq!(slow.now_or_never(), Some(String::new()));
+
+        let fixture = day::clipboard::Representation::new(
+            "text/plain",
+            b"feed:https://fixture.example/rss".to_vec(),
+        );
+        let available = super::clipboard_feed_url(Box::pin(ready(Ok(Some(fixture)))), pending());
+        assert_eq!(
+            available.now_or_never().as_deref(),
+            Some("https://fixture.example/rss")
+        );
+    }
+
     #[test]
     fn incoming_feed_schemes_preserve_url_data() {
         for (input, expected) in [

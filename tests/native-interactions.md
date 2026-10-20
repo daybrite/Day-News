@@ -12,6 +12,12 @@ and taps Today, All Unread, Starred, and All Articles, asserting a hittable nati
 and a return to the root each time. Run it with `xcodebuild test` on the NavigationProbe
 scheme, selecting `NavigationProbe/NavigationTests/testRootReachableFromSmartFeeds`.
 
+`NavigationTests.testNewFeedRemainsUsableWhenPasteIsDenied` opens New Feed with native taps
+in an isolated empty library, denies the system paste prompt when present, types a synthetic
+URL, and cancels the form. Put synthetic text on the simulator clipboard from outside the app
+to exercise the permission prompt. New Feed waits at most 200 ms for its optional clipboard
+suggestion; a pending permission request must not block the UI thread or overwrite later input.
+
 Use throwaway stores; these scripts mark articles read/unread and change synthetic feeds' reader
 preferences. Never run them against a personal subscription database.
 

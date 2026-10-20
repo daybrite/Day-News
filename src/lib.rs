@@ -51,16 +51,11 @@ day::day_start!(options: window(), root);
 /// against an empty hint list and open an English window on a French device. The same ordering
 /// is what lets the title come from the catalog (docs/localization.md).
 pub fn window() -> day::WindowOptions {
-    day::WindowOptions {
-        locales: Some((res::locales::DEFAULT, res::locales::CATALOG)),
-        title_fn: Some(|| res::str::app_title().format()),
-        // Three panes need room. At 960 the timeline and the article both end up too narrow to
-        // read comfortably; this is close to NetNewsWire's own default.
-        size: day::prelude::Size::new(1440.0, 900.0),
-        min_size: Some(day::prelude::Size::new(720.0, 480.0)),
-        version: Some(env!("CARGO_PKG_VERSION").into()),
-        ..Default::default()
-    }
+    // Three panes need room. At 960 the timeline and the article both end up too narrow to
+    // read comfortably; this is close to NetNewsWire's own default.
+    res::window_options()
+        .size(1440.0, 900.0)
+        .min_size(720.0, 480.0)
 }
 
 // Typed constants for the files under `resource/`, generated at build time by `day-build`.
@@ -115,14 +110,20 @@ pub fn root() -> impl Piece {
                 StatusMessage::RefreshedFeed(title, false) => {
                     res::str::status_feed_failed(title).format()
                 }
-                StatusMessage::RefreshedFeeds(total, failed) => res::str::status_feeds_refreshed(
-                    (total - failed) as i64,
-                    total as i64,
-                    failed as i64,
-                )
-                .format(),
+                StatusMessage::RefreshedFeeds(total, failed) => {
+                    res::str::status_feeds_refreshed(res::str::StatusFeedsRefreshed {
+                        done: (total - failed) as i64,
+                        failed: failed as i64,
+                        total: total as i64,
+                    })
+                    .format()
+                }
                 StatusMessage::Imported(added, existing) => {
-                    res::str::status_imported(added as i64, existing as i64).format()
+                    res::str::status_imported(res::str::StatusImported {
+                        added: added as i64,
+                        existing: existing as i64,
+                    })
+                    .format()
                 }
                 StatusMessage::ExportTitle => res::str::subscriptions_export_title().format(),
             }
@@ -242,121 +243,110 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         // the nav owns the field now, and the toolkit puts it in the window toolbar on
         // desktop and inline above the list on a phone. The signal is still the shared one the
         // timeline filters on.
-        .searchable(toolbar::search())
-        .search_hides_on_scroll(true)
-        .search_initially_hidden(true)
-        .search_prompt(res::str::search_placeholder())
+        .searchable(
+            Search::new(toolbar::search())
+                .reveal(SearchReveal::OnPull)
+                .prompt(res::str::search_placeholder()),
+        )
         // The article list is the content-list pane (docs/navigation.md): its own column
         // between the sidebar and the reader where the toolkit has one (a real `contentList`
         // split item on macOS, the supplementary column on iPadOS), the pushed middle layer
         // on a phone, and composed beside the reader elsewhere. Full-page sections keep the
         // whole detail area.
-        .content_list(timeline::timeline_pane)
-        .content_list_width(400.0)
-        .content_list_for(|k: &Option<String>| !matches!(k.as_deref(), Some("settings")))
-        .detail_visible(sc.reader_open)
+        .content_list(
+            ContentList::new(timeline::timeline_pane)
+                .width(400.0)
+                .only_for(|k: &Option<String>| !matches!(k.as_deref(), Some("settings")))
+                .detail_visible(sc.reader_open),
+        )
         // Smart feeds: Today, All Unread and Starred, in NetNewsWire's order, under their own
         // header. Counts are real badges: right-aligned and de-emphasized by the toolkit.
-        .section(res::str::nav_smart_feeds())
-        .item_icon(
-            "today".to_string(),
-            res::str::nav_today(),
-            res::images::sidebar_today,
-            reader_dest,
-        )
         // Per-feed identity colors (docs/vectors.md): the sun, the dot, the star and the
         // stack each wear their own tint, NetNewsWire-style.
-        .icon_tint(Color::hex(0xFF9F0A))
-        .badge(move || count(st.total_today.get()))
-        .item_icon(
-            "unread".to_string(),
-            res::str::nav_all_unread(),
-            res::images::sidebar_unread,
-            reader_dest,
-        )
-        .icon_tint(Color::hex(0x0A84FF))
-        .badge(move || count(st.total_unread.get()))
-        .item_icon(
-            "starred".to_string(),
-            res::str::nav_starred(),
-            res::images::sidebar_starred,
-            reader_dest,
-        )
-        .icon_tint(Color::hex(0xE8940A))
-        .badge(move || count(st.total_starred.get()))
-        .item_icon(
-            "all".to_string(),
-            res::str::nav_all_articles(),
-            res::images::sidebar_all,
-            reader_dest,
-        )
-        .icon_tint(Color::hex(0x5E5CE6))
-        .badge(move || count(st.total_articles.get()))
-        // One row per subscription, re-derived whenever the feed list or its counts change.
-        .section_id("feeds", feed_list::section_title)
-        .items(
-            move || {
-                let unread_only = feed_list::FeedList::app().unread_only.get();
-                let icons = feed_icons::paths().get();
-                st.feeds
-                    .get()
-                    .into_iter()
-                    .filter(|feed| feed_list::visible(feed.unread, unread_only))
-                    .map(|feed| {
-                        let icon = icons.get(&feed.id).cloned();
-                        (feed, icon)
-                    })
-                    .collect::<Vec<_>>()
-            },
-            move |(f, icon): &(daynews_core::FeedRow, Option<String>)| {
-                let name = if f.has_error {
-                    format!("⚠ {}", f.title)
-                } else {
-                    f.title.clone()
-                };
-                let row = item(format!("feed:{}", f.id), name);
-                let row = if let Some(path) = icon {
-                    row.icon(path.clone())
-                } else {
-                    row.icon(res::images::sidebar_feed)
-                        .icon_tint(Color::hex(0x30B0C7))
-                };
-                menu_scope.enter(|| {
-                    row.badge(count(f.unread))
-                        .context_menu(menus::feed_context_menu(f.id, f.unread))
-                })
-            },
-        )
-        // User tags, with their article counts; selecting one scopes the timeline to it.
-        .section(res::str::nav_tags_section())
-        .items(
-            move || st.tags.get(),
-            |t: &daynews_core::TagRow| {
-                item(format!("tag:{}", t.id), t.name.clone())
+        .section(
+            res::str::nav_smart_feeds(),
+            (
+                item("today".to_string(), res::str::nav_today())
+                    .icon(res::images::sidebar_today)
+                    .icon_tint(Color::hex(0xFF9F0A))
+                    .badge(move || count(st.total_today.get()))
+                    .page(reader_dest),
+                item("unread".to_string(), res::str::nav_all_unread())
+                    .icon(res::images::sidebar_unread)
+                    .icon_tint(Color::hex(0x0A84FF))
+                    .badge(move || count(st.total_unread.get()))
+                    .page(reader_dest),
+                item("starred".to_string(), res::str::nav_starred())
                     .icon(res::images::sidebar_starred)
                     .icon_tint(Color::hex(0xE8940A))
-                    .badge(count(t.count))
-            },
+                    .badge(move || count(st.total_starred.get()))
+                    .page(reader_dest),
+                item("all".to_string(), res::str::nav_all_articles())
+                    .icon(res::images::sidebar_all)
+                    .icon_tint(Color::hex(0x5E5CE6))
+                    .badge(move || count(st.total_articles.get()))
+                    .page(reader_dest),
+            ),
+        )
+        // One row per subscription, re-derived whenever the feed list or its counts change.
+        .section_id(
+            "feeds",
+            feed_list::section_title,
+            nav_items(
+                move || {
+                    let unread_only = feed_list::FeedList::app().unread_only.get();
+                    let icons = feed_icons::paths().get();
+                    st.feeds
+                        .get()
+                        .into_iter()
+                        .filter(|feed| feed_list::visible(feed.unread, unread_only))
+                        .map(|feed| {
+                            let icon = icons.get(&feed.id).cloned();
+                            (feed, icon)
+                        })
+                        .collect::<Vec<_>>()
+                },
+                move |(f, icon): &(daynews_core::FeedRow, Option<String>)| {
+                    let name = if f.has_error {
+                        format!("⚠ {}", f.title)
+                    } else {
+                        f.title.clone()
+                    };
+                    let row = item(format!("feed:{}", f.id), name);
+                    let row = if let Some(path) = icon {
+                        row.icon(path.clone())
+                    } else {
+                        row.icon(res::images::sidebar_feed)
+                            .icon_tint(Color::hex(0x30B0C7))
+                    };
+                    menu_scope.enter(|| {
+                        row.badge(count(f.unread))
+                            .context_menu(menus::feed_context_menu(f.id, f.unread))
+                    })
+                },
+            ),
+        )
+        // User tags, with their article counts; selecting one scopes the timeline to it.
+        .section(
+            res::str::nav_tags_section(),
+            nav_items(
+                move || st.tags.get(),
+                |t: &daynews_core::TagRow| {
+                    item(format!("tag:{}", t.id), t.name.clone())
+                        .icon(res::images::sidebar_starred)
+                        .icon_tint(Color::hex(0xE8940A))
+                        .badge(count(t.count))
+                },
+            ),
         )
         // Settings rides the sidebar where no app menu can open the surface (phones):
-        // `nav_keys` is empty elsewhere, including the web (https://daybrite.dev/docs/settings).
+        // `nav_item` is `None` elsewhere, including the web (https://daybrite.dev/docs/settings).
         .items(
-            {
-                let prefs = prefs.clone();
-                move || {
-                    if crate::settings::TOOLBAR_SETTINGS {
-                        Vec::new()
-                    } else {
-                        prefs.nav_keys(Some("settings".to_string()))
-                    }
-                }
-            },
-            |key: &Option<String>| item(key.clone(), res::str::nav_settings()),
+            (!crate::settings::TOOLBAR_SETTINGS)
+                .then(|| prefs.nav_item(Some("settings".to_string())))
+                .flatten(),
         )
-        .destination(move |key: &Option<String>| match key.as_deref() {
-            Some("settings") => Either::Left(prefs.page()),
-            _ => Either::Right(reader_dest()),
-        });
+        .destination(move |_: &Option<String>| reader_dest());
     #[cfg(not(target_arch = "wasm32"))]
     let navigation = navigation.footer(|| {
         when(

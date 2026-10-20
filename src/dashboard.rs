@@ -11,6 +11,10 @@ use daynews_db::{Scope, dashboard::Dashboard};
 use std::rc::Rc;
 
 type Data = Signal<Option<Dashboard>>;
+/// A card's title line; its color follows the live palette, so it stays a closure.
+const HEADLINE: TextPreset = TextPreset::new(Font::Headline).single_line();
+/// A card's one-line caption; the muted color follows the live palette.
+const CAPTION: TextPreset = TextPreset::new(Font::Caption).single_line();
 fn read<T: Default>(data: Data, f: impl FnOnce(&Dashboard) -> T) -> T {
     data.with(|snapshot| snapshot.as_ref().map(f).unwrap_or_default())
 }
@@ -55,7 +59,7 @@ fn card<P: Piece>(content: P) -> impl Piece {
     // Keep decoration behind the card's controls. A canvas overlay covers native hit
     // testing even when it paints only a thin border.
     content
-        .padding(12.0)
+        .padding(Space::M)
         .background(move || palette().bg_alt)
         .corner_radius(13.0)
         .padding(1.0)
@@ -75,9 +79,8 @@ fn metric(
             .color(move || accent(scope.get()))
             .single_line(),
         label(label_text)
-            .font(Font::Caption)
-            .color(move || palette().text_muted)
-            .single_line(),
+            .preset(&CAPTION)
+            .color(move || palette().text_muted),
     ))
     .spacing(3.0)
     .align(HAlign::Leading)
@@ -184,9 +187,8 @@ fn activity_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
                 Scope::Starred => res::str::dashboard_activity_starred().format(),
                 _ => res::str::dashboard_activity().format(),
             })
-            .font(Font::Headline)
-            .color(move || palette().text)
-            .single_line(),
+            .preset(&HEADLINE)
+            .color(move || palette().text),
             label(move || match scope.get() {
                 Scope::Today => res::str::dashboard_today_note().format(),
                 Scope::Unread => res::str::dashboard_unread_note().format(),
@@ -195,12 +197,15 @@ fn activity_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
                     let now = now + i64::from(daynews_time::local_offset_seconds(now).unwrap_or(0));
                     let start =
                         read(data, |d| d.days.first().map(|d| d.0)).unwrap_or(now - 27 * 86400);
-                    res::str::dashboard_activity_note(now as f64, start as f64).format()
+                    res::str::dashboard_activity_note(res::str::DashboardActivityNote {
+                        end: now as f64,
+                        start: start as f64,
+                    })
+                    .format()
                 }
             })
-            .font(Font::Caption)
-            .color(move || palette().text_muted)
-            .single_line(),
+            .preset(&CAPTION)
+            .color(move || palette().text_muted),
             chart(move || activity(data, scope.get()))
                 .animated()
                 .animate_appearance()
@@ -241,13 +246,11 @@ fn lengths_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
     card(
         column((
             label(res::str::dashboard_lengths())
-                .font(Font::Headline)
-                .color(move || palette().text)
-                .single_line(),
+                .preset(&HEADLINE)
+                .color(move || palette().text),
             label(res::str::dashboard_lengths_note())
-                .font(Font::Caption)
-                .color(move || palette().text_muted)
-                .single_line(),
+                .preset(&CAPTION)
+                .color(move || palette().text_muted),
             chart(move || {
                 length_labels()
                     .into_iter()
@@ -302,9 +305,8 @@ fn lengths_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
                 )
                 .format()
             })
-            .font(Font::Caption)
-            .color(move || palette().text_muted)
-            .single_line(),
+            .preset(&CAPTION)
+            .color(move || palette().text_muted),
         ))
         .spacing(4.0)
         .align(HAlign::Leading)
@@ -336,13 +338,11 @@ fn habits_card(data: Data) -> AnyPiece {
     card(
         column((
             label(res::str::dashboard_habits())
-                .font(Font::Headline)
-                .color(move || palette().text)
-                .single_line(),
+                .preset(&HEADLINE)
+                .color(move || palette().text),
             label(res::str::dashboard_habits_note())
-                .font(Font::Caption)
-                .color(move || palette().text_muted)
-                .single_line(),
+                .preset(&CAPTION)
+                .color(move || palette().text_muted),
             chart(move || {
                 let habits = read(data, |d| d.habits);
                 let max = habits.iter().flatten().copied().max().unwrap_or(0).max(1) as f64;
@@ -360,8 +360,10 @@ fn habits_card(data: Data) -> AnyPiece {
                             )
                             .selection_value(value(
                                 res::str::dashboard_cell_annotation(
-                                    habits[day][hour] as f64,
-                                    (hour * 4) as f64,
+                                    res::str::DashboardCellAnnotation {
+                                        count: habits[day][hour] as f64,
+                                        hour: (hour * 4) as f64,
+                                    },
                                 )
                                 .format(),
                                 habits[day][hour],
@@ -392,17 +394,16 @@ fn habits_card(data: Data) -> AnyPiece {
             .id("dashboard-habits-chart")
             .grow(),
             label(move || {
-                res::str::dashboard_read_share(
-                    read(data, |d| d.starred) as f64,
-                    read(data, |d| {
+                res::str::dashboard_read_share(res::str::DashboardReadShare {
+                    count: read(data, |d| d.starred) as f64,
+                    percent: read(data, |d| {
                         100.0 * (d.total - d.unread) as f64 / d.total.max(1) as f64
                     }),
-                )
+                })
                 .format()
             })
-            .font(Font::Caption)
-            .color(move || palette().text_muted)
-            .single_line(),
+            .preset(&CAPTION)
+            .color(move || palette().text_muted),
             label(move || {
                 read(data, |d| d.latest)
                     .map(|date| {
@@ -452,13 +453,11 @@ fn sources_card(data: Data) -> AnyPiece {
     card(
         column((
             label(res::str::dashboard_sources())
-                .font(Font::Headline)
-                .color(move || palette().text)
-                .single_line(),
+                .preset(&HEADLINE)
+                .color(move || palette().text),
             label(res::str::dashboard_sources_note())
-                .font(Font::Caption)
-                .color(move || palette().text_muted)
-                .single_line(),
+                .preset(&CAPTION)
+                .color(move || palette().text_muted),
             PublisherPieces(vec![
                 chart(move || {
                     sources(data)
@@ -565,7 +564,11 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                     });
                     match (intervals.iter().min(), intervals.iter().max()) {
                         (Some(a), Some(b)) if a != b => {
-                            res::str::dashboard_interval_range(cadence(*a), cadence(*b)).format()
+                            res::str::dashboard_interval_range(res::str::DashboardIntervalRange {
+                                fast: cadence(*a),
+                                slow: cadence(*b),
+                            })
+                            .format()
                         }
                         (Some(a), _) => cadence(*a),
                         _ => res::str::dashboard_no_schedule().format(),
@@ -590,9 +593,8 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                     }
                     _ => res::str::dashboard_no_schedule().format(),
                 })
-                .font(Font::Caption)
+                .preset(&CAPTION)
                 .color(move || palette().text_muted)
-                .single_line()
                 .grow_w(),
                 label(move || {
                     let now = clock.get();
@@ -610,11 +612,11 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                     if remaining == 0 {
                         return res::str::dashboard_due().format();
                     }
-                    res::str::dashboard_countdown(
-                        (remaining / 3600) as f64,
-                        ((remaining / 60) % 60) as f64,
-                        (remaining % 60) as f64,
-                    )
+                    res::str::dashboard_countdown(res::str::DashboardCountdown {
+                        hours: (remaining / 3600) as f64,
+                        minutes: ((remaining / 60) % 60) as f64,
+                        seconds: (remaining % 60) as f64,
+                    })
                     .format()
                 })
                 .font(Font::Footnote)
@@ -623,18 +625,15 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                 .tabular()
                 .id("dashboard-refresh-countdown"),
             ))
-            .spacing(8.0)
+            .spacing(Space::S)
             .align(VAlign::Center)
             .grow_w(),
-            each(
-                items(
-                    move || read(data, |d| d.feed_id).into_iter().collect::<Vec<_>>(),
-                    |id| *id,
-                ),
-                |slot| {
+            keyed(
+                move || read(data, |d| d.feed_id),
+                |id| {
                     column((
-                        crate::reader_options::controls(slot.get()),
-                        crate::site_browser::site_controls(slot.get()),
+                        crate::reader_options::controls(*id),
+                        crate::site_browser::site_controls(*id),
                     ))
                 },
             ),
@@ -676,7 +675,7 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                     },
                 ),
             ))
-            .spacing(8.0)
+            .spacing(Space::S)
             .align(VAlign::Center)
             .grow_w(),
         ))
@@ -771,23 +770,20 @@ pub fn dashboard() -> impl Piece {
     .grow_w()
     .any();
     let hero = row((
-        each(
-            items(
-                move || {
-                    let downloaded = match scope.get() {
-                        Scope::Feed(id) => {
-                            crate::feed_icons::paths().with(|paths| paths.get(&id).cloned())
-                        }
-                        _ => None,
-                    };
-                    vec![(scope.get(), downloaded)]
-                },
-                |item| format!("{:?}", item),
-            ),
-            |slot| {
-                let (scope, path) = slot.get();
+        keyed(
+            move || {
+                let downloaded = match scope.get() {
+                    Scope::Feed(id) => {
+                        crate::feed_icons::paths().with(|paths| paths.get(&id).cloned())
+                    }
+                    _ => None,
+                };
+                Some((scope.get(), downloaded))
+            },
+            |(scope, path)| {
+                let scope = *scope;
                 if let Some(path) = path {
-                    image(path).decorative().frame(42.0, 42.0).any()
+                    image(path.clone()).decorative().frame(42.0, 42.0).any()
                 } else {
                     vector(match scope {
                         Scope::Today => res::vectors::dashboard_today,
@@ -803,7 +799,7 @@ pub fn dashboard() -> impl Piece {
                 }
             },
         )
-        .padding(12.0)
+        .padding(Space::M)
         .background(move || accent(scope.get()).with_alpha(0.1))
         .corner_radius(18.0),
         hero_text,

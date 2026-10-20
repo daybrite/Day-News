@@ -324,7 +324,7 @@ that comparison changed:
 - **Read state.** A read article dims its title rather than only dropping its dot. Selection is
   the platform's own: the timeline is a native `list`, so the table draws the highlight and owns
   the arrow keys, and rows keep their content colors instead of inverting by hand.
-- **Separators** between rows, drawn by the HOST at the row boundary (`.separators(true)`). At
+- **Separators** between rows, drawn by the HOST at the row boundary (`.separators()`). At
   this density adjacent titles and summaries otherwise merge into one undifferentiated column of
   text — but a hairline drawn *inside* the row is the wrong tool: it never lines up with the
   native selection, and it sits still while a swipe slides the row past it.
@@ -369,7 +369,7 @@ checks the feed heading after returning from Settings.
 
 Desktop gets a File menu (New Feed, New Folder, New Window, Refresh, Import/Export Subscriptions,
 Close Window), a Go menu (Previous/Next Article ⌘[/⌘], Next Unread ⌘/, then the three smart feeds),
-a Feed menu (Refresh Feed, Mark All as Read, Unsubscribe) and an Article menu. These are one `app_menu_reactive` model,
+a Feed menu (Refresh Feed, Mark All as Read, Unsubscribe) and an Article menu. These are one live `app_menu` model,
 so all four desktop toolkits get the same bar from the same code, and dayscript drives them by
 Fluent key on every one. Next Unread walks the visible timeline forward and wraps, then falls back
 to any unread article, so it keeps working when the current scope is exhausted.
@@ -672,8 +672,8 @@ preference as a `Pref<T>` static over the platform store (`news.*`, `retention.d
 groups General (Day's appearance and language rows), Articles, Reader, Browser and Feeds, plus
 an About built from the manifest. `Preferences::install` in `root()` registers the Settings
 window and the App menu's Settings…/About items where a menu bar exists, and the
-`settings/<group>` routes. Where there is none, `prefs.nav_keys` places a Settings sidebar
-section whose destination is `prefs.page()`: a root list (About header, one row per group)
+`settings/<group>` routes. Where there is none, `prefs.nav_item` places a Settings sidebar
+row whose page is the settings surface: a root list (About header, one row per group)
 that pushes one page per group. Settings that drive state outside the UI (feed grouping,
 retention pruning, the refresh timer) are watches on their prefs, installed once in the root
 scope. Walkthroughs reach a group with `navigate: settings/<group>` on the desktops, and on a

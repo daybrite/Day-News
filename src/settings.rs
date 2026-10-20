@@ -267,9 +267,9 @@ fn color_row(
             spacer(),
             day_piece_colorpicker::color_picker(color)
                 .title(title())
-                .key(key),
+                .id(key),
         ))
-        .spacing(12.0)
+        .spacing(Space::M)
         .align(VAlign::Center)
         .grow_w()
     })

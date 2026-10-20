@@ -39,7 +39,7 @@ pub fn page() -> impl Piece {
                         })
                         .id("sync-sign-in"),
                 ))
-                .spacing(8.0)
+                .spacing(Space::S)
                 .grow_w()
             },
         ),
@@ -48,10 +48,10 @@ pub fn page() -> impl Piece {
             move || {
                 column((
                     label(move || {
-                        res::str::sync_preview(
-                            status.get().local_feeds as f64,
-                            status.get().remote_feeds as f64,
-                        )
+                        res::str::sync_preview(res::str::SyncPreview {
+                            local: status.get().local_feeds as f64,
+                            remote: status.get().remote_feeds as f64,
+                        })
                         .format()
                     })
                     .id("sync-preview"),
@@ -60,7 +60,7 @@ pub fn page() -> impl Piece {
                         label(res::str::sync_merge()).grow_w(),
                         toggle(merge).id("sync-merge"),
                     ))
-                    .spacing(8.0),
+                    .spacing(Space::S),
                     row((
                         button(res::str::sync_connect())
                             .enabled(move || !status.get().busy)
@@ -71,9 +71,9 @@ pub fn page() -> impl Piece {
                             .action(daynews_core::sync_cancel_login)
                             .id("sync-cancel"),
                     ))
-                    .spacing(12.0),
+                    .spacing(Space::M),
                 ))
-                .spacing(12.0)
+                .spacing(Space::M)
             },
         ),
         when(
@@ -103,7 +103,7 @@ pub fn page() -> impl Piece {
                             .action(daynews_core::sync_disconnect)
                             .id("sync-disconnect"),
                     ))
-                    .spacing(12.0),
+                    .spacing(Space::M),
                     label(res::str::sync_disconnect_note()).font(Font::Footnote),
                     button(res::str::sync_reset())
                         .enabled(move || {
@@ -250,18 +250,20 @@ pub fn sync_progress() -> impl Piece {
                         label(move || {
                             let s = status.get();
                             let duration = |seconds: u64| {
-                                res::str::sync_progress_duration(
-                                    (seconds / 60) as f64,
-                                    (seconds % 60) as f64,
-                                )
+                                res::str::sync_progress_duration(res::str::SyncProgressDuration {
+                                    minutes: (seconds / 60) as f64,
+                                    seconds: (seconds % 60) as f64,
+                                })
                                 .format()
                             };
                             match s.remaining_seconds {
-                                Some(seconds) => res::str::sync_progress_eta(
-                                    duration(s.elapsed_seconds),
-                                    duration(seconds),
-                                )
-                                .format(),
+                                Some(seconds) => {
+                                    res::str::sync_progress_eta(res::str::SyncProgressEta {
+                                        elapsed: duration(s.elapsed_seconds),
+                                        remaining: duration(seconds),
+                                    })
+                                    .format()
+                                }
                                 None => {
                                     res::str::sync_progress_estimating(duration(s.elapsed_seconds))
                                         .format()
@@ -282,7 +284,7 @@ pub fn sync_progress() -> impl Piece {
                         .enabled(move || status.get().cancellable)
                         .id("sync-cancel-transfer"),
                 ))
-                .spacing(8.0)
+                .spacing(Space::S)
                 .align(VAlign::Center)
                 .grow_w(),
             ))
@@ -296,27 +298,35 @@ fn progress_text(p: &daynews_sync::progress::Progress) -> String {
     use daynews_sync::progress::Phase;
     match p.phase {
         Phase::Preparing => res::str::sync_progress_preparing().format(),
-        Phase::Uploading => {
-            res::str::sync_progress_upload(p.completed as f64, p.total.unwrap_or(0) as f64).format()
-        }
+        Phase::Uploading => res::str::sync_progress_upload(res::str::SyncProgressUpload {
+            done: p.completed as f64,
+            total: p.total.unwrap_or(0) as f64,
+        })
+        .format(),
         Phase::Subscriptions => {
             res::str::sync_progress_subscriptions(p.subscriptions as f64).format()
         }
         Phase::ReadState => res::str::sync_progress_read().format(),
         Phase::Articles => match p.total {
-            Some(total) => res::str::sync_progress_articles(
-                p.articles as f64,
-                p.completed as f64,
-                total as f64,
-            )
+            Some(total) => res::str::sync_progress_articles(res::str::SyncProgressArticles {
+                articles: p.articles as f64,
+                page: p.completed as f64,
+                total: total as f64,
+            })
             .format(),
-            None => res::str::sync_progress_articles_unknown(p.articles as f64, p.completed as f64)
-                .format(),
-        },
-        Phase::MissingArticles => {
-            res::str::sync_progress_missing(p.completed as f64, p.total.unwrap_or(0) as f64)
+            None => {
+                res::str::sync_progress_articles_unknown(res::str::SyncProgressArticlesUnknown {
+                    articles: p.articles as f64,
+                    pages: p.completed as f64,
+                })
                 .format()
-        }
+            }
+        },
+        Phase::MissingArticles => res::str::sync_progress_missing(res::str::SyncProgressMissing {
+            done: p.completed as f64,
+            total: p.total.unwrap_or(0) as f64,
+        })
+        .format(),
         Phase::Finalizing => res::str::sync_progress_finalizing().format(),
         Phase::Complete => res::str::sync_progress_complete().format(),
         Phase::Resetting => res::str::sync_progress_resetting().format(),

@@ -15,20 +15,20 @@ pub const ROUTE_TODAY: &str = "today";
 pub const ROUTE_UNREAD: &str = "unread";
 pub const ROUTE_STARRED: &str = "starred";
 
-/// Install the app menu. Reactive so the Go menu's enablement follows the unread count.
+/// Install the app menu. Live, so the Go menu's enablement follows the unread count.
 pub fn install() {
-    app_menu_reactive(|| {
+    app_menu(|| {
         vec![
             // Claim the File slot: day fills the standard slots an app leaves open (Edit, View,
             // Window, Help) and puts this one where File belongs.
             sub_menu(
-                res::str::menu_file().format(),
+                res::str::menu_file(),
                 vec![
-                    menu_item(res::str::menu_new_feed().format())
+                    menu_item(res::str::menu_new_feed())
                         .key("n")
                         .action(crate::subscriptions::begin_new_feed),
-                    menu_item(res::str::menu_new_folder().format())
-                        .shortcut(Shortcut::new("n").shift())
+                    menu_item(res::str::menu_new_folder())
+                        .shortcut(Shortcut::primary("n").shift())
                         .action(crate::subscriptions::begin_new_folder),
                     // No platform has a native "new window" nav, so this lowers to the
                     // builder registered with `register_new_window` (see `root`).
@@ -36,11 +36,11 @@ pub fn install() {
                     menu_separator(),
                     crate::commands::refresh().menu_item(),
                     menu_separator(),
-                    menu_item(res::str::menu_import().format())
-                        .shortcut(Shortcut::new("i").shift())
+                    menu_item(res::str::menu_import())
+                        .shortcut(Shortcut::primary("i").shift())
                         .action(crate::subscriptions::import_opml),
-                    menu_item(res::str::menu_export().format())
-                        .shortcut(Shortcut::new("e").shift())
+                    menu_item(res::str::menu_export())
+                        .shortcut(Shortcut::primary("e").shift())
                         .action(crate::subscriptions::export_opml),
                     menu_separator(),
                     menu_role(MenuRole::CloseWindow),
@@ -48,52 +48,52 @@ pub fn install() {
             )
             .bar_role(MenuBarRole::File),
             sub_menu(
-                res::str::menu_go().format(),
+                res::str::menu_go(),
                 vec![
                     crate::commands::navigate_article(false).menu_item(),
                     crate::commands::navigate_article(true).menu_item(),
                     crate::commands::next_unread().menu_item(),
                     menu_separator(),
-                    menu_item(res::str::nav_today().format())
+                    menu_item(res::str::nav_today())
                         .key("1")
                         .action(|| go(ROUTE_TODAY, Scope::Today)),
-                    menu_item(res::str::nav_all_unread().format())
+                    menu_item(res::str::nav_all_unread())
                         .key("2")
                         .action(|| go(ROUTE_UNREAD, Scope::Unread)),
-                    menu_item(res::str::nav_starred().format())
+                    menu_item(res::str::nav_starred())
                         .key("3")
                         .action(|| go(ROUTE_STARRED, Scope::Starred)),
                 ],
             ),
             // Feed operations follow the focused window's sidebar selection.
             sub_menu(
-                res::str::menu_feed().format(),
+                res::str::menu_feed(),
                 vec![
                     crate::commands::unread_feeds_only().menu_item(),
                     crate::commands::group_by_feeds().menu_item(),
                     menu_separator(),
                     crate::commands::preview_site().menu_item(),
-                    menu_item(res::str::menu_refresh_feed().format())
+                    menu_item(res::str::menu_refresh_feed())
                         .action(|| with_selected_feed(daynews_core::refresh_feed)),
-                    menu_item(res::str::mark_all_read().format()).action(|| {
+                    menu_item(res::str::mark_all_read()).action(|| {
                         with_selected_feed(|feed| daynews_core::mark_feed_read(feed, true))
                     }),
                     menu_separator(),
-                    menu_item(res::str::unsubscribe().format())
+                    menu_item(res::str::unsubscribe())
                         .action(|| with_selected_feed(daynews_core::unsubscribe)),
                 ],
             ),
             sub_menu(
-                res::str::menu_article().format(),
+                res::str::menu_article(),
                 vec![
                     // NetNewsWire's Article menu and its shortcuts, read off its own menu bar.
-                    menu_item(res::str::menu_mark_read().format())
-                        .shortcut(Shortcut::new("u").shift())
+                    menu_item(res::str::menu_mark_read())
+                        .shortcut(Shortcut::primary("u").shift())
                         .action(|| set_open_read(true)),
-                    menu_item(res::str::menu_mark_unread().format())
+                    menu_item(res::str::menu_mark_unread())
                         .key("u")
                         .action(|| set_open_read(false)),
-                    menu_item(res::str::toggle_read().format()).action(|| {
+                    menu_item(res::str::toggle_read()).action(|| {
                         if let Some(id) =
                             daynews_core::try_scene().and_then(|sc| sc.selected.get_untracked())
                         {
@@ -102,35 +102,33 @@ pub fn install() {
                     }),
                     crate::commands::mark_all_read().menu_item(),
                     menu_separator(),
-                    menu_item(res::str::menu_star().format())
-                        .shortcut(Shortcut::new("l").shift())
+                    menu_item(res::str::menu_star())
+                        .shortcut(Shortcut::primary("l").shift())
                         .action(|| set_open_starred(true)),
-                    menu_item(res::str::menu_unstar().format())
+                    menu_item(res::str::menu_unstar())
                         .key("l")
                         .action(|| set_open_starred(false)),
-                    menu_item(res::str::menu_tag().format())
-                        .key("t")
-                        .action(|| {
-                            if let Some(id) =
-                                daynews_core::try_scene().and_then(|sc| sc.selected.get_untracked())
-                            {
-                                crate::timeline::begin_tag(id);
-                            }
-                        }),
+                    menu_item(res::str::menu_tag()).key("t").action(|| {
+                        if let Some(id) =
+                            daynews_core::try_scene().and_then(|sc| sc.selected.get_untracked())
+                        {
+                            crate::timeline::begin_tag(id);
+                        }
+                    }),
                     menu_separator(),
                     crate::commands::open_in_browser().menu_item(),
                     crate::commands::copy_article_link().menu_item(),
                     crate::commands::reader_view().menu_item(),
                     crate::commands::find().menu_item(),
                     menu_separator(),
-                    menu_item(res::str::menu_increase_text_size().format())
+                    menu_item(res::str::menu_increase_text_size())
                         .id("reader-increase-text-size")
                         .key("+")
                         .enabled(
                             crate::settings::READER_SCALE.get() < crate::reader_styles::MAX_SCALE,
                         )
                         .action(|| crate::reader_styles::adjust_size(10.0)),
-                    menu_item(res::str::menu_decrease_text_size().format())
+                    menu_item(res::str::menu_decrease_text_size())
                         .id("reader-decrease-text-size")
                         .key("-")
                         .enabled(
@@ -179,26 +177,25 @@ fn with_selected_feed(f: impl FnOnce(u64)) {
 /// right-clicked or long-pressed rather than at the selection (docs/menus.md).
 pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
     vec![
-        menu_item(res::str::dashboard_show().format())
+        menu_item(res::str::dashboard_show())
             .id("feed-dashboard")
             .action(move || crate::site_browser::show_feed_dashboard(feed)),
-        menu_item(res::str::site_preview().format())
+        menu_item(res::str::site_preview())
             .id("feed-site-preview")
             .enabled(crate::site_browser::can_preview(feed))
             .action(crate::site_browser::preview_action(feed)),
-        menu_item(res::str::refresh_action().format())
-            .action(move || daynews_core::refresh_feed(feed)),
-        menu_item(res::str::mark_all_read().format())
+        menu_item(res::str::refresh_action()).action(move || daynews_core::refresh_feed(feed)),
+        menu_item(res::str::mark_all_read())
             .enabled(unread > 0)
             .action(move || daynews_core::mark_feed_read(feed, true)),
         menu_separator(),
-        menu_item(res::str::move_feed_up().format())
+        menu_item(res::str::move_feed_up())
             .id("feed-move-up")
             .action(move || crate::feed_list::move_relative(feed, -1)),
-        menu_item(res::str::move_feed_down().format())
+        menu_item(res::str::move_feed_down())
             .id("feed-move-down")
             .action(move || crate::feed_list::move_relative(feed, 1)),
-        menu_item(res::str::unsubscribe().format()).action(move || daynews_core::unsubscribe(feed)),
+        menu_item(res::str::unsubscribe()).action(move || daynews_core::unsubscribe(feed)),
     ]
 }
 

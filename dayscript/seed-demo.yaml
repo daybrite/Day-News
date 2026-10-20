@@ -61,8 +61,9 @@ flow:
   - tap: { id: feed-verify }
   - tap: { id: feed-subscribe }
   - pause: { secs: 2 }
-  # By Fluent key, so the count reads correctly in whatever locale the run uses.
-  - assert_text: { id: "sidebar:header:feeds", contains: "/7 feeds" }
+  # Native mobile sidebars do not expose section headers as Day elements. Match the
+  # walkthrough's feed-count assertions; the article list below is portable.
+  - assert_text: { id: "sidebar:header:feeds", contains: "/7 feeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - navigate: { route: all }
   - wait_for: { id: article-row-0, timeout_secs: 20 }
   - screenshot: seeded-demo

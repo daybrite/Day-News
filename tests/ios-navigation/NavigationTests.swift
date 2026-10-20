@@ -5,6 +5,46 @@ import XCTest
 final class NavigationTests: XCTestCase {
     let app = XCUIApplication(bundleIdentifier: "dev.daybrite.news")
 
+    func testNewFeedRemainsUsableWhenPasteIsDenied() {
+        continueAfterFailure = false
+        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-new-feed-clipboard-test"
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        let newFeed = app.buttons["New Feed…"].firstMatch
+        if !newFeed.waitForExistence(timeout: 2) || !newFeed.isHittable {
+            let overflow = app.buttons["day-toolbar-overflow"].firstMatch
+            visible(overflow)
+            overflow.tap()
+        }
+        visible(newFeed)
+        newFeed.tap()
+        // UIKit's external-paste prompt may arrive while the optional suggestion is
+        // pending. Denying it must leave an editable, dismissible subscription form.
+        let alert = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch
+        if alert.waitForExistence(timeout: 3) {
+            let deny = alert.buttons.matching(NSPredicate(
+                format: "label IN %@", ["Don't Allow Paste", "Don’t Allow Paste", "Ne pas autoriser le collage"]
+            )).firstMatch
+            visible(deny)
+            deny.tap()
+        }
+        let address = app.textFields["feed-url"]
+        visible(address)
+        address.tap()
+        address.press(forDuration: 1)
+        let selectAll = app.menuItems["Select All"]
+        if selectAll.exists { selectAll.tap(); address.typeText(XCUIKeyboardKey.delete.rawValue) }
+        address.typeText("https://fixture.example/manual.xml")
+        XCTAssertTrue((address.value as? String)?.contains("https://fixture.example/manual.xml") == true)
+        // Return dismisses the software keyboard on compact phones before the footer tap.
+        address.typeText("\n")
+        photograph("New Feed after clipboard permission handling")
+        let cancel = app.buttons["feed-cancel"].firstMatch
+        visible(cancel)
+        cancel.tap()
+        XCTAssertTrue(address.waitForNonExistence(timeout: 5))
+    }
+
     func testScrollingFeedChromeAndAdaptiveSettings() {
         continueAfterFailure = false
         app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-mobile-chrome"

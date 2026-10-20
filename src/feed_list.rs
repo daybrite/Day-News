@@ -96,10 +96,10 @@ mod tests {
 pub fn section_title() -> String {
     daynews_core::state().feeds.with(|feeds| {
         let unread = feeds.iter().filter(|feed| feed.unread > 0).count();
-        crate::res::str::nav_feeds_section_counts(
-            day::format_decimal(feeds.len() as f64, 0),
-            day::format_decimal(unread as f64, 0),
-        )
+        crate::res::str::nav_feeds_section_counts(crate::res::str::NavFeedsSectionCounts {
+            total: day::format_decimal(feeds.len() as f64, 0),
+            unread: day::format_decimal(unread as f64, 0),
+        })
         .format()
     })
 }

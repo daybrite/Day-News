@@ -2,17 +2,12 @@
 use crate::res;
 use day::prelude::*;
 
-pub(crate) fn preview_site() -> CommandHandle {
-    Command {
-        id: "preview-site",
-        label: res::str::site_preview(),
-        action: || {
-            if let Some(feed) = crate::site_browser::selected_feed() {
-                crate::site_browser::preview(feed);
-            }
-        },
-    }
-    .build()
+pub(crate) fn preview_site() -> Command {
+    Command::new("preview-site", res::str::site_preview(), || {
+        if let Some(feed) = crate::site_browser::selected_feed() {
+            crate::site_browser::preview(feed);
+        }
+    })
     .enabled(|| crate::site_browser::selected_feed().is_some_and(crate::site_browser::can_preview))
 }
 
@@ -30,60 +25,45 @@ pub(crate) fn refresh_now() {
     daynews_core::refresh_all();
 }
 
-pub(crate) fn refresh() -> CommandHandle {
-    Command {
-        id: "refresh",
-        label: res::str::refresh_action(),
-        action: refresh_now,
-    }
-    .build()
-    .icon(Symbol::Refresh)
-    .shortcut(Shortcut::new("r"))
-    .enabled(|| {
-        let st = daynews_core::state();
-        !refreshing() && st.feeds.with(|feeds| !feeds.is_empty())
-    })
+pub(crate) fn refresh() -> Command {
+    Command::new("refresh", res::str::refresh_action(), refresh_now)
+        .icon(Symbol::Refresh)
+        .shortcut(Shortcut::primary("r"))
+        .enabled(|| {
+            let st = daynews_core::state();
+            !refreshing() && st.feeds.with(|feeds| !feeds.is_empty())
+        })
 }
 
-pub(crate) fn mark_all_read() -> CommandHandle {
-    Command {
-        id: "mark-all-read",
-        label: res::str::mark_all_read(),
-        action: || {
-            if daynews_core::try_scene().is_some() {
-                daynews_core::mark_scope_read(true);
-            }
-        },
-    }
-    .build()
+pub(crate) fn mark_all_read() -> Command {
+    Command::new("mark-all-read", res::str::mark_all_read(), || {
+        if daynews_core::try_scene().is_some() {
+            daynews_core::mark_scope_read(true);
+        }
+    })
     .icon(Symbol::Check)
-    .shortcut(Shortcut::new("k"))
+    .shortcut(Shortcut::primary("k"))
     .enabled(|| daynews_core::try_scene().is_some_and(|sc| sc.scope_unread.get() > 0))
 }
 
 /// Shared by the menu and native toolbars, including before any article is open.
-pub(crate) fn next_unread() -> CommandHandle {
-    Command {
-        id: "next-unread",
-        label: res::str::menu_next_unread(),
-        action: || {
-            let Some(sc) = daynews_core::try_scene() else {
-                return;
-            };
-            let before = sc.scope.get_untracked();
-            if daynews_core::open_next_unread() {
-                if before != sc.scope.get_untracked() {
-                    navigate(crate::menus::ROUTE_UNREAD);
-                }
-                if cfg!(feature = "appkit") {
-                    sc.timeline_focused.set(true);
-                }
+pub(crate) fn next_unread() -> Command {
+    Command::new("next-unread", res::str::menu_next_unread(), || {
+        let Some(sc) = daynews_core::try_scene() else {
+            return;
+        };
+        let before = sc.scope.get_untracked();
+        if daynews_core::open_next_unread() {
+            if before != sc.scope.get_untracked() {
+                navigate(crate::menus::ROUTE_UNREAD);
             }
-        },
-    }
-    .build()
+            if cfg!(feature = "appkit") {
+                sc.timeline_focused.set(true);
+            }
+        }
+    })
     .image(res::vectors::next_unread)
-    .shortcut(Shortcut::new("/"))
+    .shortcut(Shortcut::primary("/"))
     .enabled(|| {
         daynews_core::try_scene().is_some_and(|sc| {
             let current_unread = sc.article.with(|a| a.as_ref().is_some_and(|a| !a.is_read));
@@ -92,17 +72,12 @@ pub(crate) fn next_unread() -> CommandHandle {
     })
 }
 
-pub(crate) fn open_in_browser() -> CommandHandle {
-    Command {
-        id: "open-in-browser",
-        label: res::str::menu_open_in_browser(),
-        action: || {
-            if let Some(url) = displayed_link() {
-                crate::settings::open_link(&url);
-            }
-        },
-    }
-    .build()
+pub(crate) fn open_in_browser() -> Command {
+    Command::new("open-in-browser", res::str::menu_open_in_browser(), || {
+        if let Some(url) = displayed_link() {
+            crate::settings::open_link(&url);
+        }
+    })
     .image(res::vectors::open_browser)
     .shortcut(Shortcut::plain("Return"))
     .enabled(|| displayed_link().is_some())
@@ -145,39 +120,37 @@ pub(crate) fn open_adjacent_article(forward: bool) {
     }
 }
 
-pub(crate) fn navigate_article(forward: bool) -> CommandHandle {
-    Command {
-        id: if forward {
+pub(crate) fn navigate_article(forward: bool) -> Command {
+    Command::new(
+        if forward {
             "next-article"
         } else {
             "previous-article"
         },
-        label: if forward {
+        if forward {
             res::str::menu_next_article()
         } else {
             res::str::menu_previous_article()
         },
-        action: move || open_adjacent_article(forward),
-    }
-    .build()
+        move || open_adjacent_article(forward),
+    )
     .icon(if forward { Symbol::Down } else { Symbol::Up })
-    .shortcut(Shortcut::new(if forward { "]" } else { "[" }))
+    .shortcut(Shortcut::primary(if forward { "]" } else { "[" }))
     .enabled(move || adjacent_article(forward).is_some())
 }
 
-pub(crate) fn copy_article_link() -> CommandHandle {
-    Command {
-        id: "copy-article-link",
-        label: res::str::menu_copy_article_link(),
-        action: || {
+pub(crate) fn copy_article_link() -> Command {
+    Command::new(
+        "copy-article-link",
+        res::str::menu_copy_article_link(),
+        || {
             if let Some(url) = displayed_link() {
                 copy_link(&url);
             }
         },
-    }
-    .build()
+    )
     .icon(Symbol::Copy)
-    .shortcut(Shortcut::new("c").shift())
+    .shortcut(Shortcut::primary("c").shift())
     .enabled(|| displayed_link().is_some())
 }
 
@@ -203,66 +176,54 @@ pub(crate) fn copy_link(url: &str) {
     });
 }
 
-pub(crate) fn dashboard() -> CommandHandle {
-    Command {
-        id: "feed-overview",
-        label: res::str::dashboard_show(),
-        action: || {
-            let scene = daynews_core::scene();
-            if scene.selected.get_untracked().is_some() {
-                crate::site_browser::show_article_feed_dashboard();
-            } else {
-                batch(|| {
-                    scene.article.set(None);
-                    scene.reader_open.set(true);
-                });
-            }
-        },
-    }
-    .build()
+pub(crate) fn dashboard() -> Command {
+    Command::new("feed-overview", res::str::dashboard_show(), || {
+        let scene = daynews_core::scene();
+        if scene.selected.get_untracked().is_some() {
+            crate::site_browser::show_article_feed_dashboard();
+        } else {
+            batch(|| {
+                scene.article.set(None);
+                scene.reader_open.set(true);
+            });
+        }
+    })
     .icon(Symbol::Info)
 }
 
-pub(crate) fn group_by_feeds() -> CommandHandle {
-    Command {
-        id: "group-by-feeds",
-        label: res::str::group_by_feeds(),
-        action: crate::feed_list::toggle_grouping,
-    }
-    .build()
+pub(crate) fn group_by_feeds() -> Command {
+    Command::new(
+        "group-by-feeds",
+        res::str::group_by_feeds(),
+        crate::feed_list::toggle_grouping,
+    )
     .icon(Symbol::Filter)
     .checked(|| daynews_core::state().group_by_feed.get())
 }
 
-pub(crate) fn unread_feeds_only() -> CommandHandle {
-    Command {
-        id: "unread-feeds-only",
-        label: res::str::show_unread_feeds_only(),
-        action: crate::feed_list::toggle,
-    }
-    .build()
+pub(crate) fn unread_feeds_only() -> Command {
+    Command::new(
+        "unread-feeds-only",
+        res::str::show_unread_feeds_only(),
+        crate::feed_list::toggle,
+    )
     .image(res::vectors::unread_feeds_only)
     .checked(|| crate::feed_list::FeedList::app().unread_only.get())
 }
 
 pub(crate) fn full_content_shortcut() -> Shortcut {
-    Shortcut::new("r").shift()
+    Shortcut::primary("r").shift()
 }
 
-pub(crate) fn reader_view() -> CommandHandle {
-    Command {
-        id: "reader-view",
-        label: res::str::menu_reader_view(),
-        action: || {
-            if let (Some(view), Some(scene)) = (
-                crate::reader_view::ReaderView::current(),
-                daynews_core::try_scene(),
-            ) {
-                view.toggle(scene);
-            }
-        },
-    }
-    .build()
+pub(crate) fn reader_view() -> Command {
+    Command::new("reader-view", res::str::menu_reader_view(), || {
+        if let (Some(view), Some(scene)) = (
+            crate::reader_view::ReaderView::current(),
+            daynews_core::try_scene(),
+        ) {
+            view.toggle(scene);
+        }
+    })
     .icon(Symbol::Document)
     .shortcut(full_content_shortcut())
     .checked(|| crate::reader_view::ReaderView::current().is_some_and(|view| view.active.get()))
@@ -284,14 +245,13 @@ pub(crate) fn reader_view() -> CommandHandle {
 }
 
 /// Find searches the indexed articles through the native toolbar field.
-pub(crate) fn find() -> CommandHandle {
-    Command {
-        id: "find-articles",
-        label: res::str::menu_find_articles(),
-        action: day::focus_search,
-    }
-    .build()
-    .shortcut(Shortcut::new("f"))
+pub(crate) fn find() -> Command {
+    Command::new(
+        "find-articles",
+        res::str::menu_find_articles(),
+        day::focus_search,
+    )
+    .shortcut(Shortcut::primary("f"))
     .enabled(|| daynews_core::try_scene().is_some())
 }
 

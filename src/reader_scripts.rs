@@ -111,13 +111,13 @@ fn controls(feed: Option<u64>) -> impl Piece {
                 },
             ),
         ))
-        .spacing(8.0),
+        .spacing(Space::S),
         cover(open, move |target: &String| editor(open, target))
             .sheet()
             .background(|_| crate::theme::palette().bg)
             .unrouted(),
     ))
-    .spacing(4.0)
+    .spacing(Space::XS)
 }
 
 fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
@@ -133,8 +133,10 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
     });
     let status = Signal::new(String::new());
     let installed: Vec<String> = read().sites.into_keys().collect();
+    // The picker binds the position: 0 is "new site", then the installed origins in order.
     let mut choices = vec![res::str::reader_script_new_site().format()];
     choices.extend(installed.iter().cloned());
+    let choices: Vec<(usize, String)> = choices.into_iter().enumerate().collect();
     let selected = Signal::new(
         installed
             .iter()
@@ -187,7 +189,7 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
             move || site,
             move || {
                 column((
-                    picker(choices.clone(), selected).id("reader-script-sites"),
+                    picker(selected, choices.clone()).id("reader-script-sites"),
                     labeled(
                         res::str::reader_script_address(),
                         text_field(address).id("reader-script-address").grow_w(),
@@ -199,7 +201,7 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
                     .font(Font::Caption)
                     .id("reader-script-origin"),
                 ))
-                .spacing(4.0)
+                .spacing(Space::XS)
             },
         ),
         label(res::str::reader_script_help())
@@ -256,7 +258,7 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
                 .enabled(move || !source.get().trim().is_empty())
                 .id("reader-script-export"),
         ))
-        .spacing(8.0),
+        .spacing(Space::S),
         label(move || status.get())
             .font(Font::Caption)
             .id("reader-script-status")
@@ -295,10 +297,10 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
                 })
                 .id("reader-script-save"),
         ))
-        .spacing(8.0),
+        .spacing(Space::S),
     ))
-    .spacing(8.0)
-    .padding(16.0)
+    .spacing(Space::S)
+    .padding(Space::L)
     .background(|| crate::theme::palette().bg)
     .grow()
     .id("reader-script-editor");

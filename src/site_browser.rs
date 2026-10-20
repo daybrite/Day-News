@@ -178,7 +178,7 @@ pub fn site_controls(feed: u64) -> impl Piece {
                 })
                 .id("dashboard-site-forget"),
         ))
-        .spacing(8.0),
+        .spacing(Space::S),
         label(move || status.get())
             .font(Font::Caption)
             .id("dashboard-site-status"),
@@ -215,7 +215,7 @@ pub fn site_controls(feed: u64) -> impl Piece {
             },
         ),
     ))
-    .spacing(4.0)
+    .spacing(Space::XS)
 }
 pub fn browser_cover() -> impl Piece {
     // Created in the window's ambient scope; dashboard controls find this same instance.
@@ -240,7 +240,7 @@ pub fn browser_cover() -> impl Piece {
                         .action(move || browser.open.set(None))
                         .id("site-browser-close"),
                 ))
-                .spacing(8.0),
+                .spacing(Space::S),
                 row((
                     text_field(address)
                         .placeholder(res::str::site_browser_address())
@@ -254,10 +254,10 @@ pub fn browser_cover() -> impl Piece {
                         })
                         .id("site-browser-go"),
                 ))
-                .spacing(8.0),
+                .spacing(Space::S),
             ))
-            .spacing(8.0)
-            .padding(8.0),
+            .spacing(Space::S)
+            .padding(Space::S),
             web_view(address)
                 .profile(profile(feed))
                 .back(back)
