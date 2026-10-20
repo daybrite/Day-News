@@ -2,7 +2,7 @@
 # inline-reader-restore.yaml. Preferences are keyed to the fixture feed's stable ID.
 name: inline-reader-persist
 flow:
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: feed-auto-reader }
-  - toggle: { id: feed-inline-reader, value: true }
-  - toggle: { id: feed-auto-reader, value: true }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: feed_auto_reader }
+  - toggle: { id: feed_inline_reader, value: true }
+  - toggle: { id: feed_auto_reader, value: true }

@@ -9,40 +9,40 @@ flow:
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: refresh-interval-picker }
-  - select: { id: refresh-interval-picker, index: 1 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/1' }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: 'http://127.0.0.1:28762/feed/2' }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: refresh_interval_picker }
+  - select: { id: refresh_interval_picker, index: 1 }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/1' }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/2' }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 4 }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: 'feed:8512098384262059532' }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-refresh-now }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_refresh_now }
   - pause: { secs: 1 }
-  - tap: { id: dashboard-refresh-now }
+  - tap: { id: dashboard_refresh_now }
   - pause: { secs: 3 }
   - screenshot: dashboard-single-refresh
   - navigate: { route: all }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-publisher-chart }
-  - assert_missing: { id: dashboard-refresh-now }
-  - tap: { id: dashboard-publisher-8512098384262059532 }
-  - wait_for: { id: dashboard-habits-chart }
-  - assert_visible: { id: dashboard-refresh-now }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_publisher_chart }
+  - assert_missing: { id: dashboard_refresh_now }
+  - tap: { id: dashboard_publisher:8512098384262059532 }
+  - wait_for: { id: dashboard_habits_chart }
+  - assert_visible: { id: dashboard_refresh_now }
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: refresh-interval-picker }
-  - select: { id: refresh-interval-picker, index: 0 }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: refresh_interval_picker }
+  - select: { id: refresh_interval_picker, index: 0 }
   - dialog_mode: { mode: native }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }

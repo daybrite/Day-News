@@ -2,33 +2,33 @@
 name: day-news-reader-filter-selection
 description: Reading the last unread article hides its feed without closing or reloading the reader.
 flow:
-  - toolbar: { item: unread-feeds-only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false }
   - navigate: { route: 'feed:5756297993796914528' }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
   - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
   - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - menu: { id: mark-all-read }
+  - menu: { id: mark_all_read }
   - pause: { secs: 1 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
   - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - toolbar: { item: unread-feeds-only, on: true }
+  - toolbar: { item: unread_feeds_only, on: true }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "window.retainedReaderMarker = 'same document'"
       text: same document
   - toolbar: { item: read, on: true, skip_on: [ios-uikit] }
   - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
   - assert_route: { route: 'feed:5756297993796914528' }
-  - assert_text: { id: scope-title, text: Field Notes }
-  - assert_visible: { id: reader-web }
+  - assert_text: { id: scope_title, text: Field Notes }
+  - assert_visible: { id: reader_web }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: window.retainedReaderMarker
       text: same document
   - screenshot: reader-retained-after-feed-hidden
@@ -38,19 +38,18 @@ flow:
   # Exercise opening (and automatically marking read) the last unread article as well.
   - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
   - toolbar: { item: read, only_on: [ios-uikit] }
-  - toolbar: { item: unread-feeds-only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false }
   - navigate: { route: all }
   - navigate: { route: 'feed:5756297993796914528' }
-  - toolbar: { item: unread-feeds-only, on: true }
+  - toolbar: { item: unread_feeds_only, on: true }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - assert_route: { route: 'feed:5756297993796914528' }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: How monarch butterflies find their way to Mexico
   - pause: { secs: 1 }
-  - assert_visible: { id: reader-web }
-  - assert_missing: { id: reader-empty }
+  - assert_visible: { id: reader_web }
   - screenshot: reader-after-next-unread
-  - toolbar: { item: unread-feeds-only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false }

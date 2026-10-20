@@ -5,19 +5,19 @@ flow:
   - wait_for: { id: nav }
   - navigate: { route: all }
   - assert_route: { route: all }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-title }
-  - assert_text: { id: dashboard-title, key: nav_all_articles }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_title }
+  - assert_text: { id: dashboard_title, key: nav_all_articles }
   - screenshot: smoke
   - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: language-picker }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: language_picker }
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: refresh-interval-picker }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: refresh_interval_picker }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }

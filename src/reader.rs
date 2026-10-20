@@ -403,11 +403,10 @@ fn reader_body(
                 let slot = day_core::environment::<crate::reader_pager::PageSlot>();
                 move || {
                     if view.visible.get() {
-                        "reader-web"
+                        day::id!(reader_web)
                     } else {
-                        slot.map_or("reader-web", |slot| slot.web_id())
+                        slot.map_or(day::id!(reader_web), |slot| slot.web_id())
                     }
-                    .to_owned()
                 }
             })
             .grow()
@@ -487,7 +486,7 @@ fn article_text() -> impl Piece {
         .padding(Space::XL)
         .grow_w(),
     )
-    .id("reader-text")
+    .id(day::id!(reader_text))
     .grow()
 }
 

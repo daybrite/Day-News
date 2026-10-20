@@ -3,13 +3,13 @@
 name: http-interception
 flow:
   - dialog_mode: { mode: scripted }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "https://dayscript.invalid/feed.json" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
-  - wait_for: { id: article-row-0 }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "https://dayscript.invalid/feed.json" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
+  - wait_for: { id: article_row:0 }
   - toolbar: { item: refresh }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - screenshot: http-interception
   - dialog_mode: { mode: native }

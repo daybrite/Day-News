@@ -5,33 +5,33 @@ flow:
   - wait_for: { id: nav }
   - nav_back: { native: true, only_on: [ios-uikit] }
   - navigate: { route: all }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
   - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - menu: { id: mark-all-read }
+  - menu: { id: mark_all_read }
   - pause: { secs: 1 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
   - swipe_row: { id: timeline, row: 0, edge: leading, key: mark_unread }
   - navigate: { route: "feed:4450945874607950238" }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
   - swipe_row: { id: timeline, row: 0, edge: leading, key: mark_unread }
   - navigate: { route: starred }
-  - toolbar: { item: day.search, text: "no-matching-fixture-phrase" }
+  - toolbar: { item: day::search, text: "no-matching-fixture-phrase" }
   - pause: { secs: 1 }
-  - toolbar: { item: next-unread }
+  - toolbar: { item: next_unread }
   - pause: { secs: 2 }
-  - assert_text: { id: scope-title, key: nav_all_unread }
-  - assert_visible: { id: reader-web }
+  - assert_text: { id: scope_title, key: nav_all_unread }
+  - assert_visible: { id: reader_web }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: "How monarch butterflies find their way to Mexico"
   - assert_focused: { id: timeline, only_on: [macos-appkit] }
@@ -40,27 +40,27 @@ flow:
   - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
   - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - toolbar: { item: next-unread }
+  - toolbar: { item: next_unread }
   - pause: { secs: 2 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: "Why we only ever see one side of the Moon"
   # A read/star change must not reload the document or reset its scroll position.
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "window.readerRegressionMarker = 'preserved'"
       text: "preserved"
   - toolbar: { item: star, on: true }
   - pause: { secs: 1 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "window.readerRegressionMarker"
       text: "preserved"
   - screenshot: reader-actions
   - toolbar: { item: star, on: false }
   - navigate: { route: all }
   - navigate: { route: unread }
-  - menu: { id: mark-all-read }
+  - menu: { id: mark_all_read }
   - pause: { secs: 1 }
-  - assert_visible: { id: timeline-empty }
+  - assert_visible: { id: timeline_empty }

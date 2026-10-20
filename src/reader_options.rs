@@ -70,13 +70,13 @@ pub fn controls(feed: u64) -> impl Piece {
             crate::res::str::reader_inline_mode(),
             toggle(OptionBinding { feed, auto: false })
                 .enabled(|| !crate::site_browser::incognito())
-                .id("feed-inline-reader"),
+                .id(day::id!(feed_inline_reader)),
         ),
         labeled(
             crate::res::str::reader_auto_mode(),
             toggle(OptionBinding { feed, auto: true })
                 .enabled(|| !crate::site_browser::incognito())
-                .id("feed-auto-reader"),
+                .id(day::id!(feed_auto_reader)),
         ),
         crate::reader_scripts::feed_controls(feed),
     ))

@@ -3,31 +3,31 @@ name: article-deselection
 description: Deselecting an article in a smart feed opens its publisher dashboard.
 flow:
   - navigate: { route: all }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
-  - wait_for: { id: reader-web }
+  - wait_for: { id: reader_web }
   - select: { id: timeline, index: -1 }
-  - wait_for: { id: feed-dashboard }
-  - assert_text: { id: dashboard-title, text: Field Notes }
+  - wait_for: { id: feed_dashboard }
+  - assert_text: { id: dashboard_title, text: Field Notes }
   - assert_route: { route: 'feed:5756297993796914528' }
-  - assert_missing: { id: reader-web }
+  - assert_missing: { id: reader_web }
   - pause: { secs: 1 }
   - screenshot: article-deselected-feed-dashboard
   - navigate: { route: all }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
-  - wait_for: { id: reader-web }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: feed-dashboard }
-  - assert_text: { id: dashboard-title, text: Field Notes }
+  - wait_for: { id: reader_web }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: feed_dashboard }
+  - assert_text: { id: dashboard_title, text: Field Notes }
   - assert_route: { route: 'feed:5756297993796914528' }
   # Navigating to a smart feed without a selected article keeps that smart feed's dashboard.
   - navigate: { route: today }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: feed-dashboard }
-  - assert_text: { id: dashboard-title, key: nav_today }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: feed_dashboard }
+  - assert_text: { id: dashboard_title, key: nav_today }
   - nav_back: { native: true, only_on: [ios-uikit] }
   - nav_back: { native: true, only_on: [ios-uikit] }
-  - assert_missing: { id: nav-reorder-list, only_on: [ios-uikit] }
+  - assert_missing: { id: nav_reorder_list, only_on: [ios-uikit] }
   - pause: { secs: 0.5, only_on: [ios-uikit] }
   - screenshot: { name: native-navigation-list, only_on: [ios-uikit] }

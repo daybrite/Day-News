@@ -3,20 +3,20 @@ name: feed-url-handler
 description: External feed URL opens the same verification sheet, previews before committing, and rejects unsafe protocols.
 flow:
   - open_url: { url: 'feed:http://127.0.0.1:28763/direct.xml' }
-  - wait_for: { id: feed-url }
-  - assert_text: { id: feed-url, text: 'http://127.0.0.1:28763/direct.xml' }
-  - tap: { id: feed-verify }
-  - assert_text: { id: feed-preview-title, text: Fixture Direct }
-  - assert_text: { id: feed-verification-status, key: subscribe_preview_ready, args: { count: 1 } }
+  - wait_for: { id: feed_url }
+  - assert_text: { id: feed_url, text: 'http://127.0.0.1:28763/direct.xml' }
+  - tap: { id: feed_verify }
+  - assert_text: { id: feed_preview_title, text: Fixture Direct }
+  - assert_text: { id: feed_verification_status, key: subscribe_preview_ready, args: { count: 1 } }
   - screenshot: feed-verification-preview
   # No subscription until explicit confirmation.
-  - assert_hidden: { id: "sidebar:header:feeds" }
-  - tap: { id: feed-subscribe }
-  - wait_for: { id: article-row-0 }
-  - assert_text: { id: "sidebar:header:feeds", contains: "/1 feeds" }
+  - assert_hidden: { id: "sidebar:header%3Afeeds" }
+  - tap: { id: feed_subscribe }
+  - wait_for: { id: article_row:0 }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/1 feeds" }
   - open_url: { url: 'feed:javascript:alert(1)' }
-  - wait_for: { id: feed-url }
-  - tap: { id: feed-verify }
-  - assert_text: { id: feed-verification-status, key: subscribe_failed }
-  - tap: { id: feed-cancel }
-  - assert_text: { id: "sidebar:header:feeds", contains: "/1 feeds" }
+  - wait_for: { id: feed_url }
+  - tap: { id: feed_verify }
+  - assert_text: { id: feed_verification_status, key: subscribe_failed }
+  - tap: { id: feed_cancel }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/1 feeds" }

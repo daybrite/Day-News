@@ -122,14 +122,14 @@ pub fn install() {
                     crate::commands::find().menu_item(),
                     menu_separator(),
                     menu_item(res::str::menu_increase_text_size())
-                        .id("reader-increase-text-size")
+                        .id(day::id!(reader_increase_text_size))
                         .key("+")
                         .enabled(
                             crate::settings::READER_SCALE.get() < crate::reader_styles::MAX_SCALE,
                         )
                         .action(|| crate::reader_styles::adjust_size(10.0)),
                     menu_item(res::str::menu_decrease_text_size())
-                        .id("reader-decrease-text-size")
+                        .id(day::id!(reader_decrease_text_size))
                         .key("-")
                         .enabled(
                             crate::settings::READER_SCALE.get() > crate::reader_styles::MIN_SCALE,
@@ -178,10 +178,10 @@ fn with_selected_feed(f: impl FnOnce(u64)) {
 pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
     vec![
         menu_item(res::str::dashboard_show())
-            .id("feed-dashboard")
+            .id(day::id!(feed_dashboard))
             .action(move || crate::site_browser::show_feed_dashboard(feed)),
         menu_item(res::str::site_preview())
-            .id("feed-site-preview")
+            .id(day::id!(feed_site_preview))
             .enabled(crate::site_browser::can_preview(feed))
             .action(crate::site_browser::preview_action(feed)),
         menu_item(res::str::refresh_action()).action(move || daynews_core::refresh_feed(feed)),
@@ -190,10 +190,10 @@ pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
             .action(move || daynews_core::mark_feed_read(feed, true)),
         menu_separator(),
         menu_item(res::str::move_feed_up())
-            .id("feed-move-up")
+            .id(day::id!(feed_move_up))
             .action(move || crate::feed_list::move_relative(feed, -1)),
         menu_item(res::str::move_feed_down())
-            .id("feed-move-down")
+            .id(day::id!(feed_move_down))
             .action(move || crate::feed_list::move_relative(feed, 1)),
         menu_item(res::str::unsubscribe()).action(move || daynews_core::unsubscribe(feed)),
     ]

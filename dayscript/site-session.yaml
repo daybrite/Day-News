@@ -3,79 +3,79 @@ name: site-session
 description: Shared HttpOnly login, authenticated full article, dashboard reselection and forgetting site data.
 flow:
   - dialog_mode: { mode: scripted }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: 'http://127.0.0.1:28764/feed.json' }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: 'http://127.0.0.1:28764/feed.json' }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
-  - toolbar: { item: feed-overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: dashboard-site-preview }
-  - tap: { id: dashboard-site-forget }
-  - assert_text: { id: dashboard-site-status, key: site_data_cleared, timeout_secs: 20 }
-  - tap: { id: dashboard-site-preview }
-  - wait_for: { id: site-browser-web }
-  - assert_frame: { id: site-browser-sheet, width: 640, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - toolbar: { item: feed_overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: dashboard_site_preview }
+  - tap: { id: dashboard_site_forget }
+  - assert_text: { id: dashboard_site_status, key: site_data_cleared, timeout_secs: 20 }
+  - tap: { id: dashboard_site_preview }
+  - wait_for: { id: site_browser_web }
+  - assert_frame: { id: site_browser_sheet, width: 640, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - pause: { secs: 1 }
-  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed out' }
-  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-login").click(); "login"', text: 'login' }
+  - web_eval: { id: site_browser_web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed out' }
+  - web_eval: { id: site_browser_web, script: 'document.getElementById("fixture-login").click(); "login"', text: 'login' }
   - pause: { secs: 1 }
-  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in' }
-  - web_eval: { id: site-browser-web, script: 'localStorage.getItem("fixture-login")', text: 'saved' }
-  - web_eval: { id: site-browser-web, script: 'document.cookie.includes("session=")', text: 'false' }
+  - web_eval: { id: site_browser_web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in' }
+  - web_eval: { id: site_browser_web, script: 'localStorage.getItem("fixture-login")', text: 'saved' }
+  - web_eval: { id: site_browser_web, script: 'document.cookie.includes("session=")', text: 'false' }
   - screenshot: site-preview-login
-  - tap: { id: site-browser-back }
+  - tap: { id: site_browser_back }
   - pause: { secs: 0.5 }
-  - tap: { id: site-browser-forward }
+  - tap: { id: site_browser_forward }
   - pause: { secs: 0.5 }
-  - tap: { id: site-browser-close }
+  - tap: { id: site_browser_close }
   # The app menu uses the selected feed, and reuses its existing login profile.
-  - menu: { id: preview-site, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - wait_for: { id: site-browser-web, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - menu: { id: preview_site, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - wait_for: { id: site_browser_web, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - pause: { secs: 0.5, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in', only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - web_eval: { id: site_browser_web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in', only_on: [macos-appkit, macos-gtk, macos-qt] }
   - screenshot: { name: site-preview-app-menu, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - tap: { id: site-browser-close, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - tap: { id: site_browser_close, only_on: [macos-appkit, macos-gtk, macos-qt] }
   # A context menu targets its row even with a smart feed selected.
   - navigate: { route: today, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - context_menu: { id: 'sidebar:item:feed:4345234357225265956', item_id: feed-site-preview, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - wait_for: { id: site-browser-web, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - context_menu: { id: 'sidebar:item%3Afeed%3A4345234357225265956', item_id: feed_site_preview, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - wait_for: { id: site_browser_web, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - pause: { secs: 0.5, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - web_eval: { id: site-browser-web, script: 'location.pathname', text: '/site', only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - web_eval: { id: site_browser_web, script: 'location.pathname', text: '/site', only_on: [macos-appkit, macos-gtk, macos-qt] }
   - screenshot: { name: site-preview-feed-context, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - tap: { id: site-browser-close, only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - assert_missing: { id: site-browser-web, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - tap: { id: site_browser_close, only_on: [macos-appkit, macos-gtk, macos-qt] }
+  - assert_missing: { id: site_browser_web, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - assert_route: { route: today, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - navigate: { route: 'feed:4345234357225265956', only_on: [macos-appkit, macos-gtk, macos-qt] }
   - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - web_eval: { id: reader-web, script: 'document.querySelector("#reader-load-full kbd") === null', text: 'true' }
-  - web_eval: { id: reader-web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).display', text: 'none' }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-full").click(); "load"', text: 'load' }
+  - web_eval: { id: reader_web, script: 'document.querySelector("#reader-load-full kbd") === null', text: 'true' }
+  - web_eval: { id: reader_web, script: 'getComputedStyle(document.querySelector(".reader-spinner")).display', text: 'none' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-load-full").click(); "load"', text: 'load' }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }
   - screenshot: authenticated-inline-reader
   - select: { id: timeline, index: -1 }
-  - wait_for: { id: dashboard-site-preview }
-  - assert_missing: { id: reader-web }
+  - wait_for: { id: dashboard_site_preview }
+  - assert_missing: { id: reader_web }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - tap: { id: "sidebar:item:feed:4345234357225265956" }
-  - wait_for: { id: dashboard-site-preview }
-  - assert_missing: { id: reader-web }
-  - tap: { id: dashboard-site-forget }
+  - tap: { id: "sidebar:item%3Afeed%3A4345234357225265956" }
+  - wait_for: { id: dashboard_site_preview }
+  - assert_missing: { id: reader_web }
+  - tap: { id: dashboard_site_forget }
   - pause: { secs: 2 }
-  - assert_text: { id: dashboard-site-status, key: site_data_cleared }
-  - tap: { id: dashboard-site-preview }
-  - wait_for: { id: site-browser-web }
+  - assert_text: { id: dashboard_site_status, key: site_data_cleared }
+  - tap: { id: dashboard_site_preview }
+  - wait_for: { id: site_browser_web }
   - pause: { secs: 1 }
-  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed out' }
-  - web_eval: { id: site-browser-web, script: 'localStorage.getItem("fixture-login")', text: 'null' }
-  - web_eval: { id: site-browser-web, script: 'indexedDB.databases().then(d=>window.fixtureDatabases=d.length); "check"', text: 'check' }
+  - web_eval: { id: site_browser_web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed out' }
+  - web_eval: { id: site_browser_web, script: 'localStorage.getItem("fixture-login")', text: 'null' }
+  - web_eval: { id: site_browser_web, script: 'indexedDB.databases().then(d=>window.fixtureDatabases=d.length); "check"', text: 'check' }
   - pause: { secs: 0.5 }
-  - web_eval: { id: site-browser-web, script: 'window.fixtureDatabases', text: '0' }
+  - web_eval: { id: site_browser_web, script: 'window.fixtureDatabases', text: '0' }
   - screenshot: site-session-forgotten
-  - tap: { id: site-browser-close }
+  - tap: { id: site_browser_close }
   - dialog_mode: { mode: native }

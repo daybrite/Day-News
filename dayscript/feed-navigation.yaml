@@ -5,23 +5,23 @@ flow:
   - navigate: { route: all }
   - nav_back: { native: true }
   - pause: { secs: 0.8 }
-  - wait_for: { id: nav-menu }
-  - select: { id: nav-menu, index: 4 }
+  - wait_for: { id: nav_menu }
+  - select: { id: nav_menu, index: 4 }
   - pause: { secs: 0.5 }
   - assert_route: { route: 'feed:5756297993796914528' }
   - assert_visible: { id: timeline }
-  - assert_text: { id: scope-title, text: Field Notes }
+  - assert_text: { id: scope_title, text: Field Notes }
   - screenshot: feed-first-tap-article-list
   - nav_back: { native: true }
   - pause: { secs: 0.8 }
-  - select: { id: nav-menu, index: 4 }
+  - select: { id: nav_menu, index: 4 }
   - pause: { secs: 0.5 }
   - assert_visible: { id: timeline }
-  - assert_text: { id: scope-title, text: Field Notes }
+  - assert_text: { id: scope_title, text: Field Notes }
   - nav_back: { native: true }
   - pause: { secs: 0.8 }
-  - select: { id: nav-menu, index: 5 }
+  - select: { id: nav_menu, index: 5 }
   - pause: { secs: 0.5 }
   - assert_visible: { id: timeline }
-  - assert_text: { id: scope-title, text: Night Sky }
+  - assert_text: { id: scope_title, text: Night Sky }
   - screenshot: another-feed-first-tap-article-list

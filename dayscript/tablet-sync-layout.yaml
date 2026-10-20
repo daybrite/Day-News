@@ -5,13 +5,13 @@ flow:
   - pause: { secs: 8 }
   - navigate: { route: all }
   - toolbar: { item: refresh }
-  - wait_for: { id: sync-status-footer }
-  - assert_missing: { id: feeds-sync-status-footer }
+  - wait_for: { id: sync_status_footer }
+  - assert_missing: { id: feeds_sync_status_footer }
   - screenshot: tablet-sync-footer
-  - tap: { id: sync-cancel-transfer }
+  - tap: { id: sync_cancel_transfer }
   - pause: { secs: 1 }
   - toolbar: { item: settings }
-  - wait_for: { id: prefs-group-general }
+  - wait_for: { id: prefs_group:general }
   - screenshot: tablet-settings-sheet
   - close_window: { window: day.preferences }
-  - assert_missing: { id: prefs-group-general }
+  - assert_missing: { id: prefs_group:general }

@@ -3,7 +3,7 @@ use crate::res;
 use day::prelude::*;
 
 pub(crate) fn preview_site() -> Command {
-    Command::new("preview-site", res::str::site_preview(), || {
+    Command::new(day::id!(preview_site), res::str::site_preview(), || {
         if let Some(feed) = crate::site_browser::selected_feed() {
             crate::site_browser::preview(feed);
         }
@@ -26,7 +26,7 @@ pub(crate) fn refresh_now() {
 }
 
 pub(crate) fn refresh() -> Command {
-    Command::new("refresh", res::str::refresh_action(), refresh_now)
+    Command::new(day::id!(refresh), res::str::refresh_action(), refresh_now)
         .icon(Symbol::Refresh)
         .shortcut(Shortcut::primary("r"))
         .enabled(|| {
@@ -36,7 +36,7 @@ pub(crate) fn refresh() -> Command {
 }
 
 pub(crate) fn mark_all_read() -> Command {
-    Command::new("mark-all-read", res::str::mark_all_read(), || {
+    Command::new(day::id!(mark_all_read), res::str::mark_all_read(), || {
         if daynews_core::try_scene().is_some() {
             daynews_core::mark_scope_read(true);
         }
@@ -48,7 +48,7 @@ pub(crate) fn mark_all_read() -> Command {
 
 /// Shared by the menu and native toolbars, including before any article is open.
 pub(crate) fn next_unread() -> Command {
-    Command::new("next-unread", res::str::menu_next_unread(), || {
+    Command::new(day::id!(next_unread), res::str::menu_next_unread(), || {
         let Some(sc) = daynews_core::try_scene() else {
             return;
         };
@@ -73,11 +73,15 @@ pub(crate) fn next_unread() -> Command {
 }
 
 pub(crate) fn open_in_browser() -> Command {
-    Command::new("open-in-browser", res::str::menu_open_in_browser(), || {
-        if let Some(url) = displayed_link() {
-            crate::settings::open_link(&url);
-        }
-    })
+    Command::new(
+        day::id!(open_in_browser),
+        res::str::menu_open_in_browser(),
+        || {
+            if let Some(url) = displayed_link() {
+                crate::settings::open_link(&url);
+            }
+        },
+    )
     .image(res::vectors::open_browser)
     .shortcut(Shortcut::plain("Return"))
     .enabled(|| displayed_link().is_some())
@@ -123,9 +127,9 @@ pub(crate) fn open_adjacent_article(forward: bool) {
 pub(crate) fn navigate_article(forward: bool) -> Command {
     Command::new(
         if forward {
-            "next-article"
+            day::id!(next_article)
         } else {
-            "previous-article"
+            day::id!(previous_article)
         },
         if forward {
             res::str::menu_next_article()
@@ -141,7 +145,7 @@ pub(crate) fn navigate_article(forward: bool) -> Command {
 
 pub(crate) fn copy_article_link() -> Command {
     Command::new(
-        "copy-article-link",
+        day::id!(copy_article_link),
         res::str::menu_copy_article_link(),
         || {
             if let Some(url) = displayed_link() {
@@ -177,7 +181,7 @@ pub(crate) fn copy_link(url: &str) {
 }
 
 pub(crate) fn dashboard() -> Command {
-    Command::new("feed-overview", res::str::dashboard_show(), || {
+    Command::new(day::id!(feed_overview), res::str::dashboard_show(), || {
         let scene = daynews_core::scene();
         if scene.selected.get_untracked().is_some() {
             crate::site_browser::show_article_feed_dashboard();
@@ -193,7 +197,7 @@ pub(crate) fn dashboard() -> Command {
 
 pub(crate) fn group_by_feeds() -> Command {
     Command::new(
-        "group-by-feeds",
+        day::id!(group_by_feeds),
         res::str::group_by_feeds(),
         crate::feed_list::toggle_grouping,
     )
@@ -203,7 +207,7 @@ pub(crate) fn group_by_feeds() -> Command {
 
 pub(crate) fn unread_feeds_only() -> Command {
     Command::new(
-        "unread-feeds-only",
+        day::id!(unread_feeds_only),
         res::str::show_unread_feeds_only(),
         crate::feed_list::toggle,
     )
@@ -216,7 +220,7 @@ pub(crate) fn full_content_shortcut() -> Shortcut {
 }
 
 pub(crate) fn reader_view() -> Command {
-    Command::new("reader-view", res::str::menu_reader_view(), || {
+    Command::new(day::id!(reader_view), res::str::menu_reader_view(), || {
         if let (Some(view), Some(scene)) = (
             crate::reader_view::ReaderView::current(),
             daynews_core::try_scene(),
@@ -247,7 +251,7 @@ pub(crate) fn reader_view() -> Command {
 /// Find searches the indexed articles through the native toolbar field.
 pub(crate) fn find() -> Command {
     Command::new(
-        "find-articles",
+        day::id!(find_articles),
         res::str::menu_find_articles(),
         day::focus_search,
     )

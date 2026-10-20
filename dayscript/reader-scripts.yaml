@@ -3,82 +3,82 @@ name: reader-scripts
 description: App and site extraction hooks, precedence, editor persistence, removal, and errors.
 flow:
   - dialog_mode: { mode: scripted }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: 'http://127.0.0.1:28764/reader-feed.json' }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: 'http://127.0.0.1:28764/reader-feed.json' }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
   - navigate: { route: settings/reader }
-  - wait_for: { id: app-reader-script }
-  - tap: { id: app-reader-script }
-  - wait_for: { id: reader-script-source }
-  - tap: { id: reader-script-template }
+  - wait_for: { id: app_reader_script }
+  - tap: { id: app_reader_script }
+  - wait_for: { id: reader_script_source }
+  - tap: { id: reader_script_template }
   - screenshot: reader-script-template
-  - tap: { id: reader-script-import }
+  - tap: { id: reader_script_import }
   - respond: { path: "${project}/tests/data/reader-script.js" }
-  - tap: { id: reader-script-export }
+  - tap: { id: reader_script_export }
   - respond: { path: "${project}/build/day/reader-script-export.js" }
-  - tap: { id: reader-script-save }
-  - assert_text: { id: reader-script-status, key: reader_script_saved }
-  - tap: { id: reader-script-close }
+  - tap: { id: reader_script_save }
+  - assert_text: { id: reader_script_status, key: reader_script_saved }
+  - tap: { id: reader_script_close }
   - close_window: { window: day.preferences }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
+  - web_eval: { id: reader_web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Global script fixture.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Global script fixture.' }
   # Save a replacement with the article still selected: its cached extraction must be invalidated.
   - navigate: { route: settings/reader }
-  - tap: { id: app-reader-script }
-  - input: { id: reader-script-source, text: 'function extract(document, url, Readability) { return {content: "<p>Updated global fixture.</p>"}; }' }
-  - tap: { id: reader-script-save }
-  - tap: { id: reader-script-close }
+  - tap: { id: app_reader_script }
+  - input: { id: reader_script_source, text: 'function extract(document, url, Readability) { return {content: "<p>Updated global fixture.</p>"}; }' }
+  - tap: { id: reader_script_save }
+  - tap: { id: reader_script_close }
   - close_window: { window: day.preferences }
-  - web_eval: { id: reader-web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
+  - web_eval: { id: reader_web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Updated global fixture.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Updated global fixture.' }
   - select: { id: timeline, index: -1 }
-  - wait_for: { id: feed-reader-script }
-  - tap: { id: feed-reader-script }
-  - input: { id: reader-script-source, text: 'function extract(document, url, Readability) { return {title: "Site fixture", content: "<p>Site script fixture.</p>"}; }' }
-  - tap: { id: reader-script-save }
+  - wait_for: { id: feed_reader_script }
+  - tap: { id: feed_reader_script }
+  - input: { id: reader_script_source, text: 'function extract(document, url, Readability) { return {title: "Site fixture", content: "<p>Site script fixture.</p>"}; }' }
+  - tap: { id: reader_script_save }
   - pause: { secs: 1 }
   - screenshot: reader-script-site
-  - tap: { id: reader-script-close }
+  - tap: { id: reader_script_close }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
+  - web_eval: { id: reader_web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Site script fixture.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Site script fixture.' }
   - screenshot: reader-script-result
   - select: { id: timeline, index: -1 }
-  - tap: { id: feed-reader-script }
-  - assert_text: { id: reader-script-source, text: 'function extract(document, url, Readability) { return {title: "Site fixture", content: "<p>Site script fixture.</p>"}; }' }
-  - input: { id: reader-script-source, text: 'function extract(document, url, Readability) { throw new Error("Synthetic failure"); }' }
-  - tap: { id: reader-script-save }
-  - tap: { id: reader-script-close }
+  - tap: { id: feed_reader_script }
+  - assert_text: { id: reader_script_source, text: 'function extract(document, url, Readability) { return {title: "Site fixture", content: "<p>Site script fixture.</p>"}; }' }
+  - input: { id: reader_script_source, text: 'function extract(document, url, Readability) { throw new Error("Synthetic failure"); }' }
+  - tap: { id: reader_script_save }
+  - tap: { id: reader_script_close }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
+  - web_eval: { id: reader_web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-load-error").hidden', text: 'false' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-load-error").hidden', text: 'false' }
   - select: { id: timeline, index: -1 }
-  - tap: { id: feed-reader-script }
-  - tap: { id: reader-script-remove }
-  - assert_text: { id: reader-script-status, key: reader_script_removed }
-  - tap: { id: reader-script-close }
+  - tap: { id: feed_reader_script }
+  - tap: { id: reader_script_remove }
+  - assert_text: { id: reader_script_status, key: reader_script_removed }
+  - tap: { id: reader_script_close }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
+  - web_eval: { id: reader_web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Updated global fixture.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Updated global fixture.' }
   - navigate: { route: settings/reader }
-  - tap: { id: app-reader-script }
-  - tap: { id: reader-script-remove }
-  - tap: { id: reader-script-close }
+  - tap: { id: app_reader_script }
+  - tap: { id: reader_script_remove }
+  - tap: { id: reader_script_close }
   - close_window: { window: day.preferences }
-  - web_eval: { id: reader-web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
+  - web_eval: { id: reader_web, script: '(() => { const button = document.getElementById("reader-load-full"); if (button.getAttribute("aria-expanded") !== "true") button.click(); return "load"; })()', text: 'load' }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Mozilla fixture content.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Mozilla fixture content.' }
   - dialog_mode: { mode: native }

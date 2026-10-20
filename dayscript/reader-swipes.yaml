@@ -3,23 +3,23 @@
 name: day-news-reader-paging
 description: Mobile paging retains prepared documents and commits the selected article.
 flow:
-  - toolbar: { item: unread-feeds-only, on: false, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: unread_feeds_only, on: false, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - navigate: { route: 'feed:5756297993796914528', only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: timeline, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - select: { id: timeline, index: 0, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: reader-web, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - wait_for: { id: reader_web, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - web_eval:
-      id: reader-web
+      id: reader_web
       only_on: [ios-uikit, android-mdc, harmony-arkui]
       script: 'window.pagerRetention = "first-document"; document.getElementById("reader-title").textContent'
       text: How monarch butterflies find their way to Mexico
-  - select: { id: reader-pager, index: 1, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: reader_pager, index: 1, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-title").textContent', text: "What a honeybee's dance tells the hive", only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-title").textContent', text: "What a honeybee's dance tells the hive", only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - assert_route: { route: 'feed:5756297993796914528', only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - screenshot: { name: reader-pager-next, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - select: { id: reader-pager, index: 0, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: reader_pager, index: 0, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - web_eval: { id: reader-web, script: window.pagerRetention, text: first-document, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - web_eval: { id: reader_web, script: window.pagerRetention, text: first-document, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - screenshot: { name: reader-pager-previous, only_on: [ios-uikit, android-mdc, harmony-arkui] }
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui] }

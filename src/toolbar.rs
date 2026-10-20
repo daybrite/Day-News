@@ -29,7 +29,7 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
         return Vec::new();
     }
     let mut items = vec![
-        toolbar_button("new-feed", res::str::menu_new_feed())
+        toolbar_button(day::id!(new_feed), res::str::menu_new_feed())
             .icon(Symbol::Add)
             .action(crate::subscriptions::begin_new_feed)
             .placement(ToolbarPlacement::Secondary),
@@ -54,7 +54,7 @@ pub fn feed_items() -> Vec<ToolbarEntry> {
 }
 
 fn settings_item() -> ToolbarEntry {
-    toolbar_button("settings", res::str::nav_settings())
+    toolbar_button(day::id!(settings), res::str::nav_settings())
         .icon(Symbol::Settings)
         .action(|| {
             day_piece_settings::open();
@@ -77,7 +77,7 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
     // selected bar-button background. The reader rebuilds these items when
     // the stored article changes, including changes received through sync.
     let read_item = if cfg!(feature = "uikit") {
-        let button = toolbar_button("read", read_label);
+        let button = toolbar_button(day::id!(read), read_label);
         let button = if read {
             button.icon(Symbol::Circle)
         } else {
@@ -85,7 +85,7 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
         };
         button.action(move || daynews_core::toggle_read(id))
     } else {
-        toolbar_toggle("read", read_label, read_state)
+        toolbar_toggle(day::id!(read), read_label, read_state)
             .icon(Symbol::CircleFilled)
             .action(move || daynews_core::set_read(id, read_state.get_untracked()))
     }
@@ -95,7 +95,7 @@ pub fn article_items(article: daynews_core::StoredArticle) -> Vec<ToolbarEntry> 
         crate::commands::navigate_article(true).toolbar_item(),
         crate::commands::next_unread().toolbar_item(),
         toolbar_toggle(
-            "star",
+            day::id!(star),
             if starred {
                 res::str::unstar()
             } else {

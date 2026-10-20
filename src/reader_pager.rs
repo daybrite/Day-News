@@ -14,8 +14,8 @@ pub(crate) enum PageLoad {
 #[derive(Clone, Copy)]
 pub(crate) struct PageSlot(pub usize, pub Signal<PageLoad>);
 impl PageSlot {
-    pub fn web_id(self) -> &'static str {
-        ["reader-preview-0", "reader-preview-1", "reader-preview-2"][self.0]
+    pub fn web_id(self) -> day::ElementId {
+        day::id!(reader_preview, self.0)
     }
 }
 
@@ -176,7 +176,7 @@ pub(crate) fn reader_pager() -> impl Piece {
             daynews_core::open_article(id);
         }
     })
-    .id("reader-pager")
+    .id(day::id!(reader_pager))
     .background(move || crate::theme::palette().bg)
     .grow()
     .toolbar(move || {

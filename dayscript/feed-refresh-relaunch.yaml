@@ -8,6 +8,6 @@ flow:
   - pause: { secs: 0.5 }
   - screenshot: updating-after-relaunch
   - pause: { secs: 5 }
-  - toolbar: { item: unread-feeds-only, on: true }
+  - toolbar: { item: unread_feeds_only, on: true }
   - screenshot: filter-toolbar-active
-  - toolbar: { item: unread-feeds-only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false }

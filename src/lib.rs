@@ -354,11 +354,11 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
                 crate::settings::TOOLBAR_SETTINGS
                     && day::size_class().is_none_or(|size| size.width == WidthClass::Compact)
             },
-            || accounts::sync_status_footer("feeds-sync-status-footer"),
+            || accounts::sync_status_footer(day::id!(feeds_sync_status_footer)),
         )
     });
     column((
-        navigation.id("nav").grow(),
+        navigation.id(day::id!(nav)).grow(),
         site_browser::browser_cover(),
         subscriptions::subscription_sheet(),
     ))

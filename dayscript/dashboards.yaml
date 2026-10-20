@@ -7,99 +7,99 @@ flow:
   - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: group-by-feeds-picker }
-  - toggle: { id: group-by-feeds-picker, value: true }
+  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: group_by_feeds_picker }
+  - toggle: { id: group_by_feeds_picker, value: true }
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs-group-feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: refresh-interval-picker }
-  - select: { id: refresh-interval-picker, index: 0 }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: refresh_interval_picker }
+  - select: { id: refresh_interval_picker, index: 0 }
   - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: language-picker }
-  - select: { id: theme-picker, index: 0, only_on: [macos-appkit, ios-uikit] }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: language_picker }
+  - select: { id: theme_picker, index: 0, only_on: [macos-appkit, ios-uikit] }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: 'feed:9105033381806695217' }
   # Keep the publisher link available even when a prior walkthrough marked every story read.
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
-  - wait_for: { id: reader-web }
+  - wait_for: { id: reader_web }
   - toolbar: { item: read, on: false, skip_on: [ios-uikit] }
   - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-habits-chart }
-  - assert_text: { id: dashboard-title, text: Kitchen Science }
-  - assert_visible: { id: dashboard-feed-link }
-  - assert_visible: { id: dashboard-refresh-now }
-  - tap: { id: dashboard-refresh-now }
-  - assert_visible: { id: dashboard-activity-chart }
-  - assert_visible: { id: dashboard-length-chart }
-  - assert_visible: { id: dashboard-refresh-countdown }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_habits_chart }
+  - assert_text: { id: dashboard_title, text: Kitchen Science }
+  - assert_visible: { id: dashboard_feed_link }
+  - assert_visible: { id: dashboard_refresh_now }
+  - tap: { id: dashboard_refresh_now }
+  - assert_visible: { id: dashboard_activity_chart }
+  - assert_visible: { id: dashboard_length_chart }
+  - assert_visible: { id: dashboard_refresh_countdown }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-feed-light
   - pause: { secs: 2 }
   - screenshot: dashboard-feed-countdown
   - navigate: { route: unread }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-publisher-chart }
-  - assert_text: { id: dashboard-title, key: nav_all_unread }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_publisher_chart }
+  - assert_text: { id: dashboard_title, key: nav_all_unread }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-unread
-  - assert_missing: { id: dashboard-refresh-now }
-  - tap: { id: dashboard-publisher-9105033381806695217 }
-  - wait_for: { id: dashboard-habits-chart }
-  - assert_text: { id: dashboard-title, text: Kitchen Science }
-  - assert_visible: { id: dashboard-refresh-now }
+  - assert_missing: { id: dashboard_refresh_now }
+  - tap: { id: dashboard_publisher:9105033381806695217 }
+  - wait_for: { id: dashboard_habits_chart }
+  - assert_text: { id: dashboard_title, text: Kitchen Science }
+  - assert_visible: { id: dashboard_refresh_now }
   - navigate: { route: unread }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-publisher-chart }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_publisher_chart }
   - pause: { secs: 1 } # Settle the incoming chart before selecting a value.
-  - tap: { id: dashboard-activity-chart, at: [200, 50] }
+  - tap: { id: dashboard_activity_chart, at: [200, 50] }
   - screenshot: dashboard-unread-annotation
   - navigate: { route: today }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-title }
-  - assert_text: { id: dashboard-title, key: nav_today }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_title }
+  - assert_text: { id: dashboard_title, key: nav_today }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-today
   - navigate: { route: all }
   - select: { id: timeline, index: 0 }
-  - wait_for: { id: reader-web }
+  - wait_for: { id: reader_web }
   - toolbar: { item: star, on: true }
   - navigate: { route: starred }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-title }
-  - assert_text: { id: dashboard-title, key: nav_starred }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_title }
+  - assert_text: { id: dashboard_title, key: nav_starred }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-starred
   - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: language-picker }
-  - select: { id: theme-picker, index: 1, only_on: [macos-appkit, ios-uikit] }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: language_picker }
+  - select: { id: theme_picker, index: 1, only_on: [macos-appkit, ios-uikit] }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: 'feed:9105033381806695217' }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-habits-chart }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_habits_chart }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-feed-dark
   - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: language-picker }
-  - select: { id: theme-picker, index: 2, only_on: [macos-appkit, ios-uikit] }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: language_picker }
+  - select: { id: theme_picker, index: 2, only_on: [macos-appkit, ios-uikit] }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: all }
-  - toolbar: { item: feed-overview }
-  - wait_for: { id: dashboard-publisher-chart }
+  - toolbar: { item: feed_overview }
+  - wait_for: { id: dashboard_publisher_chart }
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-library
   - select: { id: timeline, index: 0 }
-  - wait_for: { id: reader-web }
-  - assert_missing: { id: feed-dashboard }
+  - wait_for: { id: reader_web }
+  - assert_missing: { id: feed_dashboard }
   - toolbar: { item: star, on: false }

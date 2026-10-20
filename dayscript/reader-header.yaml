@@ -6,15 +6,15 @@ flow:
   - navigate: { route: 'feed:5756297993796914528' }
   - wait_for: { id: timeline }
   - select: { id: timeline, index: 0 }
-  - wait_for: { id: reader-web }
-  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 0); true', text: 'true' }
+  - wait_for: { id: reader_web }
+  - web_eval: { id: reader_web, script: 'window.scrollTo(0, 0); true', text: 'true' }
   - pause: { secs: 1 }
   - screenshot: reader-header-top
-  - web_eval: { id: reader-web, script: 'window.scrollTo(0, 500); true', text: 'true' }
+  - web_eval: { id: reader_web, script: 'window.scrollTo(0, 500); true', text: 'true' }
   - pause: { secs: 1 }
-  - web_eval: { id: reader-web, script: 'window.scrollY > 0', text: 'true' }
+  - web_eval: { id: reader_web, script: 'window.scrollY > 0', text: 'true' }
   - screenshot: reader-header-scrolled
-  - web_eval: { id: reader-web, script: 'window.scrollTo(0, document.documentElement.scrollHeight); true', text: 'true' }
+  - web_eval: { id: reader_web, script: 'window.scrollTo(0, document.documentElement.scrollHeight); true', text: 'true' }
   - pause: { secs: 1 }
   - screenshot: reader-header-bottom
   - nav_back: {}

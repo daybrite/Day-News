@@ -34,6 +34,6 @@ flow:
   - dialog_mode: { mode: native }
   - menu: { key: menu_new_feed, path: [menu_file] }
   - wait_idle:
-  - wait_for: { id: feed-url }
+  - wait_for: { id: feed_url }
   - screenshot: menu-new-feed
-  - tap: { id: feed-cancel }
+  - tap: { id: feed_cancel }

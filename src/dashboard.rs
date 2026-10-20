@@ -232,7 +232,7 @@ fn activity_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
                         .snap(day_piece_charts::Snap::NearestX)
                         .guides(day_piece_charts::Guides::RULE),
                 )
-                .id("dashboard-activity-chart")
+                .id(day::id!(dashboard_activity_chart))
                 .grow(),
         ))
         .spacing(5.0)
@@ -297,7 +297,7 @@ fn lengths_card(data: Data, scope: Signal<Scope>) -> AnyPiece {
                         ..day_piece_charts::Guides::NONE
                     }),
             )
-            .id("dashboard-length-chart")
+            .id(day::id!(dashboard_length_chart))
             .grow(),
             label(move || {
                 res::str::dashboard_words(
@@ -391,7 +391,7 @@ fn habits_card(data: Data) -> AnyPiece {
                     .snap(day_piece_charts::Snap::NearestMark)
                     .guides(day_piece_charts::Guides::CROSSHAIR),
             )
-            .id("dashboard-habits-chart")
+            .id(day::id!(dashboard_habits_chart))
             .grow(),
             label(move || {
                 res::str::dashboard_read_share(res::str::DashboardReadShare {
@@ -485,7 +485,7 @@ fn sources_card(data: Data) -> AnyPiece {
                 )
                 .interact(highlighted.on(day_piece_charts::EventSource::Hover))
                 .interact(links.clone())
-                .id("dashboard-publisher-chart")
+                .id(day::id!(dashboard_publisher_chart))
                 .any(),
                 day_piece_charts::legend(move || {
                     sources(data)
@@ -507,7 +507,7 @@ fn sources_card(data: Data) -> AnyPiece {
                         .collect()
                 })
                 .interact(highlighted.on(day_piece_charts::EventSource::Hover))
-                .id_prefix("dashboard-publisher")
+                .entry_id(|key| day::id!(dashboard_publisher, key))
                 .links(links)
                 .any(),
             ])
@@ -623,7 +623,7 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                 .weight(FontWeight::Semibold)
                 .color(move || palette().accent)
                 .tabular()
-                .id("dashboard-refresh-countdown"),
+                .id(day::id!(dashboard_refresh_countdown)),
             ))
             .spacing(Space::S)
             .align(VAlign::Center)
@@ -671,7 +671,7 @@ fn forecast(data: Data, scope: Signal<Scope>, clock: Signal<i64>) -> AnyPiece {
                                         d.feed_id.is_some_and(|id| scope.get() == Scope::Feed(id))
                                     })
                             })
-                            .id("dashboard-refresh-now")
+                            .id(day::id!(dashboard_refresh_now))
                     },
                 ),
             ))
@@ -719,7 +719,7 @@ pub fn dashboard() -> impl Piece {
             .weight(FontWeight::Bold)
             .color(move || palette().text)
             .single_line()
-            .id("dashboard-title"),
+            .id(day::id!(dashboard_title)),
         label(move || match scope.get() {
             Scope::Today => res::str::dashboard_today_intro().format(),
             Scope::Unread => res::str::dashboard_unread_intro().format(),
@@ -747,7 +747,7 @@ pub fn dashboard() -> impl Piece {
                         }
                     })
                     .a11y(|b| b.role(Role::Button))
-                    .id("dashboard-feed-link")
+                    .id(day::id!(dashboard_feed_link))
             },
         )
         .otherwise(move || {
@@ -866,7 +866,7 @@ pub fn dashboard() -> impl Piece {
     ])
     .padding(18.0)
     .background(move || palette().bg)
-    .id("feed-dashboard")
+    .id(day::id!(feed_dashboard))
     .grow()
 }
 

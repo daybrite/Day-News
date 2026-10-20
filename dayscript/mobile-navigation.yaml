@@ -6,19 +6,19 @@ flow:
   # Let the launch-triggered fixture sync finish before issuing Refresh.
   - pause: { secs: 8 }
   - navigate: { route: all }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - nav_back: {}
   - assert_route: { route: "" }
-  - toolbar: { item: unread-feeds-only, on: true }
+  - toolbar: { item: unread_feeds_only, on: true }
   - assert_route: { route: "" }
   - screenshot: mobile-filtered-feed-counts
-  - toolbar: { item: unread-feeds-only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false }
   - assert_route: { route: "" }
   - toolbar: { item: settings }
-  - wait_for: { id: prefs-group-articles }
+  - wait_for: { id: prefs_group:articles }
   - screenshot: mobile-toolbar-settings
-  - tap: { id: prefs-group-articles }
-  - toggle: { id: show-sync-status, value: false }
+  - tap: { id: prefs_group:articles }
+  - toggle: { id: show_sync_status, value: false }
   - close_window: { window: day.preferences }
   - pause: { secs: 1 }
   - assert_route: { route: "" }
@@ -26,38 +26,38 @@ flow:
   - pause: { secs: 8 }
   - toolbar: { item: refresh }
   - pause: { secs: 1 }
-  - assert_missing: { id: feeds-sync-status-footer }
+  - assert_missing: { id: feeds_sync_status_footer }
   - navigate: { route: all }
   - pause: { secs: 1 }
-  - assert_missing: { id: sync-status-footer }
+  - assert_missing: { id: sync_status_footer }
   - pause: { secs: 8 }
   - toolbar: { item: settings }
-  - wait_for: { id: prefs-group-articles }
-  - tap: { id: prefs-group-articles }
-  - toggle: { id: show-sync-status, value: true }
+  - wait_for: { id: prefs_group:articles }
+  - tap: { id: prefs_group:articles }
+  - toggle: { id: show_sync_status, value: true }
   - close_window: { window: day.preferences }
   - pause: { secs: 1 }
   - toolbar: { item: refresh }
   - pause: { secs: 1 }
-  - assert_visible: { id: sync-status-footer }
+  - assert_visible: { id: sync_status_footer }
   - screenshot: mobile-sync-footer
-  - tap: { id: sync-cancel-transfer }
+  - tap: { id: sync_cancel_transfer }
   - pause: { secs: 1 }
-  - assert_missing: { id: sync-status-footer }
+  - assert_missing: { id: sync_status_footer }
   - nav_back: {}
   - assert_route: { route: "" }
   - toolbar: { item: refresh }
-  - wait_for: { id: feeds-sync-status-footer }
+  - wait_for: { id: feeds_sync_status_footer }
   - screenshot: mobile-feeds-sync-footer
-  - tap: { id: sync-cancel-transfer }
+  - tap: { id: sync_cancel_transfer }
   - pause: { secs: 1 }
-  - assert_missing: { id: feeds-sync-status-footer }
+  - assert_missing: { id: feeds_sync_status_footer }
   # Navigate while syncing: each page owns its footer, with progress preserved on Back.
   - toolbar: { item: refresh }
-  - wait_for: { id: feeds-sync-status-footer }
+  - wait_for: { id: feeds_sync_status_footer }
   - navigate: { route: all }
-  - assert_visible: { id: sync-status-footer }
+  - assert_visible: { id: sync_status_footer }
   - nav_back: {}
-  - assert_visible: { id: feeds-sync-status-footer }
+  - assert_visible: { id: feeds_sync_status_footer }
   - pause: { secs: 15 }
-  - assert_missing: { id: feeds-sync-status-footer }
+  - assert_missing: { id: feeds_sync_status_footer }

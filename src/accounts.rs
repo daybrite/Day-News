@@ -19,12 +19,12 @@ pub fn page() -> impl Piece {
                     text_field(username)
                         .input_purpose(InputPurpose::Email)
                         .placeholder(res::str::sync_username())
-                        .id("sync-username")
+                        .id(day::id!(sync_username))
                         .grow_w(),
                     label(res::str::sync_password()),
                     secure_field(password)
                         .placeholder(res::str::sync_password())
-                        .id("sync-password")
+                        .id(day::id!(sync_password))
                         .grow_w(),
                     button(res::str::sync_sign_in())
                         .enabled(move || {
@@ -37,7 +37,7 @@ pub fn page() -> impl Piece {
                             password.set(String::new());
                             daynews_core::sync_sign_in(username.get_untracked(), secret);
                         })
-                        .id("sync-sign-in"),
+                        .id(day::id!(sync_sign_in)),
                 ))
                 .spacing(Space::S)
                 .grow_w()
@@ -54,22 +54,22 @@ pub fn page() -> impl Piece {
                         })
                         .format()
                     })
-                    .id("sync-preview"),
+                    .id(day::id!(sync_preview)),
                     label(res::str::sync_read_state_import()).font(Font::Footnote),
                     row((
                         label(res::str::sync_merge()).grow_w(),
-                        toggle(merge).id("sync-merge"),
+                        toggle(merge).id(day::id!(sync_merge)),
                     ))
                     .spacing(Space::S),
                     row((
                         button(res::str::sync_connect())
                             .enabled(move || !status.get().busy)
                             .action(move || daynews_core::sync_connect(merge.get_untracked()))
-                            .id("sync-connect"),
+                            .id(day::id!(sync_connect)),
                         button(res::str::sync_cancel())
                             .enabled(move || !status.get().busy)
                             .action(daynews_core::sync_cancel_login)
-                            .id("sync-cancel"),
+                            .id(day::id!(sync_cancel)),
                     ))
                     .spacing(Space::M),
                 ))
@@ -81,27 +81,27 @@ pub fn page() -> impl Piece {
             move || {
                 column((
                     label(move || res::str::sync_account(status.get().username).format())
-                        .id("sync-account"),
+                        .id(day::id!(sync_account)),
                     label(move || res::str::sync_pending(status.get().pending as f64).format())
-                        .id("sync-pending"),
+                        .id(day::id!(sync_pending)),
                     label(move || match status.get().last_sync {
                         Some(at) => res::str::sync_last(crate::format::full_date(at)).format(),
                         None => res::str::sync_never().format(),
                     })
-                    .id("sync-last"),
+                    .id(day::id!(sync_last)),
                     row((
                         button(res::str::sync_now())
                             .enabled(move || !status.get().busy)
                             .action(daynews_core::sync_now)
-                            .id("sync-now"),
+                            .id(day::id!(sync_now)),
                         button(res::str::sync_sign_in())
                             .enabled(move || !status.get().busy)
                             .action(daynews_core::sync_reauthenticate)
-                            .id("sync-reauthenticate"),
+                            .id(day::id!(sync_reauthenticate)),
                         button(res::str::sync_disconnect())
                             .enabled(move || !status.get().busy)
                             .action(daynews_core::sync_disconnect)
-                            .id("sync-disconnect"),
+                            .id(day::id!(sync_disconnect)),
                     ))
                     .spacing(Space::M),
                     label(res::str::sync_disconnect_note()).font(Font::Footnote),
@@ -123,7 +123,7 @@ pub fn page() -> impl Piece {
                                 }
                             });
                         })
-                        .id("sync-reset"),
+                        .id(day::id!(sync_reset)),
                 ))
                 .spacing(10.0)
             },
@@ -151,7 +151,7 @@ pub fn page() -> impl Piece {
                 String::new()
             }
         })
-        .id("sync-status"),
+        .id(day::id!(sync_status)),
     ))
     .spacing(14.0)
     .align(HAlign::Leading)
@@ -159,7 +159,7 @@ pub fn page() -> impl Piece {
 }
 
 /// Shared status footer for the article column and compact mobile feeds page.
-pub fn sync_status_footer(id: &'static str) -> impl Piece {
+pub fn sync_status_footer(id: day::ElementId) -> impl Piece {
     when(
         || {
             let status = daynews_core::sync_status().get();
@@ -170,7 +170,7 @@ pub fn sync_status_footer(id: &'static str) -> impl Piece {
                 divider(),
                 sync_progress().padding(Insets::symmetric(12.0, 4.0)),
             ))
-            .id(id)
+            .id(id.clone())
             .background(move || crate::theme::palette().bg_alt)
             .grow_w()
         },
@@ -205,7 +205,7 @@ pub fn sync_progress() -> impl Piece {
                                     .and_then(|p| p.fraction())
                                     .unwrap_or(0.0)
                             })
-                            .id("sync-progress-bar")
+                            .id(day::id!(sync_progress_bar))
                             .grow_w()
                         },
                     ),
@@ -229,7 +229,7 @@ pub fn sync_progress() -> impl Piece {
                             .font(Font::Caption)
                             .single_line()
                             .color(move || crate::theme::palette().text)
-                            .id("sync-progress-activity")
+                            .id(day::id!(sync_progress_activity))
                             .grow_w(),
                         label(move || {
                             status
@@ -245,7 +245,7 @@ pub fn sync_progress() -> impl Piece {
                         // Reserve a line even before the first feed arrives, using the
                         // caption's actual font metrics (including accessibility scaling).
                         .reserving(res::str::sync_progress_feed(String::new()).format())
-                        .id("sync-progress-feed")
+                        .id(day::id!(sync_progress_feed))
                         .grow_w(),
                         label(move || {
                             let s = status.get();
@@ -273,7 +273,7 @@ pub fn sync_progress() -> impl Piece {
                         .font(Font::Caption)
                         .single_line()
                         .color(move || crate::theme::palette().text_muted)
-                        .id("sync-progress-time")
+                        .id(day::id!(sync_progress_time))
                         .grow_w(),
                     ))
                     .spacing(2.0)
@@ -282,7 +282,7 @@ pub fn sync_progress() -> impl Piece {
                     button(res::str::sync_cancel())
                         .action(daynews_core::sync_cancel)
                         .enabled(move || status.get().cancellable)
-                        .id("sync-cancel-transfer"),
+                        .id(day::id!(sync_cancel_transfer)),
                 ))
                 .spacing(Space::S)
                 .align(VAlign::Center)

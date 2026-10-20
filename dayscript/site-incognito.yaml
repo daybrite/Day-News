@@ -2,25 +2,25 @@
 name: site-incognito
 description: A saved persistent login is unavailable in private mode and restored afterward.
 flow:
-  - tap: { id: dashboard-site-preview }
+  - tap: { id: dashboard_site_preview }
   - pause: { secs: 0.5 }
-  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-login").click(); "login"', text: 'login' }
+  - web_eval: { id: site_browser_web, script: 'document.getElementById("fixture-login").click(); "login"', text: 'login' }
   - pause: { secs: 1 }
-  - tap: { id: site-browser-close }
+  - tap: { id: site_browser_close }
   - navigate: { route: settings/browser }
-  - wait_for: { id: incognito-mode-picker }
-  - toggle: { id: incognito-mode-picker, value: true }
+  - wait_for: { id: incognito_mode_picker }
+  - toggle: { id: incognito_mode_picker, value: true }
   - screenshot: { name: incognito-settings, window: day.preferences }
   - close_window: { window: day.preferences }
   - screenshot: incognito-feed-dashboard
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
   - navigate: { route: settings/browser }
-  - wait_for: { id: incognito-mode-picker }
-  - toggle: { id: incognito-mode-picker, value: false }
+  - wait_for: { id: incognito_mode_picker }
+  - toggle: { id: incognito_mode_picker, value: false }
   - close_window: { window: day.preferences }
   - select: { id: timeline, index: -1 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }

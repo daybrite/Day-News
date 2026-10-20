@@ -162,7 +162,7 @@ pub fn site_controls(feed: u64) -> impl Piece {
             button(res::str::site_preview())
                 .action(preview_action(feed))
                 .enabled(move || !clearing.get() && can_preview(feed))
-                .id("dashboard-site-preview"),
+                .id(day::id!(dashboard_site_preview)),
             button(res::str::site_forget())
                 .action(move || {
                     clearing.set(true);
@@ -176,12 +176,12 @@ pub fn site_controls(feed: u64) -> impl Piece {
                         && day_piece_webview::clear_data_support() == Support::Native
                         && day_piece_webview::profile_support() == Support::Native
                 })
-                .id("dashboard-site-forget"),
+                .id(day::id!(dashboard_site_forget)),
         ))
         .spacing(Space::S),
         label(move || status.get())
             .font(Font::Caption)
-            .id("dashboard-site-status"),
+            .id(day::id!(dashboard_site_status)),
         when(
             move || clear.get(),
             move || {
@@ -210,7 +210,7 @@ pub fn site_controls(feed: u64) -> impl Piece {
                             clearing.set(false);
                         });
                     })
-                    .id("site-data-web")
+                    .id(day::id!(site_data_web))
                     .frame(1.0, 1.0)
             },
         ),
@@ -231,20 +231,20 @@ pub fn browser_cover() -> impl Piece {
                 row((
                     button(res::str::site_browser_back())
                         .action(move || back.notify())
-                        .id("site-browser-back"),
+                        .id(day::id!(site_browser_back)),
                     button(res::str::site_browser_forward())
                         .action(move || forward.notify())
-                        .id("site-browser-forward"),
+                        .id(day::id!(site_browser_forward)),
                     spacer().grow_w(),
                     button(res::str::site_browser_close())
                         .action(move || browser.open.set(None))
-                        .id("site-browser-close"),
+                        .id(day::id!(site_browser_close)),
                 ))
                 .spacing(Space::S),
                 row((
                     text_field(address)
                         .placeholder(res::str::site_browser_address())
-                        .id("site-browser-address")
+                        .id(day::id!(site_browser_address))
                         .grow_w(),
                     button(res::str::site_browser_go())
                         .action(move || {
@@ -252,7 +252,7 @@ pub fn browser_cover() -> impl Piece {
                                 go.notify();
                             }
                         })
-                        .id("site-browser-go"),
+                        .id(day::id!(site_browser_go)),
                 ))
                 .spacing(Space::S),
             ))
@@ -264,10 +264,10 @@ pub fn browser_cover() -> impl Piece {
                 .forward(forward)
                 .go(go)
                 .on_external_link(|_| day_piece_webview::LinkPolicy::InView)
-                .id("site-browser-web")
+                .id(day::id!(site_browser_web))
                 .grow(),
         ))
-        .id("site-browser-sheet")
+        .id(day::id!(site_browser_sheet))
         .grow();
         if cfg!(any(feature = "appkit", feature = "uikit")) {
             content.any()

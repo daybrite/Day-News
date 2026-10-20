@@ -3,20 +3,20 @@ name: site-session-restore
 description: Login cookies and browser storage persist across application restart.
 flow:
   - dialog_mode: { mode: scripted }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: 'http://127.0.0.1:28764/feed.json' }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: 'http://127.0.0.1:28764/feed.json' }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
-  - wait_for: { id: dashboard-site-preview }
-  - tap: { id: dashboard-site-preview }
+  - wait_for: { id: dashboard_site_preview }
+  - tap: { id: dashboard_site_preview }
   - pause: { secs: 1 }
-  - web_eval: { id: site-browser-web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in' }
-  - web_eval: { id: site-browser-web, script: 'localStorage.getItem("fixture-login")', text: 'saved' }
-  - tap: { id: site-browser-close }
+  - web_eval: { id: site_browser_web, script: 'document.getElementById("fixture-session").textContent', text: 'Signed in' }
+  - web_eval: { id: site_browser_web, script: 'localStorage.getItem("fixture-login")', text: 'saved' }
+  - tap: { id: site_browser_close }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 2 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Authenticated full article fixture.' }
   - screenshot: site-login-restored
   - dialog_mode: { mode: native }

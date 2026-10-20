@@ -19,52 +19,52 @@ description: Subscribe to the bundled demo feeds — the offline seed for the wa
 flow:
   - dialog_mode: { mode: scripted }
   - wait_for: { id: nav, timeout_secs: 30 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "asset:demo/field-notes.xml" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/field-notes.xml" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "asset:demo/night-sky.xml" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/night-sky.xml" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "asset:demo/kitchen-science.xml" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/kitchen-science.xml" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "asset:demo/atlas.xml" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/atlas.xml" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "asset:demo/word-of-the-day.xml" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/word-of-the-day.xml" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "asset:demo/workshop.xml" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/workshop.xml" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
-  - toolbar: { item: new-feed }
-  - wait_for: { id: feed-url }
-  - input: { id: feed-url, text: "asset:demo/almanac.json" }
-  - tap: { id: feed-verify }
-  - tap: { id: feed-subscribe }
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/almanac.json" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
   # Native mobile sidebars do not expose section headers as Day elements. Match the
   # walkthrough's feed-count assertions; the article list below is portable.
-  - assert_text: { id: "sidebar:header:feeds", contains: "/7 feeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/7 feeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - navigate: { route: all }
-  - wait_for: { id: article-row-0, timeout_secs: 20 }
+  - wait_for: { id: article_row:0, timeout_secs: 20 }
   - screenshot: seeded-demo
   - dialog_mode: { mode: native }

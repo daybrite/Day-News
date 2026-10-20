@@ -71,7 +71,7 @@ fn row_for(
                     circle()
                         .fill(move || palette().unread_dot)
                         .frame(DOT, DOT)
-                        .id_of(move || format!("unread-dot-{}", id()))
+                        .id_of(move || day::id!(unread_dot, id()))
                 },
             ),
         ))
@@ -104,7 +104,7 @@ fn row_for(
                     .font(SUMMARY_FONT)
                     .font_scale(scale)
                     .max_lines(preview_lines as u32)
-                    .id_of(move || format!("article-preview-{}", id()))
+                    .id_of(move || day::id!(article_preview, id()))
                     .color(sub_color)
                 },
             ),
@@ -156,21 +156,21 @@ fn row_for(
             } else {
                 crate::res::str::mark_read()
             })
-            .id("row-toggle-read")
+            .id(day::id!(row_toggle_read))
             .action(move || daynews_core::set_read(id, !read)),
             menu_item(if starred {
                 crate::res::str::unstar()
             } else {
                 crate::res::str::star()
             })
-            .id("row-toggle-star")
+            .id(day::id!(row_toggle_star))
             .action(move || daynews_core::set_starred(id, !starred)),
             menu_item(crate::res::str::tag_action())
-                .id("row-tag")
+                .id(day::id!(row_tag))
                 .action(move || begin_tag(id)),
             menu_separator(),
             menu_item(crate::res::str::menu_open_in_browser())
-                .id("row-open-in-browser")
+                .id(day::id!(row_open_in_browser))
                 .enabled(url.is_some())
                 .action(move || {
                     if let Some(url) = &browser_url {
@@ -178,7 +178,7 @@ fn row_for(
                     }
                 }),
             menu_item(crate::res::str::menu_copy_article_link())
-                .id("row-copy-article-link")
+                .id(day::id!(row_copy_article_link))
                 .enabled(url.is_some())
                 .action(move || {
                     if let Some(url) = &url {
@@ -197,7 +197,7 @@ fn row_for(
             .articles
             .with(|a| a.iter().position(|x| x.id == id))
             .unwrap_or(usize::MAX);
-        format!("article-row-{pos}")
+        day::id!(article_row, pos)
     })
     .grow_w();
     column((
@@ -248,9 +248,9 @@ fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool
             .single_line()
             .id_of(move || {
                 if floating {
-                    "floating-feed-name".to_owned()
+                    day::id!(floating_feed_name)
                 } else {
-                    format!("feed-group-name-{}", feed().0)
+                    day::id!(feed_group_name, feed().0)
                 }
             })
             .grow_w(),
@@ -293,9 +293,9 @@ fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool
     }))
     .id_of(move || {
         if floating {
-            "floating-feed-group".to_owned()
+            day::id!(floating_feed_group)
         } else {
-            format!("feed-group-{}", feed().0)
+            day::id!(feed_group, feed().0)
         }
     })
     .grow_w()
@@ -356,7 +356,7 @@ pub fn timeline_pane() -> impl Piece {
                     .font(Font::Title3)
                     .weight(FontWeight::Bold)
                     .color(move || palette().text)
-                    .id("scope-title"),
+                    .id(day::id!(scope_title)),
                 label(move || {
                     let n = sc.scope_unread.get();
                     crate::res::str::unread_count(n as f64).format()
@@ -395,7 +395,7 @@ pub fn timeline_pane() -> impl Piece {
             move || {
                 row((text_field(search)
                     .placeholder(crate::res::str::search_placeholder())
-                    .id("search")
+                    .id(day::id!(search))
                     .grow_w(),))
                 .padding(Insets {
                     top: 0.0,
@@ -422,7 +422,7 @@ pub fn timeline_pane() -> impl Piece {
                     })
                     .font(Font::Caption)
                     .color(move || palette().text_muted)
-                    .id("refresh-progress"),
+                    .id(day::id!(refresh_progress)),
                 ))
                 .spacing(Space::S)
                 .align(VAlign::Center)
@@ -446,7 +446,7 @@ pub fn timeline_pane() -> impl Piece {
             },
         ),
         #[cfg(not(target_arch = "wasm32"))]
-        crate::accounts::sync_status_footer("sync-status-footer"),
+        crate::accounts::sync_status_footer(day::id!(sync_status_footer)),
     ))
     .background(move || palette().bg_alt)
     .toolbar(crate::toolbar::list_items)
@@ -479,13 +479,13 @@ fn timeline_rows(
                         .font(Font::Body)
                         .font_scale(scale)
                         .color(move || palette().text_muted)
-                        .id("timeline-empty"),
+                        .id(day::id!(timeline_empty)),
                         spacer(),
                     ))
                     .align(HAlign::Center)
                     .height(row_height(preview_lines, scale))
                     .grow_w()
-                    .id("timeline-empty-row"),
+                    .id(day::id!(timeline_empty_row)),
                     divider(),
                 ))
                 .grow_w()
@@ -608,7 +608,7 @@ fn timeline_rows(
                 // The host draws the row separators, at the row boundary, aligned with the
                 // native selection, and stationary while a swipe slides the row past them.
                 .separators()
-                .id("timeline")
+                .id(day::id!(timeline))
                 .overlay_aligned(
                     Alignment::TopLeading,
                     when(

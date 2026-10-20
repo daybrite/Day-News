@@ -98,16 +98,16 @@ fn controls(feed: Option<u64>) -> impl Piece {
                 }));
             })
             .id(if feed.is_some() {
-                "feed-reader-script"
+                day::id!(feed_reader_script)
             } else {
-                "app-reader-script"
+                day::id!(app_reader_script)
             }),
             when(
                 move || feed.is_none(),
                 move || {
                     button(res::str::reader_script_sites())
                         .action(move || open.set(Some("https://".into())))
-                        .id("site-reader-scripts")
+                        .id(day::id!(site_reader_scripts))
                 },
             ),
         ))
@@ -189,17 +189,19 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
             move || site,
             move || {
                 column((
-                    picker(selected, choices.clone()).id("reader-script-sites"),
+                    picker(selected, choices.clone()).id(day::id!(reader_script_sites)),
                     labeled(
                         res::str::reader_script_address(),
-                        text_field(address).id("reader-script-address").grow_w(),
+                        text_field(address)
+                            .id(day::id!(reader_script_address))
+                            .grow_w(),
                     ),
                     label(move || {
                         origin(&address.get())
                             .unwrap_or_else(|| res::str::reader_script_invalid_site().format())
                     })
                     .font(Font::Caption)
-                    .id("reader-script-origin"),
+                    .id(day::id!(reader_script_origin)),
                 ))
                 .spacing(Space::XS)
             },
@@ -214,12 +216,12 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
             .spellcheck(false)
             .min_lines(8)
             .max_lines(14)
-            .id("reader-script-source")
+            .id(day::id!(reader_script_source))
             .grow(),
         row((
             button(res::str::reader_script_template())
                 .action(move || source.set(TEMPLATE.to_owned()))
-                .id("reader-script-template"),
+                .id(day::id!(reader_script_template)),
             button(res::str::reader_script_import())
                 .action(move || {
                     let task = day::task(async move {
@@ -244,7 +246,7 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
                     });
                     day::reactive::Scope::current().on_cleanup(move || task.abort());
                 })
-                .id("reader-script-import"),
+                .id(day::id!(reader_script_import)),
             button(res::str::reader_script_export())
                 .action(move || {
                     let bytes = source.get_untracked().into_bytes();
@@ -256,12 +258,12 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
                     });
                 })
                 .enabled(move || !source.get().trim().is_empty())
-                .id("reader-script-export"),
+                .id(day::id!(reader_script_export)),
         ))
         .spacing(Space::S),
         label(move || status.get())
             .font(Font::Caption)
-            .id("reader-script-status")
+            .id(day::id!(reader_script_status))
             .grow_w(),
         row((
             button(res::str::reader_script_remove())
@@ -275,11 +277,11 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
                     status.set(res::str::reader_script_removed().format());
                 })
                 .enabled(move || !site || origin(&address.get()).is_some())
-                .id("reader-script-remove"),
+                .id(day::id!(reader_script_remove)),
             spacer().grow_w(),
             button(res::str::site_browser_close())
                 .action(move || open.set(None))
-                .id("reader-script-close"),
+                .id(day::id!(reader_script_close)),
             button(res::str::reader_script_save())
                 .action(move || {
                     let origin = destination();
@@ -295,7 +297,7 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
                     save(origin.as_deref(), Some(text));
                     status.set(res::str::reader_script_saved().format());
                 })
-                .id("reader-script-save"),
+                .id(day::id!(reader_script_save)),
         ))
         .spacing(Space::S),
     ))
@@ -303,7 +305,7 @@ fn editor(open: Signal<Option<String>>, target: &str) -> impl Piece + use<> {
     .padding(Space::L)
     .background(|| crate::theme::palette().bg)
     .grow()
-    .id("reader-script-editor");
+    .id(day::id!(reader_script_editor));
     if cfg!(any(feature = "appkit", feature = "uikit")) {
         content.any()
     } else {

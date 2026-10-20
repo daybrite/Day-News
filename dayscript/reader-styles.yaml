@@ -3,7 +3,7 @@ description: Persistent reader controls update the existing document and reset t
 flow:
   - wait_for: { id: nav }
   - navigate: { route: all }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   # On a phone or the web the section is a root list of groups: open it and tap the group's
@@ -11,59 +11,59 @@ flow:
   - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: reader-size-slider }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: reader_size_slider }
   # A real native back proves the Reader page joined the visible phone stack, not a hidden column.
   - pause: { secs: 1, only_on: [ios-uikit] }
   - nav_back: { native: true, only_on: [ios-uikit] }
-  - assert_missing: { id: reader-size-slider, only_on: [ios-uikit] }
-  - tap: { id: prefs-group-reader, only_on: [ios-uikit] }
-  - wait_for: { id: reader-reset-styles }
-  - tap: { id: reader-reset-styles }
+  - assert_missing: { id: reader_size_slider, only_on: [ios-uikit] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit] }
+  - wait_for: { id: reader_reset_styles }
+  - tap: { id: reader_reset_styles }
   # Slider values are driven where the row's id is on the control itself; the UIKit, ArkUI
   # GTK and XAML settings rows put it on the layout wrapper, which a probe cannot read.
-  - set_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
-  - assert_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
+  - set_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
+  - assert_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   # Georgia is the first installed recommendation on Apple platforms.
-  - select: { id: reader-font-picker, index: 1 }
-  - input: { id: reader-background-color, text: '#fff2d5' }
-  - input: { id: reader-text-color, text: '#243448' }
+  - select: { id: reader_font_picker, index: 1 }
+  - input: { id: reader_background_color, text: '#fff2d5' }
+  - input: { id: reader_text_color, text: '#243448' }
   - screenshot: { name: reader-style-preferences, window: day.preferences, only_on: [macos-appkit] }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - select: { id: timeline, index: 0, only_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).fontFamily', contains: Georgia }
-  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).backgroundColor', text: 'rgb(255, 242, 213)' }
-  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).color', text: 'rgb(36, 52, 72)' }
-  - web_eval: { id: reader-web, script: "window.readerStyleMarker = 'preserved'", text: preserved }
-  - menu: { id: reader-increase-text-size, only_on: [macos-appkit] }
+  - web_eval: { id: reader_web, script: 'getComputedStyle(document.body).fontFamily', contains: Georgia }
+  - web_eval: { id: reader_web, script: 'getComputedStyle(document.body).backgroundColor', text: 'rgb(255, 242, 213)' }
+  - web_eval: { id: reader_web, script: 'getComputedStyle(document.body).color', text: 'rgb(36, 52, 72)' }
+  - web_eval: { id: reader_web, script: "window.readerStyleMarker = 'preserved'", text: preserved }
+  - menu: { id: reader_increase_text_size, only_on: [macos-appkit] }
   - pause: { secs: 1 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-display").textContent', contains: '1rem * 1.5', only_on: [macos-appkit] }
-  - menu: { id: reader-decrease-text-size, only_on: [macos-appkit] }
-  - web_eval: { id: reader-web, script: 'window.readerStyleMarker', text: preserved }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-display").textContent', contains: '1rem * 1.5', only_on: [macos-appkit] }
+  - menu: { id: reader_decrease_text_size, only_on: [macos-appkit] }
+  - web_eval: { id: reader_web, script: 'window.readerStyleMarker', text: preserved }
   - screenshot: { name: reader-custom-style, only_on: [macos-appkit] }
   - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
   - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: reader-size-slider }
-  - assert_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: reader_size_slider }
+  - assert_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs-group-general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: theme-picker }
-  - select: { id: theme-picker, index: 0 }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: theme_picker }
+  - select: { id: theme_picker, index: 0 }
   - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
   - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs-group-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: reader-reset-styles }
-  - tap: { id: reader-reset-styles }
-  - assert_value: { id: reader-size-slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - wait_for: { id: reader_reset_styles }
+  - tap: { id: reader_reset_styles }
+  - assert_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - select: { id: timeline, index: 0, only_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - web_eval: { id: reader-web, script: 'document.getElementById("reader-display").textContent', contains: '1rem * 1.4)' }
-  - web_eval: { id: reader-web, script: 'getComputedStyle(document.body).fontFamily', contains: system-ui }
-  - web_eval: { id: reader-web, script: 'window.readerStyleMarker', text: preserved, only_on: [macos-appkit] }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-display").textContent', contains: '1rem * 1.4)' }
+  - web_eval: { id: reader_web, script: 'getComputedStyle(document.body).fontFamily', contains: system-ui }
+  - web_eval: { id: reader_web, script: 'window.readerStyleMarker', text: preserved, only_on: [macos-appkit] }

@@ -138,7 +138,10 @@ fn articles_group() -> Group {
     });
     let group = Group::new("articles", res::str::settings_articles())
         .icon(res::vectors::dashboard_all)
-        .row(rows::toggle(&GROUP_BY_FEED, res::str::group_by_feeds()).id("group-by-feeds-picker"))
+        .row(
+            rows::toggle(&GROUP_BY_FEED, res::str::group_by_feeds())
+                .id(day::id!(group_by_feeds_picker)),
+        )
         .row(
             rows::slider(
                 &LIST_SCALE,
@@ -147,16 +150,16 @@ fn articles_group() -> Group {
             )
             .step(10.0)
             .caption(|| res::str::settings_list_percent(LIST_SCALE.get()).format())
-            .id("list-size-slider"),
+            .id(day::id!(list_size_slider)),
         )
         .row(
             rows::choice(&PREVIEW_LINES, res::str::settings_preview_lines(), lines)
-                .id("preview-lines-picker"),
+                .id(day::id!(preview_lines_picker)),
         );
     #[cfg(not(target_arch = "wasm32"))]
     let group = group.row(
         rows::toggle(&SHOW_SYNC_STATUS, res::str::settings_show_sync_status())
-            .id("show-sync-status"),
+            .id(day::id!(show_sync_status)),
     );
     group
 }
@@ -201,11 +204,11 @@ fn reader_group() -> Group {
                     )
                     .step(10.0)
                     .caption(|| res::str::settings_reader_percent(READER_SCALE.get()).format())
-                    .id("reader-size-slider"),
+                    .id(day::id!(reader_size_slider)),
                 )
                 .row(
                     rows::choice(&READER_FONT, res::str::settings_reader_font(), fonts)
-                        .id("reader-font-picker"),
+                        .id(day::id!(reader_font_picker)),
                 )
                 // Notes go in footers: a long caption widens the title column and pushes the
                 // control past the panel's edge.
@@ -216,19 +219,19 @@ fn reader_group() -> Group {
                 .row(color_row(
                     res::str::settings_reader_background,
                     ReaderColor::Background,
-                    "reader-background-color",
+                    day::id!(reader_background_color),
                 ))
                 .row(color_row(
                     res::str::settings_reader_text,
                     ReaderColor::Text,
-                    "reader-text-color",
+                    day::id!(reader_text_color),
                 )),
         )
         .section(
             Section::new()
                 .row(
                     rows::action(res::str::settings_reader_reset(), styles::reset)
-                        .id("reader-reset-styles"),
+                        .id(day::id!(reader_reset_styles)),
                 )
                 .footer(res::str::settings_reader_reset_note()),
         )
@@ -237,7 +240,7 @@ fn reader_group() -> Group {
                 .row(
                     rows::toggle(&READER_INLINE, res::str::reader_inline_mode())
                         .enabled(editable)
-                        .id("inline-reader-picker"),
+                        .id(day::id!(inline_reader_picker)),
                 )
                 .footer(res::str::reader_inline_mode_note()),
         )
@@ -246,7 +249,7 @@ fn reader_group() -> Group {
                 .row(
                     rows::toggle(&READER_AUTO, res::str::reader_auto_mode())
                         .enabled(editable)
-                        .id("auto-reader-picker"),
+                        .id(day::id!(auto_reader_picker)),
                 )
                 .footer(res::str::reader_auto_mode_note()),
         )
@@ -259,7 +262,7 @@ fn reader_group() -> Group {
 fn color_row(
     title: fn() -> day::LocalizedText,
     color: crate::reader_styles::ReaderColor,
-    key: &'static str,
+    key: day::ElementId,
 ) -> Row {
     rows::custom(move || {
         row((
@@ -267,7 +270,7 @@ fn color_row(
             spacer(),
             day_piece_colorpicker::color_picker(color)
                 .title(title())
-                .id(key),
+                .id(key.clone()),
         ))
         .spacing(Space::M)
         .align(VAlign::Center)
@@ -294,7 +297,7 @@ fn browser_group() -> Group {
             Section::new()
                 .row(
                     rows::choice(&BROWSER, res::str::settings_browser_label(), options)
-                        .id("browser-picker"),
+                        .id(day::id!(browser_picker)),
                 )
                 .footer(res::str::settings_browser_note())
         }
@@ -305,8 +308,9 @@ fn browser_group() -> Group {
             ))
             .footer(res::str::settings_browser_unavailable()),
     };
-    let mut privacy = Section::new()
-        .row(rows::toggle(&INCOGNITO, res::str::incognito_mode()).id("incognito-mode-picker"));
+    let mut privacy = Section::new().row(
+        rows::toggle(&INCOGNITO, res::str::incognito_mode()).id(day::id!(incognito_mode_picker)),
+    );
     if day_piece_webview::private_browsing_support() == Support::Unsupported {
         privacy = privacy.footer(res::str::site_private_unsupported());
     }
@@ -346,7 +350,7 @@ fn feeds_group(pruned: Signal<usize>) -> Group {
                             (Refresh::Hours8, res::str::settings_refresh_480()),
                         ],
                     )
-                    .id("refresh-interval-picker"),
+                    .id(day::id!(refresh_interval_picker)),
                 )
                 .footer(res::str::settings_refresh_automatic_note()),
         )
@@ -358,7 +362,7 @@ fn feeds_group(pruned: Signal<usize>) -> Group {
                         res::str::settings_retention_label(),
                         retention,
                     )
-                    .id("retention-picker"),
+                    .id(day::id!(retention_picker)),
                 )
                 .footer(move || {
                     let note = res::str::settings_retention_note().format();
@@ -372,11 +376,11 @@ fn feeds_group(pruned: Signal<usize>) -> Group {
             Section::new()
                 .row(
                     rows::action(res::str::opml_import(), crate::subscriptions::import_opml)
-                        .id("opml-import"),
+                        .id(day::id!(opml_import)),
                 )
                 .row(
                     rows::action(res::str::opml_export(), crate::subscriptions::export_opml)
-                        .id("opml-export"),
+                        .id(day::id!(opml_export)),
                 )
                 // The import and export outcomes land on the app-wide status line.
                 .footer(move || daynews_core::state().status.get()),

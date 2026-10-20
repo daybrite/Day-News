@@ -3,58 +3,58 @@ name: day-news-reading-navigation
 description: Previous/Next follow the visible list and search; link copying preserves the reader.
 flow:
   - wait_for: { id: nav }
-  - toolbar: { item: unread-feeds-only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false }
   - navigate: { route: "feed:5756297993796914528" }
-  - wait_for: { id: article-row-0 }
+  - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - toolbar: { item: next-article }
+  - toolbar: { item: next_article }
   - pause: { secs: 1 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: "What a honeybee's dance tells the hive"
-  - toolbar: { item: previous-article }
+  - toolbar: { item: previous_article }
   - pause: { secs: 1 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: "How monarch butterflies find their way to Mexico"
-  - toolbar: { item: next-article }
-  - toolbar: { item: next-article }
+  - toolbar: { item: next_article }
+  - toolbar: { item: next_article }
   - pause: { secs: 1 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: "Three hearts and blue blood: inside the octopus"
   - assert_focused: { id: timeline, only_on: [macos-appkit] }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "window.linkCopyMarker = 'preserved'"
       text: "preserved"
-  - toolbar: { item: copy-article-link }
+  - toolbar: { item: copy_article_link }
   - pause: { secs: 1 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "window.linkCopyMarker"
       text: "preserved"
   - screenshot: reading-navigation
   - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
-  - toolbar: { item: day.search, text: "sun" }
+  - toolbar: { item: day::search, text: "sun" }
   - pause: { secs: 1 }
   - select: { id: timeline, index: 0 }
-  - toolbar: { item: next-article }
+  - toolbar: { item: next_article }
   - pause: { secs: 1 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: "What a honeybee's dance tells the hive"
-  - toolbar: { item: next-article }
+  - toolbar: { item: next_article }
   - pause: { secs: 1 }
   - web_eval:
-      id: reader-web
+      id: reader_web
       script: "document.getElementById('reader-title').textContent"
       text: "Reading the tide pools: why the sea rises twice a day"
   - screenshot: reading-search-navigation
   - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
-  - toolbar: { item: day.search, text: "" }
+  - toolbar: { item: day::search, text: "" }
