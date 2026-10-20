@@ -1436,20 +1436,9 @@ fn base_dir() -> PathBuf {
 
 #[cfg(target_os = "android")]
 fn android_files_dir() -> Option<PathBuf> {
-    use day_android::{DayEnv, as_jstring, read_jstring, with_env};
-    const BRIDGE: &str = "dev/daybrite/day/bridge/DayBridge";
-    with_env(|env| {
-        let obj = env
-            .dcall_static(BRIDGE, "filesDirPath", "()Ljava/lang/String;", &[])
-            .ok()?
-            .l()
-            .ok()?;
-        if obj.is_null() {
-            return None;
-        }
-        let path = read_jstring(env, &as_jstring(obj))?;
-        (!path.is_empty()).then(|| PathBuf::from(path))
-    })
+    use day_android::{DayBridge, java_string, with_env};
+    let path = with_env(|env| java_string(env, DayBridge::filesDirPath))?;
+    (!path.is_empty()).then(|| PathBuf::from(path))
 }
 
 /// Subscribe only while a dashboard is mounted; scope disposal cancels obsolete projections.
