@@ -85,8 +85,8 @@ pub fn install() -> Prefs {
         .about(
             About::from_manifest()
                 .icon(res::images::app_logo)
-                .link(day::tr("day-about-website"), WEBSITE)
-                .link(day::tr("day-about-source"), SOURCE),
+                .link(res::str::day_about_website(), WEBSITE)
+                .link(res::str::day_about_source(), SOURCE),
         )
         .group(general_group(res::locales::ALL))
         .group(articles_group())
