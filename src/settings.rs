@@ -1,4 +1,4 @@
-//! Settings and About (https://daybrite.dev/docs/settings): the typed, persisted preferences
+//! Settings and About (https://daybrite.dev/docs/reference/settings): the typed, persisted preferences
 //! the rest of the app reads, and the declaration of the groups Day's shared surface presents.
 //! The surface itself is Day's: the Settings window and the App menu's Settings…/About items on
 //! a desktop, the Settings section's pages behind the sidebar item on a phone and the web, and

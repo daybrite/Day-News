@@ -138,7 +138,7 @@ pub fn root() -> impl Piece {
                 .set(res::str::storage_error(error).format());
         }
     });
-    // Settings and About (https://daybrite.dev/docs/settings): appearance and language from
+    // Settings and About (https://daybrite.dev/docs/reference/settings): appearance and language from
     // Day's catalog, the app's own groups, the name and version from Day.toml. A desktop gets
     // the App menu's Settings… and About items and their windows; the web uses a modal surface
     // and phones get the Settings sidebar section in `shell_body`. Also applies grouping and retention
@@ -340,7 +340,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
             ),
         )
         // Settings rides the sidebar where no app menu can open the surface (phones):
-        // `nav_item` is `None` elsewhere, including the web (https://daybrite.dev/docs/settings).
+        // `nav_item` is `None` elsewhere, including the web (https://daybrite.dev/docs/reference/settings).
         .items(
             (!crate::settings::TOOLBAR_SETTINGS)
                 .then(|| prefs.nav_item(Some("settings".to_string())))

@@ -713,7 +713,7 @@ pub(crate) fn reader_document(chrome: bool) -> impl Piece {
     .grow()
     // The commands follow the open article: a new one re-derives the list with its own starred
     // and read state, and no article at all contributes nothing, so the bar carries them only
-    // while there is something to act on (https://daybrite.dev/docs/toolbars).
+    // while there is something to act on (https://daybrite.dev/docs/reference/toolbars).
     .toolbar(move || match st.article.get().filter(|_| chrome) {
         Some(a) => crate::toolbar::article_items(a),
         None => Vec::new(),

@@ -187,7 +187,7 @@ flow:
   - pause: { secs: 1 }
   - assert_visible: { id: timeline_empty, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
-  # Settings: Day's shared surface (https://daybrite.dev/docs/settings), a window on the
+  # Settings: Day's shared surface (https://daybrite.dev/docs/reference/settings), a window on the
   # desktops and a modal on mobile/web. The mobile gear opens
   # the window (on General, the first group) or selects the section, whose root lists the
   # groups. The web opens a modal preferences surface, which must close before feed commands.
