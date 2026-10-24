@@ -290,7 +290,7 @@ flow:
   - menu: { key: unsubscribe, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: "sidebar:header%3Afeeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/6 feeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(6)", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   # Subscribe again, so the screenshots below and the next run see all seven feeds.
   - toolbar: { item: new_feed, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - wait_for: { id: feed_url, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
@@ -300,7 +300,7 @@ flow:
   - screenshot: { name: subscription-preview, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - tap: { id: feed_subscribe, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
   - pause: { secs: 2, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/7 feeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(7)", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
 
   # Subscription import/export lives in Settings ▸ Feeds.
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }

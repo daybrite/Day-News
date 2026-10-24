@@ -1,0 +1,97 @@
+# Desktop regression: run after seed-demo.yaml in an isolated store.
+# Collections: created from Feed ▸ Collection (the menu a feed's sidebar row also has) and from
+# the feed overview's Collection picker, then ordered, sorted, renamed and deleted in
+# Settings ▸ Feeds, where the default collection (feeds in no collection) is renamed and moved.
+# Deleting a collection keeps its feeds. The default collection's name and place are real
+# preferences, so the script restores them. A native sidebar's section headers
+# are not Day elements, so the sidebar's "Name (feeds)" titles are checked in the screenshots.
+name: day-news-collections
+description: Feed collections from the Feed menu, the feed overview and Settings.
+flow:
+  - dialog_mode: { mode: scripted }
+  - wait_for: { id: nav, timeout_secs: 30 }
+  # Field Notes starts a new collection.
+  - navigate: { route: "feed:5756297993796914528" }
+  - wait_for: { id: dashboard_collection_picker }
+  - assert_text: { id: dashboard_collection_picker, text: "None" }
+  - menu: { id: feed_collection_new }
+  - assert_presented: {}
+  - respond: { text: "News" }
+  - assert_not_presented:
+  - pause: { secs: 1 }
+  - assert_text: { id: dashboard_collection_picker, text: "News" }
+  # Night Sky joins it from the same menu.
+  - navigate: { route: "feed:4450945874607950238" }
+  - wait_for: { id: dashboard_collection_picker }
+  - menu: { id: "feed_collection:3021761254516566290" }
+  - pause: { secs: 1 }
+  - assert_text: { id: dashboard_collection_picker, text: "News" }
+  - screenshot: collections-sidebar
+  # Kitchen Science gets a second collection from its overview's picker: None, News, New….
+  - navigate: { route: "feed:9105033381806695217" }
+  - wait_for: { id: dashboard_collection_picker }
+  - select: { id: dashboard_collection_picker, index: 2 }
+  - assert_presented: {}
+  - respond: { text: "Science" }
+  - pause: { secs: 1 }
+  - assert_text: { id: dashboard_collection_picker, text: "Science" }
+  - screenshot: collections-overview
+  # Drag Atlas from Feeds into Science. Display rows count headers: Smart Feeds 0-4, News 5-7,
+  # Science 8-9, Feeds 10 on; landing on Kitchen Science's row puts Atlas in Science.
+  - reorder: { id: nav_reorder_list, from: 11, to: 9 }
+  - pause: { secs: 1 }
+  - navigate: { route: "feed:679254617280847685" }
+  - wait_for: { id: dashboard_collection_picker }
+  - assert_text: { id: dashboard_collection_picker, text: "Science" }
+  # Settings ▸ Feeds: the collections in sidebar order. Science moves first; News sorts by name.
+  - navigate: { route: settings/feeds }
+  - wait_for: { id: collections_list }
+  - reorder: { id: collections_list, from: 1, to: 0 }
+  - pause: { secs: 1 }
+  - select: { id: collections_list, index: 1 }
+  - wait_for: { id: "collection_sort:3021761254516566290" }
+  - select: { id: "collection_sort:3021761254516566290", index: 2 }
+  - screenshot: { name: collections-settings, window: day.preferences }
+  # The default collection, Feeds, is listed last: renamed and moved first, never deleted.
+  - select: { id: collections_list, index: 2 }
+  - wait_for: { id: collection_default_badge }
+  - screenshot: { name: collections-default, window: day.preferences }
+  - tap: { id: collection_rename }
+  - assert_presented: {}
+  - respond: { text: "Unsorted" }
+  - pause: { secs: 1 }
+  - assert_text: { id: "collection_row:0", contains: "Unsorted" }
+  - reorder: { id: collections_list, from: 2, to: 0 }
+  - pause: { secs: 1 }
+  - close_window: { window: day.preferences }
+  - screenshot: collections-default-first
+  - navigate: { route: settings/feeds }
+  - wait_for: { id: collections_list }
+  # Rename News to World, then delete it: its two feeds stay subscribed, in no collection.
+  - select: { id: collections_list, index: 2 }
+  - tap: { id: collection_rename }
+  - assert_presented: {}
+  - respond: { text: "World" }
+  - pause: { secs: 1 }
+  - assert_text: { id: "collection_row:3021761254516566290", contains: "World" }
+  - tap: { id: collection_delete }
+  - assert_presented: {}
+  - respond: { button: 1 }
+  - pause: { secs: 1 }
+  - assert_missing: { id: "collection_row:3021761254516566290" }
+  # Back to the default collection's defaults (its name and place are preferences).
+  - select: { id: collections_list, index: 0 }
+  - tap: { id: collection_rename }
+  - assert_presented: {}
+  - respond: { text: "Feeds" }
+  - pause: { secs: 1 }
+  - assert_text: { id: "collection_row:0", contains: "Feeds" }
+  - reorder: { id: collections_list, from: 0, to: 1 }
+  - pause: { secs: 1 }
+  - close_window: { window: day.preferences }
+  - screenshot: collections-sorted-sidebar
+  - navigate: { route: "feed:5756297993796914528" }
+  - wait_for: { id: dashboard_collection_picker }
+  - assert_text: { id: dashboard_collection_picker, text: "None" }
+  - screenshot: collections-after-delete
+  - dialog_mode: { mode: native }

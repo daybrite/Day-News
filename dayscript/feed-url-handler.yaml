@@ -13,10 +13,10 @@ flow:
   - assert_hidden: { id: "sidebar:header%3Afeeds" }
   - tap: { id: feed_subscribe }
   - wait_for: { id: article_row:0 }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/1 feeds" }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(1)" }
   - open_url: { url: 'feed:javascript:alert(1)' }
   - wait_for: { id: feed_url }
   - tap: { id: feed_verify }
   - assert_text: { id: feed_verification_status, key: subscribe_failed }
   - tap: { id: feed_cancel }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/1 feeds" }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(1)" }

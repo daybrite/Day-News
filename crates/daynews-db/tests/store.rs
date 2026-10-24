@@ -3,7 +3,9 @@
 //! and live count badges.
 
 use day_reactive::Binding;
-use daynews_db::{Article, ArticleFields, Db, FeedFields, IncomingArticle, Scope, article_id};
+use daynews_db::{
+    Article, ArticleFields, Db, FeedFields, FolderFields, IncomingArticle, Scope, article_id,
+};
 
 fn item(guid: &str, title: &str, body: &str, published: i64) -> IncomingArticle {
     IncomingArticle {
@@ -140,7 +142,7 @@ fn deleting_a_feed_cascades_articles_bodies_and_the_index() {
 }
 
 #[test]
-fn deleting_a_folder_cascades_through_feeds_to_articles() {
+fn deleting_a_folder_keeps_its_feeds_outside_any_folder() {
     let db = Db::open_in_memory().unwrap();
     let tech = db.add_folder("Tech");
     let url = "https://a.example/f";
@@ -148,18 +150,95 @@ fn deleting_a_folder_cascades_through_feeds_to_articles() {
     db.upsert_articles(f, url, &[item("1", "in folder", "x", 1)]);
     let _keep = db.add_feed("https://b.example/f", "B", None);
 
-    db.delete_folder(tech);
+    db.delete_folder(tech).unwrap();
     assert!(
-        db.container.get::<daynews_db::Feed>(f).is_none(),
-        "feed went"
+        db.container.get::<daynews_db::Folder>(tech).is_none(),
+        "folder went"
     );
-    assert_eq!(db.count(Scope::All).get_untracked(), 0, "articles went");
+    let feed = db
+        .container
+        .get::<daynews_db::Feed>(f)
+        .expect("feed stayed");
+    assert!(feed.folder().peek().is_none(), "feed left the folder");
+    assert_eq!(db.count(Scope::All).get_untracked(), 1, "articles stayed");
+}
+
+#[test]
+fn folders_rename_reorder_and_sort() {
+    let db = Db::open_in_memory().unwrap();
+    let news = db.add_folder("News");
+    let tech = db.add_folder("Tech");
+    assert_eq!(db.add_folder("News"), news, "same name, same folder");
+    assert!(db.rename_folder(news, "World").unwrap());
     assert!(
+        !db.rename_folder(news, "Tech").unwrap(),
+        "names stay unique"
+    );
+    assert!(
+        !db.rename_folder(news, "  ").unwrap(),
+        "names are never empty"
+    );
+    // The renamed folder still holds the hash of "News": a new "News" is another folder.
+    let again = db.add_folder("News");
+    assert_ne!(again, news);
+    assert_eq!(db.folder_named("World"), Some(news));
+
+    db.move_folder(again, 0).unwrap();
+    let order: Vec<u64> = db
+        .container
+        .query::<daynews_db::Folder>()
+        .sort(daynews_db::Folder::position().asc())
+        .live()
+        .try_collect()
+        .unwrap()
+        .into_iter()
+        .map(|f| f.id)
+        .collect();
+    assert_eq!(order, [again, news, tech]);
+
+    db.set_folder_sort(tech, daynews_db::FeedSort::Manual);
+    let sort = db
+        .container
+        .get::<daynews_db::Folder>(tech)
+        .unwrap()
+        .sort()
+        .peek();
+    assert_eq!(
+        daynews_db::FeedSort::from_key(&sort),
+        daynews_db::FeedSort::Manual
+    );
+}
+
+#[test]
+fn feeds_join_folders_in_manual_order() {
+    let db = Db::open_in_memory().unwrap();
+    let tech = db.add_folder("Tech");
+    let a = db.add_feed("https://a.example/f", "A", None);
+    let b = db.add_feed("https://b.example/f", "B", None);
+    let c = db.add_feed("https://c.example/f", "C", None);
+    db.set_feed_folder(a, Some(tech), None).unwrap();
+    db.set_feed_folder(b, Some(tech), None).unwrap();
+    db.set_feed_folder(c, Some(tech), Some(a)).unwrap();
+    let order = |db: &Db| -> Vec<u64> {
         db.container
-            .get::<daynews_db::Feed>(daynews_db::feed_id("https://b.example/f"))
-            .is_some(),
-        "the top-level feed stayed"
-    );
+            .query::<daynews_db::Feed>()
+            .filter(daynews_db::Feed::folder().is(tech))
+            .sort(daynews_db::Feed::collection_position().asc())
+            .live()
+            .try_collect()
+            .unwrap()
+            .into_iter()
+            .map(|f| f.id)
+            .collect()
+    };
+    assert_eq!(order(&db), [c, a, b]);
+    // Within its own folder the same call is a manual reorder.
+    db.set_feed_folder(c, Some(tech), None).unwrap();
+    assert_eq!(order(&db), [a, b, c]);
+    db.set_feed_folder(a, None, None).unwrap();
+    assert_eq!(order(&db), [b, c]);
+    let stats = db.feed_stats().unwrap();
+    assert!(!stats.contains_key(&a), "no articles, no figures");
 }
 
 #[test]

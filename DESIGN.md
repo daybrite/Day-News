@@ -122,8 +122,20 @@ subscription counts, and asks whether to upload eligible local subscriptions (of
 The initial import adopts matching feed URLs and uses Feedbin's read/unread state for matched
 articles. Unmatched local history remains local. Subscribing, renaming, unsubscribing, reading,
 and marking a scope read/unread all use the same durable journal. There is one active account
-per installation; folders, stars, tags, and reader preferences remain local. Web DOM retains its
+per installation. Collections (the store's folders) sync as Feedbin taggings, described below;
+stars, tags, and reader preferences remain local. Web DOM retains its
 existing local-only behavior and does not expose the account screen.
+
+### Collections and taggings
+
+A collection is a folder in the store, and a feed belongs to at most one. Feedbin's equivalent is
+a tagging, and a feed may carry several there. Moving a feed queues one coalesced intent per feed
+that replaces its taggings; renaming or deleting a collection renames or deletes the tag, and only
+when the service has that tag. Each cycle downloads the complete taggings list: a linked feed
+goes to its alphabetically first tag's folder (created when missing) and leaves its folder when it
+has no tagging. A feed with a move still pending keeps its local folder, and pending renames and
+deletes apply to the downloaded names first. Downloads never delete a folder and never touch
+unlinked feeds. Collection order and each collection's sort stay local, since Feedbin has neither.
 
 ### Provider boundary and reconciliation
 
@@ -203,7 +215,8 @@ informed the durable-journal and partial-acknowledgement behavior; this implemen
 
 `daynews-sync::fixture::Server` implements sanitized synthetic request/response exchanges based
 on those live responses: auth 200/401, subscription 201/302/204, entry pagination via Link headers,
-unread ID arrays, and per-ID write acknowledgements. It uses Day HTTP `Simulation`, not a fake
+unread ID arrays, per-ID write acknowledgements, and the taggings and tags endpoints that carry
+collections. It uses Day HTTP `Simulation`, not a fake
 Provider, and never embeds account credentials or downloaded article content. The tests under
 `daynews-sync/tests/protocol.rs` and `daynews-db/tests/synchronization.rs` therefore exercise the
 production HTTP adapter, including two replicas, restart, partial failure, rollback, undo,
@@ -367,9 +380,9 @@ The navigation regression covers both an unrelated scene and no ambient/focused 
 browser walkthrough closes the modal preferences surface before resuming feed commands and
 checks the feed heading after returning from Settings.
 
-Desktop gets a File menu (New Feed, New Folder, New Window, Refresh, Import/Export Subscriptions,
+Desktop gets a File menu (New Feed, New Collection, New Window, Refresh, Import/Export Subscriptions,
 Close Window), a Go menu (Previous/Next Article ⌘[/⌘], Next Unread ⌘/, then the three smart feeds),
-a Feed menu (Refresh Feed, Mark All as Read, Unsubscribe) and an Article menu. These are one live `app_menu` model,
+a Feed menu (Collection, Refresh Feed, Mark All as Read, Unsubscribe) and an Article menu. These are one live `app_menu` model,
 so all four desktop toolkits get the same bar from the same code, and dayscript drives them by
 Fluent key on every one. Next Unread walks the visible timeline forward and wraps, then falls back
 to any unread article, so it keeps working when the current scope is exhausted.
@@ -408,8 +421,8 @@ Each of these is a test, because each was a wrong assumption first:
 ## Not yet built
 
 Additional synchronization providers (iCloud/Reader), per-feed refresh intervals,
-starred-article sync, images cached offline, folder editing in the UI (import creates folders,
-but there is no rename/move), and article pagination beyond the 500-row timeline cap.
+starred-article sync, images cached offline, and article pagination beyond the 500-row timeline
+cap.
 
 Two want Day itself to grow first: an HTML-content API on `day-piece-webview`, without which
 the web build's article pane stays blank (it has no filesystem for the generated document), and
@@ -572,14 +585,32 @@ then resume conditional requests and unchanged-body shortcuts.
 
 Group by Feeds is a persisted preference, also available in the Feed menu and desktop list
 toolbar. The existing bounded result window is stably sorted by subscription priority, with
-chronological articles inside each group. A name/icon header marks each group and an overlay
-follows the native list's first-visible-row signal. Uniform recycling rows reserve header
-space; headers do not add selectable records or change article indexes.
+chronological articles inside each group. Each group is a section of Day's native list
+(`list(..).sections(..)`), whose header the platform pins while its articles scroll; headers are
+never selectable and never change article indexes.
 
-The Feeds sidebar section supports drag reordering through Day's shared native list driver;
-smart feeds, section headers, tags, and Settings are fixed. The row context menu retains
-localized Move Up/Down controls. Moves persist contiguous positions without changing folders.
-Sidebar order, article group order and the bounded four-request refresh queue share that priority.
+### Collections
+
+Feeds sit in collections, the store's folders. The sidebar shows one section per collection in
+the user's order, titled "Name (feeds)". The default collection ("Feeds" until renamed) holds the
+feeds in no collection; it has no folder, so its name, place and sort are preferences
+(`news.collections.default.*`), and it never syncs. Dropped last in the order it stays after
+every collection, including later ones. A feed's Collection menu (on its sidebar row, under Feed ▸ Collection, and as the
+feed overview's picker) lists None, every collection and New Collection…, which asks for a name.
+Settings ▸ Feeds lists the collections, the default one marked with a Default capsule: drag them
+to reorder, rename them, delete any but the default (a deleted collection's feeds move to the
+default collection), and choose each one's Sort Feeds: Priority,
+Recently Updated, Name, Unread Count, Total Count or Manual. Every sort is stable, so ties keep
+priority order. The counts and newest-article dates come from one grouped query beside the
+sidebar snapshot.
+
+Two orders coexist. Priority is global: refresh order and the grouped timeline's group order,
+changed by dragging feeds in the default collection while it sorts by Priority and by Move Feed
+Up/Down in Priority sections. Manual is per collection (`Feed::collection_position`; the default
+collection keeps one too), changed by dragging within a Manual collection and by Move Feed
+Up/Down there. The sidebar uses Day's `Nav::regroup_items`: a feed
+drags into any other collection (joining it), and within its own section only where the user sets
+that order; other sorted sections refuse the drop.
 The separate Subscriptions page is removed. File → New Feed and the sidebar add button open
 an attached URL prompt, prefilled only with a valid clipboard HTTP(S) URL. A direct feed is
 parsed once; websites advertise candidates through Link headers, alternate links, feed metadata,
@@ -724,8 +755,8 @@ changes that clear selection do not redirect navigation.
 
 The Feed overview command opens the selected article’s publisher dashboard, including from
 iOS article menus. Without a selected article it opens the current scope dashboard. UIKit
-keeps Day’s native navigation sidebar; feed reordering is available only where NavReorder
-is supported.
+keeps Day’s native navigation sidebar; dragging feeds is available only where NavReorder
+is supported, and the Collection menus work everywhere.
 
 On merged content-list toolkits (including UIKit), reselecting a feed closes its article
 and opens the article list rather than its overview. Feed rows provide a localized Feed

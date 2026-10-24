@@ -98,12 +98,44 @@ pub struct ReadState {
     pub read: bool,
 }
 
+/// A feed's membership in a named collection (a Feedbin tagging). The application keeps one
+/// collection per feed; a feed the service files under several names takes the first.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Tagging {
+    /// The provider's feed ID, as in [`Subscription::feed_id`].
+    pub feed_id: String,
+    pub name: String,
+}
+
+/// Journal rows store these externally tagged, so new variants only ever append: rows written
+/// by an older build keep decoding.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Mutation {
     SetRead(ReadState),
-    Subscribe { url: String },
-    Unsubscribe { subscription: String },
-    Rename { subscription: String, title: String },
+    Subscribe {
+        url: String,
+    },
+    Unsubscribe {
+        subscription: String,
+    },
+    Rename {
+        subscription: String,
+        title: String,
+    },
+    /// Replace every collection of the provider's feed `feed` with `folder`; `None` leaves all.
+    SetFolder {
+        feed: String,
+        folder: Option<String>,
+    },
+    /// Rename a collection on every feed filed under it.
+    RenameFolder {
+        old: String,
+        new: String,
+    },
+    /// Remove a collection; its feeds stay subscribed.
+    DeleteFolder {
+        name: String,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -159,5 +191,11 @@ pub trait Provider {
     fn entries(&self, cursor: Option<String>) -> Call<'_, Page<Entry>>;
     fn entries_by_id(&self, ids: Vec<String>) -> Call<'_, Vec<Entry>>;
     fn read_state(&self) -> Call<'_, ReadChanges>;
+    /// Every feed-to-collection assignment of the account, complete: a linked feed absent
+    /// from the list belongs to no collection. `None` means the provider has no collections,
+    /// and local folders stay as they are.
+    fn taggings(&self) -> Call<'_, Option<Vec<Tagging>>> {
+        Box::pin(async { Ok(None) })
+    }
     fn apply(&self, operations: Vec<Operation>) -> Call<'_, Vec<Outcome>>;
 }

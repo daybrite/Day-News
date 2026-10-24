@@ -12,7 +12,7 @@ use daynews_db::{
     Article, ArticleFields, ArticleRelations, Db, FeedFields, IncomingArticle, Scope,
     timeline_fetch,
 };
-pub use daynews_db::{Scope as TimelineScope, article_id, feed_id, folder_id, tag_id};
+pub use daynews_db::{FeedSort, Scope as TimelineScope, article_id, feed_id, folder_id, tag_id};
 use futures_util::{
     FutureExt, StreamExt,
     future::{LocalBoxFuture, Shared},
@@ -48,12 +48,22 @@ pub struct FeedRow {
     pub feed_url: String,
     pub icon_url: Option<String>,
     pub has_fetched: bool,
+    /// Stored articles, read or not.
+    pub total: i64,
+    /// The newest article's publication time.
+    pub newest: Option<i64>,
+    /// Place in its collection's manual order.
+    pub collection_position: f64,
 }
 
+/// A collection: the store's folder, with how the sidebar orders its feeds.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FolderRow {
     pub id: u64,
     pub name: String,
+    pub sort: FeedSort,
+    /// Place in the sidebar's collection order.
+    pub position: f64,
 }
 
 /// A sidebar tag row with its article count.
@@ -493,18 +503,10 @@ type SidebarSnapshot = (
 );
 fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
     use daynews_db::{Feed, Folder, Tag};
-    let mut unread = HashMap::new();
-    db.try_with_connection(|conn| {
-        conn.query(
-            "SELECT feed, COUNT(*) FROM articles WHERE is_read = 0 GROUP BY feed",
-            &[],
-            &mut |row| {
-                if let (Ok(id), Ok(count)) = (row.get(0).as_int(), row.get(1).as_int()) {
-                    unread.insert(id as u64, count);
-                }
-            },
-        )
-    })?;
+    let d = Db {
+        container: db.clone(),
+    };
+    let stats = d.feed_stats()?;
     let feeds = db
         .query::<Feed>()
         .filter(Feed::unsubscribed().eq(false))
@@ -513,16 +515,22 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
         .live()
         .try_collect()?
         .into_iter()
-        .map(|f| FeedRow {
-            id: f.id,
-            title: f.title,
-            unread: unread.get(&f.id).copied().unwrap_or(0),
-            folder_id: f.folder.and_then(|f| f.id()).map(|id| id.handle()),
-            has_error: f.last_error.is_some(),
-            site_url: f.site_url,
-            feed_url: f.feed_url,
-            icon_url: f.icon_url,
-            has_fetched: f.last_fetched_at.is_some(),
+        .map(|f| {
+            let stats = stats.get(&f.id).copied().unwrap_or_default();
+            FeedRow {
+                id: f.id,
+                title: f.title,
+                unread: stats.unread,
+                folder_id: f.folder.and_then(|f| f.id()).map(|id| id.handle()),
+                has_error: f.last_error.is_some(),
+                site_url: f.site_url,
+                feed_url: f.feed_url,
+                icon_url: f.icon_url,
+                has_fetched: f.last_fetched_at.is_some(),
+                total: stats.total,
+                newest: stats.newest,
+                collection_position: f.collection_position,
+            }
         })
         .collect();
     let folders = db
@@ -535,11 +543,10 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
         .map(|f| FolderRow {
             id: f.id,
             name: f.name,
+            sort: FeedSort::from_key(&f.sort),
+            position: f.position,
         })
         .collect();
-    let d = Db {
-        container: db.clone(),
-    };
     let tags = db
         .query::<Tag>()
         .sort(Tag::name().asc())
@@ -558,7 +565,7 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
         feeds,
         folders,
         tags,
-        unread.values().sum(),
+        stats.values().map(|s| s.unread).sum(),
         d.count(Scope::Starred).try_get()? as i64,
         d.unread_count(Scope::Today).try_get()? as i64,
         d.count(Scope::All).try_get()? as i64,
@@ -909,14 +916,46 @@ pub fn unsubscribe(feed: u64) {
         select_scope(Scope::Unread);
     }
 }
-pub fn create_folder(name: &str) -> Option<u64> {
-    let name = name.to_owned();
-    let id = folder_id(&name);
+/// Create a collection (or find the one with this name), optionally moving `feed` into it.
+pub fn create_folder(name: &str, feed: Option<u64>) {
+    let name = name.trim().to_owned();
+    if name.is_empty() {
+        return;
+    }
     edit(move |db| {
-        db.add_folder(&name);
+        let id = db.add_folder(&name);
+        if let Some(feed) = feed {
+            db.set_feed_folder(feed, Some(id), None)?;
+        }
         Ok(())
     });
-    Some(id)
+}
+/// Rename a collection; an empty or already-used name is refused.
+pub fn rename_folder(folder: u64, name: &str) {
+    let name = name.to_owned();
+    edit(move |db| db.rename_folder(folder, &name).map(|_| ()));
+}
+/// Delete a collection. Its feeds stay subscribed, outside any collection.
+pub fn delete_folder(folder: u64) {
+    edit(move |db| db.delete_folder(folder));
+}
+/// Write the sidebar's collection order: each collection's position.
+pub fn set_folder_positions(positions: Vec<(u64, f64)>) {
+    edit(move |db| {
+        db.set_folder_positions(&positions);
+        Ok(())
+    });
+}
+/// Choose how the sidebar orders a collection's feeds.
+pub fn set_folder_sort(folder: u64, sort: FeedSort) {
+    edit(move |db| {
+        db.set_folder_sort(folder, sort);
+        Ok(())
+    });
+}
+/// Put a feed in a collection (`None`: in none), before `before` in its manual order or last.
+pub fn set_feed_folder(feed: u64, folder: Option<u64>, before: Option<u64>) {
+    edit(move |db| db.set_feed_folder(feed, folder, before));
 }
 pub fn rename_feed(feed: u64, title: &str) {
     let title = title.to_owned();

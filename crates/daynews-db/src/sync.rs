@@ -2,7 +2,7 @@
 //! Call mutations inside the same worker transaction as the user's edit.
 use crate::*;
 use daynews_sync::{
-    Changes, Entry, Mutation, Operation, Outcome, ReadChanges, ReadState, Subscription,
+    Changes, Entry, Mutation, Operation, Outcome, ReadChanges, ReadState, Subscription, Tagging,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -240,6 +240,225 @@ impl Db {
         }
         Ok(())
     }
+    /// Queue a feed's folder change for the connected account: `None` leaves every folder.
+    /// One intent per feed: a later move replaces an earlier one not yet uploaded.
+    pub fn sync_queue_feed_folder(&self, feed: u64, folder: Option<&str>) -> Result<(), DbError> {
+        for link in self
+            .container
+            .query::<SubscriptionLink>()
+            .filter(SubscriptionLink::local_feed().eq(feed) & SubscriptionLink::removed().eq(false))
+            .live()
+            .try_collect()?
+        {
+            if self
+                .container
+                .try_get::<Feed>(feed)?
+                .and_then(|f| f.sync_account().peek())
+                != Some(link.account)
+            {
+                continue;
+            }
+            self.sync_queue(
+                link.account,
+                &format!("folder:{}", link.remote_feed),
+                Mutation::SetFolder {
+                    feed: link.remote_feed,
+                    folder: folder.map(Into::into),
+                },
+            )?;
+        }
+        Ok(())
+    }
+    /// Queue a folder rename for the connected account. Folder edits never coalesce: each
+    /// applies to the names the previous ones left behind.
+    pub fn sync_queue_folder_rename(&self, old: &str, new: &str) -> Result<(), DbError> {
+        let Some(account) = self.sync_connected()? else {
+            return Ok(());
+        };
+        self.sync_queue_folder_edit(
+            account,
+            Mutation::RenameFolder {
+                old: old.into(),
+                new: new.into(),
+            },
+        )?;
+        // A move into the old name not yet uploaded now means the new one.
+        self.sync_requeue_folder_moves(account, old, Some(new))
+    }
+    /// Queue a folder deletion (its feeds stay subscribed) for the connected account.
+    pub fn sync_queue_folder_delete(&self, name: &str) -> Result<(), DbError> {
+        let Some(account) = self.sync_connected()? else {
+            return Ok(());
+        };
+        self.sync_queue_folder_edit(account, Mutation::DeleteFolder { name: name.into() })?;
+        // Its feeds left the folder locally; a pending move into it must not recreate it.
+        self.sync_requeue_folder_moves(account, name, None)
+    }
+    fn sync_connected(&self) -> Result<Option<u64>, DbError> {
+        Ok(self
+            .container
+            .query::<Account>()
+            .filter(Account::connected().eq(true))
+            .live()
+            .try_collect()?
+            .first()
+            .map(|a| a.id))
+    }
+    fn sync_queue_folder_edit(&self, account: u64, mutation: Mutation) -> Result<(), DbError> {
+        let Some(a) = self.container.try_get::<Account>(account)? else {
+            return Err(DbError::driver("sync account missing"));
+        };
+        // Keyed by the revision it is about to take, so no later edit replaces it.
+        let key = format!("folder-edit:{}", a.revision().peek().saturating_add(1));
+        self.sync_queue(account, &key, mutation)
+    }
+    fn sync_requeue_folder_moves(
+        &self,
+        account: u64,
+        from: &str,
+        to: Option<&str>,
+    ) -> Result<(), DbError> {
+        for op in self.sync_pending(account)? {
+            if let Mutation::SetFolder {
+                feed,
+                folder: Some(name),
+            } = op.mutation
+                && name == from
+            {
+                self.sync_queue(
+                    account,
+                    &format!("folder:{feed}"),
+                    Mutation::SetFolder {
+                        feed,
+                        folder: to.map(Into::into),
+                    },
+                )?;
+            }
+        }
+        Ok(())
+    }
+    /// A newly linked feed Day-News subscribed itself keeps the folder it was filed under.
+    fn sync_queue_linked_folder(
+        &self,
+        account: u64,
+        local_feed: u64,
+        remote_feed: &str,
+    ) -> Result<(), DbError> {
+        if let Some(name) = self.sync_folder_name(local_feed)? {
+            self.sync_queue(
+                account,
+                &format!("folder:{remote_feed}"),
+                Mutation::SetFolder {
+                    feed: remote_feed.into(),
+                    folder: Some(name),
+                },
+            )?;
+        }
+        Ok(())
+    }
+    fn sync_folder_name(&self, feed: u64) -> Result<Option<String>, DbError> {
+        let Some(folder) = self
+            .container
+            .try_get::<Feed>(feed)?
+            .and_then(|f| f.folder().peek())
+            .and_then(|f| f.id())
+        else {
+            return Ok(None);
+        };
+        Ok(self
+            .container
+            .try_get::<Folder>(folder.handle())?
+            .map(|f| f.name().peek()))
+    }
+    /// File the account's linked feeds by a complete tagging list. A feed with a pending move
+    /// keeps its local folder until that move is acknowledged, and pending folder renames and
+    /// deletions apply on top of the service's names. Folders are created by name and never
+    /// deleted here: one no feed uses may be local-only. Unlinked feeds keep their folders.
+    pub fn sync_apply_taggings(&self, account: u64, taggings: Vec<Tagging>) -> Result<(), DbError> {
+        let pending = self.sync_pending(account)?;
+        let mut moving = HashSet::new();
+        let mut edits = Vec::new();
+        for op in &pending {
+            match &op.mutation {
+                Mutation::SetFolder { feed, .. } => {
+                    moving.insert(feed.clone());
+                }
+                Mutation::RenameFolder { .. } | Mutation::DeleteFolder { .. } => {
+                    edits.push(&op.mutation)
+                }
+                _ => {}
+            }
+        }
+        let mut names: HashMap<String, Vec<String>> = HashMap::new();
+        for tagging in taggings {
+            let mut name = Some(tagging.name).filter(|n| !n.trim().is_empty());
+            for edit in &edits {
+                match edit {
+                    Mutation::RenameFolder { old, new } if name.as_ref() == Some(old) => {
+                        name = Some(new.clone())
+                    }
+                    Mutation::DeleteFolder { name: gone } if name.as_ref() == Some(gone) => {
+                        name = None
+                    }
+                    _ => {}
+                }
+            }
+            if let Some(name) = name {
+                names.entry(tagging.feed_id).or_default().push(name);
+            }
+        }
+        for link in self
+            .container
+            .query::<SubscriptionLink>()
+            .filter(SubscriptionLink::account().eq(account) & SubscriptionLink::removed().eq(false))
+            .live()
+            .try_collect()?
+        {
+            if moving.contains(&link.remote_feed) {
+                continue;
+            }
+            let Some(feed) = self.container.try_get::<Feed>(link.local_feed)? else {
+                continue;
+            };
+            if feed.sync_account().peek() != Some(account) {
+                continue;
+            }
+            // Day-News files a feed once; several tags resolve to the alphabetically first.
+            let name = names
+                .get(&link.remote_feed)
+                .and_then(|n| n.iter().min_by_key(|n| (n.to_lowercase(), n.as_str())));
+            let target = name.map(|n| self.add_folder(n));
+            let current = feed
+                .folder()
+                .peek()
+                .and_then(|f| f.id())
+                .map(|id| id.handle());
+            if current == target {
+                continue;
+            }
+            feed.folder().write(target.map(One::to));
+            if let Some(folder) = target {
+                // Arrive last in the folder's manual order.
+                let last = self
+                    .container
+                    .query::<Feed>()
+                    .filter(Feed::folder().is(folder))
+                    .live()
+                    .try_collect()?
+                    .into_iter()
+                    .filter(|f| f.id != link.local_feed)
+                    .map(|f| f.collection_position)
+                    .fold(None, |max: Option<f64>, p| {
+                        Some(max.map_or(p, |m| m.max(p)))
+                    });
+                let position = last.map_or(0.0, |p| p + 1.0);
+                if feed.collection_position().peek() != position {
+                    feed.collection_position().write(position);
+                }
+            }
+        }
+        Ok(())
+    }
     pub fn sync_adopt_local(&self, feed: u64) -> Result<(), DbError> {
         let Some(f) = self.container.try_get::<Feed>(feed)? else {
             return Ok(());
@@ -364,9 +583,11 @@ impl Db {
                 if let Some(l) = self.container.get::<SubscriptionLink>(link.id) {
                     l.removed().write(true);
                 }
-                // Removal wins over a stale rename. A later explicit subscribe is a new intent.
+                // Removal wins over a stale rename or move. A later explicit subscribe is a new
+                // intent.
                 for op in &pending {
                     if matches!(&op.mutation,Mutation::Rename{subscription,..}|Mutation::Unsubscribe{subscription} if *subscription==remote)
+                        || matches!(&op.mutation,Mutation::SetFolder{feed,..} if *feed==link.remote_feed)
                     {
                         self.sync_ack(account, op.revision)?;
                     }
@@ -416,6 +637,9 @@ impl Db {
                                 title,
                             },
                         )?;
+                    }
+                    if !deleting {
+                        self.sync_queue_linked_folder(account, local, &s.feed_id)?;
                     }
                 }
                 f.sync_account().write(Some(account));
@@ -715,17 +939,20 @@ impl Db {
                                     subscription: s.id.clone(),
                                 },
                             )?;
-                        } else if let Some(title) = f.custom_title().peek()
-                            && title != s.title
-                        {
-                            self.sync_queue(
-                                account,
-                                &format!("subscription:{}", s.id),
-                                Mutation::Rename {
-                                    subscription: s.id.clone(),
-                                    title,
-                                },
-                            )?;
+                        } else {
+                            if let Some(title) = f.custom_title().peek()
+                                && title != s.title
+                            {
+                                self.sync_queue(
+                                    account,
+                                    &format!("subscription:{}", s.id),
+                                    Mutation::Rename {
+                                        subscription: s.id.clone(),
+                                        title,
+                                    },
+                                )?;
+                            }
+                            self.sync_queue_linked_folder(account, f.id().peek(), &s.feed_id)?;
                         }
                     }
                 }
@@ -793,6 +1020,15 @@ impl Db {
                     .unwrap_or(&l.title);
                 if deleting || title != remote_title {
                     self.sync_queue_rename(l.local_feed, &title)?;
+                }
+                // Only a move still pending is known to differ from the service: after its
+                // acknowledgement the next download files the feed as the service does.
+                let folder = self.sync_folder_name(l.local_feed)?;
+                if pending.iter().any(|o| {
+                    matches!(&o.mutation, Mutation::SetFolder { feed, folder: queued }
+                        if *feed == l.remote_feed && *queued != folder)
+                }) {
+                    self.sync_queue_feed_folder(l.local_feed, folder.as_deref())?;
                 }
             }
         }

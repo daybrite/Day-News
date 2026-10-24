@@ -61,9 +61,9 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
-  # Native mobile sidebars do not expose section headers as Day elements. Match the
-  # walkthrough's feed-count assertions; the article list below is portable.
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "/7 feeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  # Native sidebars (the phones' and AppKit's outline) do not expose section headers as Day
+  # elements. Match the walkthrough's feed-count assertions; the article list below is portable.
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(7)", skip_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
   - navigate: { route: all }
   - wait_for: { id: article_row:0, timeout_secs: 20 }
   - screenshot: seeded-demo

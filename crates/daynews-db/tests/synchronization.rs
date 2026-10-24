@@ -100,6 +100,9 @@ impl Storage for Replica {
     fn subscriptions(&self, c: Changes<Subscription>) -> Call<'_, ()> {
         async move { self.saved(self.db.sync_apply_subscriptions(self.account, c)) }.boxed_local()
     }
+    fn taggings(&self, t: Vec<Tagging>) -> Call<'_, ()> {
+        async move { self.saved(self.db.sync_apply_taggings(self.account, t)) }.boxed_local()
+    }
     fn missing(&self, ids: Vec<String>) -> Call<'_, Vec<String>> {
         async move { Ok(self.db.sync_missing(self.account, ids)) }.boxed_local()
     }
@@ -656,6 +659,11 @@ fn alternate_protocol_checkpoints_advance_only_after_complete_import() {
     );
     wait(synchronize(&p, &a)).unwrap();
     assert_eq!(p.restored.borrow().as_deref(), Some("opaque/version:2"));
+    // A provider without collections never empties local folders.
+    let feed = daynews_db::feed_id("https://fixture.invalid/delta");
+    a.file(feed, Some("Local collection"));
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(a.folder(feed).as_deref(), Some("Local collection"));
 }
 
 #[test]
@@ -1042,4 +1050,303 @@ fn newly_subscribed_feed_backfills_within_retention_behind_known_recent_pages() 
     assert_eq!(report.entries, 2);
     assert_eq!(report.imported, 1);
     assert!(wait(a.missing(vec!["1004".into()])).unwrap().is_empty());
+}
+
+const FIXTURE_FEED: &str = "https://fixture.invalid/feed.xml";
+const FIXTURE_REMOTE_FEED: u64 = 11;
+impl Replica {
+    /// The fixture subscription's local folder, by name.
+    fn folder(&self, feed: u64) -> Option<String> {
+        use day_reactive::Binding;
+        use daynews_db::{FeedFields, Folder, FolderFields};
+        let folder = self
+            .db
+            .container
+            .get::<daynews_db::Feed>(feed)
+            .unwrap()
+            .folder()
+            .peek()?
+            .id()?;
+        Some(
+            self.db
+                .container
+                .get::<Folder>(folder.handle())
+                .unwrap()
+                .name()
+                .peek(),
+        )
+    }
+    fn file(&self, feed: u64, folder: Option<&str>) {
+        let folder = folder.map(|name| self.db.add_folder(name));
+        self.db.set_feed_folder(feed, folder, None).unwrap();
+        self.db.container.save().unwrap();
+    }
+    fn posts(server: &Server, path: &str) -> u64 {
+        server
+            .simulation
+            .request_count("POST", &format!("https://api.feedbin.com/v2/{path}"))
+    }
+}
+
+#[test]
+fn folder_moves_upload_as_taggings_replacing_others_and_coalesce() {
+    let server = Server::new();
+    let p = server.provider();
+    let a = Replica::new();
+    wait(synchronize(&p, &a)).unwrap();
+    let feed = daynews_db::feed_id(FIXTURE_FEED);
+    // Another client filed the feed twice; Day-News keeps one collection per feed.
+    server.tag(FIXTURE_REMOTE_FEED, "Elsewhere");
+    server.tag(FIXTURE_REMOTE_FEED, "Twice");
+    a.file(feed, Some("Tech"));
+    a.file(feed, Some("News"));
+    assert_eq!(
+        a.db.sync_pending_count(a.account),
+        1,
+        "the later move replaces"
+    );
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(
+        server.taggings(),
+        [(FIXTURE_REMOTE_FEED, "News".to_string())]
+    );
+    assert_eq!(
+        Replica::posts(&server, "taggings.json"),
+        1,
+        "only the last move"
+    );
+    assert_eq!(a.folder(feed).as_deref(), Some("News"));
+    assert_eq!(a.db.sync_pending_count(a.account), 0);
+    a.file(feed, None);
+    wait(synchronize(&p, &a)).unwrap();
+    assert!(server.taggings().is_empty(), "no collection removes them");
+    assert_eq!(a.folder(feed), None);
+}
+
+#[test]
+fn folder_rename_and_delete_upload_as_tag_edits_keeping_feeds_subscribed() {
+    use day_reactive::Binding;
+    use daynews_db::FeedFields;
+    let server = Server::new();
+    let p = server.provider();
+    let a = Replica::new();
+    wait(synchronize(&p, &a)).unwrap();
+    let feed = daynews_db::feed_id(FIXTURE_FEED);
+    a.file(feed, Some("News"));
+    wait(synchronize(&p, &a)).unwrap();
+    let news = a.db.folder_named("News").unwrap();
+    assert!(a.db.rename_folder(news, "World").unwrap());
+    a.db.container.save().unwrap();
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(Replica::posts(&server, "tags.json"), 1);
+    assert_eq!(
+        server.taggings(),
+        [(FIXTURE_REMOTE_FEED, "World".to_string())]
+    );
+    assert_eq!(a.folder(feed).as_deref(), Some("World"));
+    assert_eq!(
+        a.db.folder_named("News"),
+        None,
+        "the old name is not recreated"
+    );
+    a.db.delete_folder(news).unwrap();
+    a.db.container.save().unwrap();
+    wait(synchronize(&p, &a)).unwrap();
+    assert!(server.taggings().is_empty());
+    assert!(matches!(wait(p.subscriptions()).unwrap(), Changes::Snapshot(v) if v.len() == 1));
+    let row = a.db.container.get::<daynews_db::Feed>(feed).unwrap();
+    assert!(!row.unsubscribed().peek());
+    assert_eq!(a.folder(feed), None);
+    assert_eq!(a.db.folder_named("World"), None);
+    // A collection no subscription uses on the service needs no request at all.
+    let local = a.db.add_folder("Local only");
+    let before = server.simulation.requests().len();
+    assert!(a.db.rename_folder(local, "Still local").unwrap());
+    a.db.delete_folder(local).unwrap();
+    a.db.container.save().unwrap();
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(a.db.sync_pending_count(a.account), 0);
+    assert!(
+        server.simulation.requests()[before..]
+            .iter()
+            .all(|r| r.method == "GET")
+    );
+}
+
+#[test]
+fn downloaded_taggings_create_folders_and_file_linked_feeds_only() {
+    let server = Server::new();
+    let p = server.provider();
+    let a = Replica::new();
+    let b = Replica::new();
+    let feed = daynews_db::feed_id(FIXTURE_FEED);
+    let local =
+        a.db.add_feed("https://fixture.invalid/local-only", "Local", None);
+    a.file(local, Some("Mine"));
+    server.tag(FIXTURE_REMOTE_FEED, "Zeta");
+    server.tag(FIXTURE_REMOTE_FEED, "alpha");
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(
+        a.folder(feed).as_deref(),
+        Some("alpha"),
+        "several taggings: the alphabetically first"
+    );
+    assert_eq!(a.db.folder_named("Zeta"), None, "no feed is filed there");
+    assert_eq!(
+        a.db.sync_pending_count(a.account),
+        0,
+        "a download is no edit"
+    );
+    // Another installation's move arrives through the service.
+    wait(synchronize(&p, &b)).unwrap();
+    b.file(feed, Some("From B"));
+    wait(synchronize(&p, &b)).unwrap();
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(a.folder(feed).as_deref(), Some("From B"));
+    // Untagged on the service: out of every folder, which stays behind for the user.
+    server.untag(FIXTURE_REMOTE_FEED);
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(a.folder(feed), None);
+    assert!(a.db.folder_named("From B").is_some());
+    assert!(a.db.folder_named("alpha").is_some());
+    assert_eq!(
+        a.folder(local).as_deref(),
+        Some("Mine"),
+        "unlinked feeds keep theirs"
+    );
+}
+
+#[test]
+fn pending_folder_edits_win_over_a_stale_tagging_download() {
+    let server = Server::new();
+    let p = server.provider();
+    let a = Replica::new();
+    let feed = daynews_db::feed_id(FIXTURE_FEED);
+    server.tag(FIXTURE_REMOTE_FEED, "Theirs");
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(a.folder(feed).as_deref(), Some("Theirs"));
+    a.file(feed, Some("Mine"));
+    let stale = || wait(p.taggings()).unwrap().unwrap();
+    a.db.sync_apply_taggings(a.account, stale()).unwrap();
+    assert_eq!(a.folder(feed).as_deref(), Some("Mine"), "queued move wins");
+    wait(synchronize(&p, &a)).unwrap();
+    assert_eq!(
+        server.taggings(),
+        [(FIXTURE_REMOTE_FEED, "Mine".to_string())]
+    );
+    // A rename not yet uploaded maps the service's old name onto the new one.
+    let mine = a.db.folder_named("Mine").unwrap();
+    assert!(a.db.rename_folder(mine, "Renamed").unwrap());
+    a.db.sync_apply_taggings(a.account, stale()).unwrap();
+    assert_eq!(a.folder(feed).as_deref(), Some("Renamed"));
+    assert_eq!(a.db.folder_named("Mine"), None);
+    // So does a deletion: the service's tag no longer files the feed anywhere.
+    a.db.delete_folder(mine).unwrap();
+    a.db.sync_apply_taggings(a.account, stale()).unwrap();
+    assert_eq!(a.folder(feed), None);
+    assert_eq!(a.db.folder_named("Mine"), None);
+    a.db.container.save().unwrap();
+    wait(synchronize(&p, &a)).unwrap();
+    assert!(server.taggings().is_empty());
+    assert_eq!(a.db.sync_pending_count(a.account), 0);
+}
+
+#[test]
+fn move_before_subscription_ack_and_into_a_renamed_folder_is_not_lost() {
+    let server = Server::new();
+    let p = server.provider();
+    let a = Replica::new();
+    let feed =
+        a.db.add_feed("https://fixture.invalid/new.xml", "New", None);
+    a.db.sync_adopt_local(feed).unwrap();
+    a.file(feed, Some("Before"));
+    // Queued before the subscription exists remotely: nothing to tag yet.
+    assert_eq!(a.db.sync_pending_count(a.account), 1);
+    wait(synchronize(&p, &a)).unwrap();
+    wait(synchronize(&p, &a)).unwrap();
+    let remote = match wait(p.subscriptions()).unwrap() {
+        Changes::Snapshot(v) => v
+            .into_iter()
+            .find(|s| s.url.ends_with("new.xml"))
+            .unwrap()
+            .feed_id
+            .parse::<u64>()
+            .unwrap(),
+        _ => unreachable!(),
+    };
+    assert_eq!(server.taggings(), [(remote, "Before".to_string())]);
+    assert_eq!(a.folder(feed).as_deref(), Some("Before"));
+    // A move into a folder renamed before either upload lands under the new name.
+    let fixture = daynews_db::feed_id(FIXTURE_FEED);
+    a.file(fixture, Some("Draft"));
+    let draft = a.db.folder_named("Draft").unwrap();
+    assert!(a.db.rename_folder(draft, "Final").unwrap());
+    a.db.container.save().unwrap();
+    wait(synchronize(&p, &a)).unwrap();
+    assert!(
+        server
+            .taggings()
+            .contains(&(FIXTURE_REMOTE_FEED, "Final".to_string()))
+    );
+    assert!(!server.taggings().iter().any(|(_, n)| n == "Draft"));
+    assert_eq!(a.folder(fixture).as_deref(), Some("Final"));
+}
+
+#[test]
+fn undoing_a_pending_move_queues_the_restored_folder() {
+    let server = Server::new();
+    let p = server.provider();
+    let a = Replica::new();
+    wait(synchronize(&p, &a)).unwrap();
+    let feed = daynews_db::feed_id(FIXTURE_FEED);
+    a.file(feed, Some("Kept"));
+    wait(synchronize(&p, &a)).unwrap();
+    let stack = a.db.container.undo(20);
+    a.file(feed, Some("Undone"));
+    day_reactive::flush_sync();
+    assert!(stack.undo());
+    a.db.sync_after_undo().unwrap();
+    a.db.container.save().unwrap();
+    assert_eq!(a.folder(feed).as_deref(), Some("Kept"));
+    day_model::with_author("sync", || wait(synchronize(&p, &a))).unwrap();
+    assert_eq!(
+        server.taggings(),
+        [(FIXTURE_REMOTE_FEED, "Kept".to_string())]
+    );
+    assert_eq!(a.folder(feed).as_deref(), Some("Kept"));
+}
+
+#[test]
+fn journal_rows_from_an_older_build_still_decode() {
+    use daynews_db::sync::Intent;
+    let a = Replica::new();
+    for (id, json) in [
+        (1, r#"{"SetRead":{"id":"1001","read":true}}"#),
+        (
+            2,
+            r#"{"Subscribe":{"url":"https://fixture.invalid/old.xml"}}"#,
+        ),
+        (3, r#"{"Unsubscribe":{"subscription":"101"}}"#),
+        (
+            4,
+            r#"{"Rename":{"subscription":"101","title":"Older build"}}"#,
+        ),
+    ] {
+        a.db.container.insert(Intent {
+            id,
+            account: a.account,
+            revision: id,
+            mutation: json.into(),
+            blocked: false,
+        });
+    }
+    let pending = a.db.sync_pending(a.account).unwrap();
+    assert_eq!(pending.len(), 4);
+    assert_eq!(
+        pending[3].mutation,
+        Mutation::Rename {
+            subscription: "101".into(),
+            title: "Older build".into(),
+        }
+    );
 }

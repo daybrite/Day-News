@@ -69,6 +69,20 @@ pub static INCOGNITO: Pref<bool> = Pref::new("news.browser.incognito", || false)
 // Feeds
 // ---------------------------------------------------------------------------------------------
 
+/// The default collection, where feeds in no collection live: its name, empty for the
+/// localized "Feeds".
+pub static DEFAULT_COLLECTION_NAME: Pref<String> =
+    Pref::new("news.collections.default.name", String::new);
+/// Its place among the collections' positions; by default after every collection.
+pub static DEFAULT_COLLECTION_POSITION: Pref<f64> =
+    Pref::new("news.collections.default.position", || {
+        DEFAULT_COLLECTION_LAST
+    });
+pub const DEFAULT_COLLECTION_LAST: f64 = 1e9;
+/// How it sorts its feeds: a `FeedSort` key, empty for Priority.
+pub static DEFAULT_COLLECTION_SORT: Pref<String> =
+    Pref::new("news.collections.default.sort", String::new);
+
 /// Days a read article stays before the launch-time prune removes it; 0 keeps everything.
 pub static RETENTION_DAYS: Pref<u32> =
     Pref::new("retention.days", || daynews_core::DEFAULT_RETENTION_DAYS);
@@ -334,6 +348,12 @@ fn feeds_group(pruned: Signal<usize>) -> Group {
     });
     Group::new("feeds", res::str::settings_feeds())
         .icon(Symbol::Refresh)
+        .section(
+            Section::new()
+                .title(res::str::settings_collections())
+                .row(rows::custom(crate::feed_list::collections_editor))
+                .footer(res::str::settings_collections_note()),
+        )
         .section(
             Section::new()
                 .row(

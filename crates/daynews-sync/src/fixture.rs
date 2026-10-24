@@ -1,6 +1,9 @@
 //! Synthetic fixtures implementing Feedbin's observed wire format, installed only by tests.
 //! Based on the trial round trip on 2026-10-18: 200 auth, subscription 201, paged entries,
-//! unread ID array and per-ID 200 acknowledgements. All content and credentials are synthetic.
+//! unread ID array and per-ID 200 acknowledgements. Taggings and tags follow the published
+//! feedbin-api documents (taggings.md, tags.md) rather than a recorded exchange: 201/302
+//! creation, 204/403 deletion, and tag rename/delete answering the remaining taggings. All
+//! content and credentials are synthetic.
 use day_part_http::{
     Client, Request,
     simulation::{Reply, Simulation},
@@ -25,6 +28,8 @@ struct State {
     entries: Vec<Value>,
     entries_version: u64,
     response_date: Option<String>,
+    taggings: Vec<Value>,
+    next_tagging: u64,
 }
 impl Default for Server {
     fn default() -> Self {
@@ -47,6 +52,8 @@ impl Server {
             entries: vec![entry(1001), entry(1002)],
             entries_version: 1,
             response_date: None,
+            taggings: vec![],
+            next_tagging: 1,
         }));
         let captured = state.clone();
         let auth = Request::get("https://api.feedbin.com/v2/authentication.json")
@@ -163,6 +170,64 @@ impl Server {
                         if let Some(date) = &s.response_date { reply = reply.header("Date", date); }
                         return Ok(reply);
                     }
+                    ("GET", "/v2/taggings.json") => (200, Value::Array(s.taggings.clone())),
+                    ("POST", "/v2/taggings.json") => {
+                        let (Some(feed), Some(name)) =
+                            (body["feed_id"].as_u64(), body["name"].as_str())
+                        else {
+                            return Ok(Reply::new(422, vec![]));
+                        };
+                        let (status, row) = match s
+                            .taggings
+                            .iter()
+                            .find(|t| t["feed_id"] == feed && t["name"] == name)
+                        {
+                            Some(old) => (302, old.clone()),
+                            None => {
+                                let row = json!({"id":s.next_tagging,"feed_id":feed,"name":name});
+                                s.next_tagging += 1;
+                                s.taggings.push(row.clone());
+                                (201, row)
+                            }
+                        };
+                        let location =
+                            format!("https://api.feedbin.com/v2/taggings/{}.json", row["id"]);
+                        return Ok(Reply::new(status, serde_json::to_vec(&row).unwrap())
+                            .header("Content-Type", "application/json")
+                            .header("Location", location));
+                    }
+                    ("POST", "/v2/tags.json") => {
+                        let (Some(old), Some(new)) =
+                            (body["old_name"].as_str(), body["new_name"].as_str())
+                        else {
+                            return Ok(Reply::new(422, vec![]));
+                        };
+                        for row in s.taggings.iter_mut().filter(|t| t["name"] == old) {
+                            row["name"] = json!(new);
+                        }
+                        (200, Value::Array(s.taggings.clone()))
+                    }
+                    ("DELETE", "/v2/tags.json") => {
+                        let Some(name) = body["name"].as_str() else {
+                            return Ok(Reply::new(422, vec![]));
+                        };
+                        s.taggings.retain(|t| t["name"] != name);
+                        (200, Value::Array(s.taggings.clone()))
+                    }
+                    ("DELETE", _) if path.starts_with("/v2/taggings/") => {
+                        let id = path
+                            .trim_start_matches("/v2/taggings/")
+                            .trim_end_matches(".json")
+                            .parse::<u64>()
+                            .ok();
+                        match s.taggings.iter().position(|t| t["id"].as_u64() == id) {
+                            Some(index) => {
+                                s.taggings.remove(index);
+                                return Ok(Reply::new(204, vec![]));
+                            }
+                            None => (403, Value::Null),
+                        }
+                    }
                     _ if path.starts_with("/v2/subscriptions/") => {
                         let id = path
                             .trim_start_matches("/v2/subscriptions/")
@@ -230,6 +295,31 @@ impl Server {
         } else {
             s.unread.insert(id);
         }
+    }
+    /// The service's taggings as (feed ID, tag name), in creation order.
+    pub fn taggings(&self) -> Vec<(u64, String)> {
+        self.state
+            .lock()
+            .unwrap()
+            .taggings
+            .iter()
+            .filter_map(|t| Some((t["feed_id"].as_u64()?, t["name"].as_str()?.to_string())))
+            .collect()
+    }
+    /// File a feed under a tag, as another client would.
+    pub fn tag(&self, feed: u64, name: &str) {
+        let mut s = self.state.lock().unwrap();
+        let id = s.next_tagging;
+        s.next_tagging += 1;
+        s.taggings.push(json!({"id":id,"feed_id":feed,"name":name}));
+    }
+    /// Remove every tagging of a feed, as another client would.
+    pub fn untag(&self, feed: u64) {
+        self.state
+            .lock()
+            .unwrap()
+            .taggings
+            .retain(|t| t["feed_id"] != feed);
     }
     pub fn reject(&self, id: u64) {
         self.state.lock().unwrap().reject.insert(id);

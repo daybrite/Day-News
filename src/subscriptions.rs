@@ -369,21 +369,6 @@ async fn select_subscribed_feed(feed: u64) {
     }
 }
 
-/// File ▸ New Folder: ask for a name, then create it.
-pub fn begin_new_folder() {
-    day::task(async {
-        if let Some(name) = prompt(crate::res::str::new_folder_title())
-            .placeholder(crate::res::str::new_folder_placeholder())
-            .await
-        {
-            let name = name.trim().to_string();
-            if !name.is_empty() {
-                daynews_core::create_folder(&name);
-            }
-        }
-    });
-}
-
 /// Import: pick an `.opml` file and merge its subscriptions in.
 pub fn import_opml() {
     day::task(async {

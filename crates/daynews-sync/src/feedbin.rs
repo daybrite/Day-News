@@ -162,6 +162,95 @@ impl Feedbin {
             _ => Err(Error::Unsupported),
         }
     }
+    /// `known` caches the account's taggings across one upload batch; a write that adds a
+    /// tagging or renames a tag drops it, so the next folder write reads a fresh list.
+    async fn folder_write(
+        &self,
+        mutation: &Mutation,
+        known: &mut Option<Vec<RemoteTagging>>,
+    ) -> Result<()> {
+        if let Mutation::SetFolder { feed, .. } = mutation {
+            numeric(feed)?;
+        }
+        let taggings = match known.take() {
+            Some(taggings) => taggings,
+            None => self.get("taggings.json").await?,
+        };
+        match mutation {
+            Mutation::SetFolder { feed, folder } => {
+                let feed = numeric(feed)?;
+                if let Some(name) = folder
+                    && !taggings
+                        .iter()
+                        .any(|t| t.feed_id == feed && t.name == *name)
+                {
+                    // 201 creates the tagging; 302 names one that already exists.
+                    self.request(
+                        Method::Post,
+                        "taggings.json",
+                        Some(json!({"feed_id":feed,"name":name})),
+                    )
+                    .await?;
+                    return self
+                        .drop_other_taggings(feed, name, taggings)
+                        .await
+                        .map(|_| ());
+                }
+                let kept = self
+                    .drop_other_taggings(feed, folder.as_deref().unwrap_or_default(), taggings)
+                    .await?;
+                *known = Some(kept);
+                Ok(())
+            }
+            Mutation::RenameFolder { old, new } => {
+                // A collection no feed uses on the service has no tag to rename.
+                if taggings.iter().any(|t| t.name == *old) {
+                    self.request(
+                        Method::Post,
+                        "tags.json",
+                        Some(json!({"old_name":old,"new_name":new})),
+                    )
+                    .await?;
+                } else {
+                    *known = Some(taggings);
+                }
+                Ok(())
+            }
+            Mutation::DeleteFolder { name } => {
+                if taggings.iter().any(|t| t.name == *name) {
+                    self.request(Method::Delete, "tags.json", Some(json!({"name":name})))
+                        .await?;
+                    *known = Some(taggings.into_iter().filter(|t| t.name != *name).collect());
+                } else {
+                    *known = Some(taggings);
+                }
+                Ok(())
+            }
+            _ => Err(Error::Unsupported),
+        }
+    }
+    /// Remove the feed's taggings other than `keep`; answer the account's remaining ones.
+    async fn drop_other_taggings(
+        &self,
+        feed: u64,
+        keep: &str,
+        taggings: Vec<RemoteTagging>,
+    ) -> Result<Vec<RemoteTagging>> {
+        let mut kept = Vec::with_capacity(taggings.len());
+        for tagging in taggings {
+            if tagging.feed_id == feed && tagging.name != keep {
+                self.request(
+                    Method::Delete,
+                    &format!("taggings/{}.json", tagging.id),
+                    None,
+                )
+                .await?;
+            } else {
+                kept.push(tagging);
+            }
+        }
+        Ok(kept)
+    }
 }
 fn numeric(id: &str) -> Result<u64> {
     id.parse().map_err(|_| Error::InvalidResponse)
@@ -188,6 +277,12 @@ impl From<RemoteSubscription> for Subscription {
             site_url: s.site_url,
         }
     }
+}
+#[derive(Deserialize)]
+struct RemoteTagging {
+    id: u64,
+    feed_id: u64,
+    name: String,
 }
 #[derive(Deserialize)]
 struct RemoteEntry {
@@ -415,6 +510,21 @@ impl Provider for Feedbin {
         }
         .boxed_local()
     }
+    fn taggings(&self) -> Call<'_, Option<Vec<Tagging>>> {
+        async {
+            Ok(Some(
+                self.get::<Vec<RemoteTagging>>("taggings.json")
+                    .await?
+                    .into_iter()
+                    .map(|t| Tagging {
+                        feed_id: t.feed_id.to_string(),
+                        name: t.name,
+                    })
+                    .collect(),
+            ))
+        }
+        .boxed_local()
+    }
     fn apply(&self, operations: Vec<Operation>) -> Call<'_, Vec<Outcome>> {
         async move {
             let mut outcomes = Vec::new();
@@ -467,11 +577,25 @@ impl Provider for Feedbin {
                     }
                 }
             }
+            let mut taggings = None;
             for op in operations
                 .iter()
                 .filter(|o| !matches!(o.mutation, Mutation::SetRead(_)))
             {
-                outcomes.push(match self.subscription_write(&op.mutation).await {
+                let result = match &op.mutation {
+                    Mutation::SetFolder { .. }
+                    | Mutation::RenameFolder { .. }
+                    | Mutation::DeleteFolder { .. } => self
+                        .folder_write(&op.mutation, &mut taggings)
+                        .await
+                        .map(|()| None),
+                    _ => {
+                        // Unsubscribing can take a feed's taggings with it.
+                        taggings = None;
+                        self.subscription_write(&op.mutation).await
+                    }
+                };
+                outcomes.push(match result {
                     Ok(subscription) => Outcome::Applied {
                         revision: op.revision,
                         subscription,

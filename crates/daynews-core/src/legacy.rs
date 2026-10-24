@@ -22,7 +22,7 @@ use daynews_db::{
 };
 use futures_util::{StreamExt, stream};
 
-pub use daynews_db::{Scope as TimelineScope, article_id, feed_id, folder_id, tag_id};
+pub use daynews_db::{FeedSort, Scope as TimelineScope, article_id, feed_id, folder_id, tag_id};
 
 /// How many articles the timeline shows at once. The query is windowed (`LIMIT`), so this caps
 /// what the UI materializes, not what the store holds.
@@ -47,12 +47,22 @@ pub struct FeedRow {
     pub feed_url: String,
     pub icon_url: Option<String>,
     pub has_fetched: bool,
+    /// Stored articles, read or not.
+    pub total: i64,
+    /// The newest article's publication time.
+    pub newest: Option<i64>,
+    /// Place in its collection's manual order.
+    pub collection_position: f64,
 }
 
+/// A collection: the store's folder, with how the sidebar orders its feeds.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FolderRow {
     pub id: u64,
     pub name: String,
+    pub sort: FeedSort,
+    /// Place in the sidebar's collection order.
+    pub position: f64,
 }
 
 /// A sidebar tag row with its article count.
@@ -478,12 +488,15 @@ fn build_feed_rows(q: &Query<daynews_db::Feed>) -> Vec<FeedRow> {
     let keys: Vec<u64> = ids.iter().map(|i| i.handle()).collect();
     let _ = db.ensure_resident::<daynews_db::Feed>(&keys);
     let feeds = db.cache::<daynews_db::Feed>();
+    // Totals and dates for the sidebar's sorts; the unread badges below stay live queries.
+    let stats = with_db(|d| d.feed_stats().unwrap_or_default()).unwrap_or_default();
     keys.iter()
         .filter_map(|id| {
             let f = feeds.elem(*id);
             if !f.exists() {
                 return None;
             }
+            let figures = stats.get(id).copied().unwrap_or_default();
             let unread = store_with(|s| {
                 s.feed_counts
                     .borrow_mut()
@@ -505,6 +518,9 @@ fn build_feed_rows(q: &Query<daynews_db::Feed>) -> Vec<FeedRow> {
                 feed_url: f.feed_url().with(|v| v.cloned().unwrap_or_default()),
                 icon_url: f.icon_url().with(|v| v.cloned().flatten()),
                 has_fetched: f.last_fetched_at().with(|v| v.copied().flatten()).is_some(),
+                total: figures.total,
+                newest: figures.newest,
+                collection_position: f.collection_position().with(|v| v.copied().unwrap_or(0.0)),
             })
         })
         .collect()
@@ -523,6 +539,8 @@ fn build_folder_rows(q: &Query<daynews_db::Folder>) -> Vec<FolderRow> {
             f.exists().then(|| FolderRow {
                 id: *id,
                 name: f.name().with(|n| n.cloned().unwrap_or_default()),
+                sort: FeedSort::from_key(&f.sort().with(|s| s.cloned().unwrap_or_default())),
+                position: f.position().with(|p| p.copied().unwrap_or(0.0)),
             })
         })
         .collect()
@@ -804,11 +822,38 @@ pub fn unsubscribe(feed: u64) {
     }
 }
 
-/// Create a folder (idempotent by name) and report it.
-pub fn create_folder(name: &str) -> Option<u64> {
-    let id = with_db(|d| d.add_folder(name))?;
-    state().status.set(format!("Created folder “{name}”"));
-    Some(id)
+/// Create a collection (or find the one with this name), optionally moving `feed` into it.
+pub fn create_folder(name: &str, feed: Option<u64>) {
+    let name = name.trim();
+    if name.is_empty() {
+        return;
+    }
+    with_db(|d| {
+        let id = d.add_folder(name);
+        if let Some(feed) = feed {
+            let _ = d.set_feed_folder(feed, Some(id), None);
+        }
+    });
+}
+/// Rename a collection; an empty or already-used name is refused.
+pub fn rename_folder(folder: u64, name: &str) {
+    with_db(|d| d.rename_folder(folder, name));
+}
+/// Delete a collection. Its feeds stay subscribed, outside any collection.
+pub fn delete_folder(folder: u64) {
+    with_db(|d| d.delete_folder(folder));
+}
+/// Write the sidebar's collection order: each collection's position.
+pub fn set_folder_positions(positions: Vec<(u64, f64)>) {
+    with_db(|d| d.set_folder_positions(&positions));
+}
+/// Choose how the sidebar orders a collection's feeds.
+pub fn set_folder_sort(folder: u64, sort: FeedSort) {
+    with_db(|d| d.set_folder_sort(folder, sort));
+}
+/// Put a feed in a collection (`None`: in none), before `before` in its manual order or last.
+pub fn set_feed_folder(feed: u64, folder: Option<u64>, before: Option<u64>) {
+    with_db(|d| d.set_feed_folder(feed, folder, before));
 }
 
 pub fn rename_feed(feed: u64, title: &str) {

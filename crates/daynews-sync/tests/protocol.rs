@@ -186,3 +186,164 @@ fn aborting_during_a_delayed_http_response_does_not_wait_for_the_network_timeout
     clock.advance(std::time::Duration::from_secs(60));
     assert_eq!(sim.requests().len(), 1);
 }
+
+fn op(revision: u64, mutation: Mutation) -> Operation {
+    Operation { revision, mutation }
+}
+#[test]
+fn folder_writes_follow_the_tagging_api() {
+    let s = Server::new();
+    let p = s.provider();
+    s.tag(11, "A");
+    s.tag(11, "B");
+    s.tag(12, "B");
+    let outcomes = wait(p.apply(vec![op(
+        1,
+        Mutation::SetFolder {
+            feed: "11".into(),
+            folder: Some("C".into()),
+        },
+    )]))
+    .unwrap();
+    assert!(matches!(
+        outcomes[..],
+        [Outcome::Applied { revision: 1, .. }]
+    ));
+    assert_eq!(s.taggings(), [(12, "B".into()), (11, "C".into())]);
+    // Already filed there: only the other taggings go, with no new POST.
+    s.tag(11, "D");
+    let posts = s
+        .simulation
+        .request_count("POST", "https://api.feedbin.com/v2/taggings.json");
+    wait(p.apply(vec![op(
+        2,
+        Mutation::SetFolder {
+            feed: "11".into(),
+            folder: Some("C".into()),
+        },
+    )]))
+    .unwrap();
+    assert_eq!(
+        s.simulation
+            .request_count("POST", "https://api.feedbin.com/v2/taggings.json"),
+        posts
+    );
+    assert_eq!(s.taggings(), [(12, "B".into()), (11, "C".into())]);
+    let outcomes = wait(p.apply(vec![
+        op(
+            3,
+            Mutation::RenameFolder {
+                old: "B".into(),
+                new: "E".into(),
+            },
+        ),
+        op(
+            4,
+            Mutation::SetFolder {
+                feed: "11".into(),
+                folder: None,
+            },
+        ),
+    ]))
+    .unwrap();
+    assert!(
+        outcomes
+            .iter()
+            .all(|o| matches!(o, Outcome::Applied { .. }))
+    );
+    assert_eq!(s.taggings(), [(12, "E".into())]);
+    wait(p.apply(vec![op(5, Mutation::DeleteFolder { name: "E".into() })])).unwrap();
+    assert!(s.taggings().is_empty());
+    assert!(matches!(wait(p.subscriptions()), Ok(Changes::Snapshot(v)) if v.len() == 1));
+    let deletes = s
+        .simulation
+        .requests()
+        .iter()
+        .filter(|r| r.method == "DELETE" && r.url == "https://api.feedbin.com/v2/tags.json")
+        .count();
+    assert_eq!(deletes, 1);
+}
+#[test]
+fn folder_edits_on_tags_the_service_lacks_send_no_writes() {
+    let s = Server::new();
+    let p = s.provider();
+    let outcomes = wait(p.apply(vec![
+        op(
+            1,
+            Mutation::RenameFolder {
+                old: "Local".into(),
+                new: "Other".into(),
+            },
+        ),
+        op(
+            2,
+            Mutation::DeleteFolder {
+                name: "Other".into(),
+            },
+        ),
+        op(
+            3,
+            Mutation::SetFolder {
+                feed: "11".into(),
+                folder: None,
+            },
+        ),
+    ]))
+    .unwrap();
+    assert!(
+        outcomes
+            .iter()
+            .all(|o| matches!(o, Outcome::Applied { .. }))
+    );
+    assert!(s.simulation.requests().iter().all(|r| r.method == "GET"));
+    // One listing serves the whole batch while nothing changes it.
+    assert_eq!(s.simulation.requests().len(), 1);
+}
+#[test]
+fn non_numeric_tagging_feed_is_refused_before_any_request() {
+    let s = Server::new();
+    let p = s.provider();
+    s.tag(11, "A");
+    let outcomes = wait(p.apply(vec![op(
+        1,
+        Mutation::SetFolder {
+            feed: "../11".into(),
+            folder: None,
+        },
+    )]))
+    .unwrap();
+    assert!(matches!(
+        outcomes[..],
+        [Outcome::Failed {
+            error: Error::InvalidResponse,
+            ..
+        }]
+    ));
+    assert_eq!(s.taggings(), [(11, "A".into())]);
+    assert!(s.simulation.requests().is_empty());
+}
+#[test]
+fn taggings_download_as_feed_and_name_pairs() {
+    let s = Server::new();
+    s.tag(11, "News");
+    let taggings = wait(s.provider().taggings()).unwrap().unwrap();
+    assert_eq!(
+        taggings,
+        [Tagging {
+            feed_id: "11".into(),
+            name: "News".into(),
+        }]
+    );
+}
+#[test]
+fn journal_mutations_from_an_older_build_still_decode() {
+    for json in [
+        r#"{"SetRead":{"id":"1","read":false}}"#,
+        r#"{"Subscribe":{"url":"https://fixture.invalid/a"}}"#,
+        r#"{"Unsubscribe":{"subscription":"7"}}"#,
+        r#"{"Rename":{"subscription":"7","title":"T"}}"#,
+    ] {
+        let mutation: Mutation = serde_json::from_str(json).unwrap();
+        assert_eq!(serde_json::to_string(&mutation).unwrap(), json);
+    }
+}

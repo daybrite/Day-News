@@ -32,19 +32,29 @@ feeds_count =
 nav_today = Today
 nav_smart_feeds = Smart Feeds
 nav_feeds_section = Feeds
-nav_feeds_section_counts = Feeds · { $unread }/{ $total } feeds
+# The feeds in no collection, and a collection: its name and how many feeds it holds.
+nav_feeds_section_total = Feeds ({ $count })
+nav_collection_section = { $name } ({ $count })
 menu_file = File
 menu_go = Go
 menu_new_feed = New Feed…
-menu_new_folder = New Folder…
+menu_new_collection = New Collection…
 menu_refresh = Refresh
 menu_import = Import Subscriptions…
 menu_export = Export Subscriptions…
 menu_next_unread = Next Unread
 menu_feed = Feed
 menu_refresh_feed = Refresh Feed
-new_folder_title = New Folder
-new_folder_placeholder = Folder name
+new_collection_title = New Collection
+new_collection_placeholder = Collection name
+collection_menu = Collection
+collection_none = None
+collection_new = New Collection…
+rename_collection_title = Rename Collection
+delete_collection_title = Delete “{ $name }”?
+delete_collection_message = Its feeds stay subscribed, outside any collection.
+collection_name_taken = A collection named “{ $name }” already exists.
+collection_ok = OK
 unread_count = { $n ->
     [0] No unread
     [one] { $n } unread
@@ -148,6 +158,19 @@ settings_refresh_automatic_note = Automatic checks each feed based on how often 
 group_by_feeds = Group by Feeds
 move_feed_up = Move Feed Up
 move_feed_down = Move Feed Down
+settings_collections = Collections
+settings_collections_note = Drag collections to set their order in the sidebar. Choose how each one sorts its feeds; with Manual, drag feeds in the sidebar to order them. The default collection holds feeds that are in no other collection: rename it or move it, but it can't be deleted. Deleting another collection moves its feeds there.
+collection_default = Default
+collection_add = New Collection…
+collection_rename = Rename…
+collection_delete = Delete
+sort_feeds = Sort Feeds
+sort_priority = Priority
+sort_recently_updated = Recently Updated
+sort_name = Name
+sort_unread_count = Unread Count
+sort_total_count = Total Count
+sort_manual = Manual
 feed_order_note = Reorder feeds to set refresh priority and article group order. Drag feeds or use Move Feed Up and Move Feed Down.
 
 # Dashboards. Numbers, dates, chart axes and countdown digits follow the active locale.

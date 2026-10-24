@@ -27,9 +27,9 @@ pub fn install() {
                     menu_item(res::str::menu_new_feed())
                         .key("n")
                         .action(crate::subscriptions::begin_new_feed),
-                    menu_item(res::str::menu_new_folder())
+                    menu_item(res::str::menu_new_collection())
                         .shortcut(Shortcut::primary("n").shift())
-                        .action(crate::subscriptions::begin_new_folder),
+                        .action(|| crate::feed_list::begin_new_collection(None, || {})),
                     // No platform has a native "new window" nav, so this lowers to the
                     // builder registered with `register_new_window` (see `root`).
                     menu_role(MenuRole::NewWindow),
@@ -72,6 +72,7 @@ pub fn install() {
                     crate::commands::unread_feeds_only().menu_item(),
                     crate::commands::group_by_feeds().menu_item(),
                     menu_separator(),
+                    selected_feed_collection_menu(),
                     crate::commands::preview_site().menu_item(),
                     menu_item(res::str::menu_refresh_feed())
                         .action(|| with_selected_feed(daynews_core::refresh_feed)),
@@ -173,9 +174,30 @@ fn with_selected_feed(f: impl FnOnce(u64)) {
     }
 }
 
+/// Feed ▸ Collection: the selected feed's Collection menu, the same one its sidebar row has.
+/// Disabled while no feed is selected.
+fn selected_feed_collection_menu() -> MenuEntry {
+    let feed = match daynews_core::try_scene().map(|sc| sc.scope.get()) {
+        Some(Scope::Feed(feed)) => Some(feed),
+        _ => None,
+    };
+    let folder = feed.and_then(|feed| {
+        daynews_core::state().feeds.with(|feeds| {
+            feeds
+                .iter()
+                .find(|f| f.id == feed)
+                .and_then(|f| f.folder_id)
+        })
+    });
+    match feed {
+        Some(feed) => crate::feed_list::collection_menu(feed, folder),
+        None => sub_menu(res::str::collection_menu(), vec![]).enabled(false),
+    }
+}
+
 /// A sidebar feed row's context menu: feed commands aimed at the row that was
 /// right-clicked or long-pressed rather than at the selection (docs/menus.md).
-pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
+pub fn feed_context_menu(feed: u64, unread: i64, collection: Option<u64>) -> Vec<MenuEntry> {
     vec![
         menu_item(res::str::dashboard_show())
             .id(day::id!(feed_dashboard))
@@ -189,11 +211,14 @@ pub fn feed_context_menu(feed: u64, unread: i64) -> Vec<MenuEntry> {
             .enabled(unread > 0)
             .action(move || daynews_core::mark_feed_read(feed, true)),
         menu_separator(),
+        crate::feed_list::collection_menu(feed, collection),
         menu_item(res::str::move_feed_up())
             .id(day::id!(feed_move_up))
+            .enabled(crate::feed_list::can_move(feed, -1))
             .action(move || crate::feed_list::move_relative(feed, -1)),
         menu_item(res::str::move_feed_down())
             .id(day::id!(feed_move_down))
+            .enabled(crate::feed_list::can_move(feed, 1))
             .action(move || crate::feed_list::move_relative(feed, 1)),
         menu_item(res::str::unsubscribe()).action(move || daynews_core::unsubscribe(feed)),
     ]

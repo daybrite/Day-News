@@ -42,10 +42,70 @@ pub struct Folder {
     pub name: String,
     /// Sidebar order among folders (fractional keying, like every ordered surface).
     pub position: f64,
-    /// Deleting a folder unsubscribes its feeds, and their articles, bodies and tag
-    /// memberships go with them: one delete, the whole subtree, one undo unit.
+    /// How the sidebar orders this folder's feeds: a [`FeedSort::key`], empty for
+    /// [`FeedSort::Priority`].
+    pub sort: String,
+    /// The schema still cascades, but [`Db::delete_folder`] releases the feeds first: deleting
+    /// a collection leaves its feeds subscribed, outside any collection.
     #[model(relation(target = Feed, inverse = "folder", delete = "cascade", ordered = "position"))]
     pub feeds: Many<Feed>,
+}
+
+/// How a folder's feeds are ordered in the sidebar (Settings ▸ Feeds ▸ Sort Feeds).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum FeedSort {
+    /// The global feed order: refresh priority and the timeline's feed-group order.
+    #[default]
+    Priority,
+    /// Newest article first.
+    RecentlyUpdated,
+    Name,
+    /// Most unread articles first.
+    UnreadCount,
+    /// Most stored articles first.
+    TotalCount,
+    /// The folder's own order, set by dragging ([`Feed::collection_position`]).
+    Manual,
+}
+
+impl FeedSort {
+    pub const ALL: [FeedSort; 6] = [
+        FeedSort::Priority,
+        FeedSort::RecentlyUpdated,
+        FeedSort::Name,
+        FeedSort::UnreadCount,
+        FeedSort::TotalCount,
+        FeedSort::Manual,
+    ];
+
+    /// The stored spelling; Priority is the empty default.
+    pub fn key(self) -> &'static str {
+        match self {
+            FeedSort::Priority => "",
+            FeedSort::RecentlyUpdated => "updated",
+            FeedSort::Name => "name",
+            FeedSort::UnreadCount => "unread",
+            FeedSort::TotalCount => "total",
+            FeedSort::Manual => "manual",
+        }
+    }
+
+    /// The sort a stored key names; anything unknown reads as Priority.
+    pub fn from_key(key: &str) -> FeedSort {
+        FeedSort::ALL
+            .into_iter()
+            .find(|sort| sort.key() == key)
+            .unwrap_or_default()
+    }
+}
+
+/// Per-feed article statistics for the sidebar's badges and sorts.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct FeedStats {
+    pub unread: i64,
+    pub total: i64,
+    /// The newest article's publication time.
+    pub newest: Option<i64>,
 }
 
 /// Durable metadata for revalidating one successfully imported representation.
@@ -89,8 +149,11 @@ pub struct Feed {
     #[model(index)]
     pub next_poll_at: Option<i64>,
     pub poll_failures: u32,
-    /// Order within the folder (or among top-level feeds).
+    /// The global feed order: refresh priority and the timeline's feed-group order.
     pub position: f64,
+    /// Order within the folder when it sorts [`FeedSort::Manual`]; ties fall back to
+    /// `position`.
+    pub collection_position: f64,
     #[model(relation(target = Article, inverse = "feed", delete = "cascade"))]
     pub articles: Many<Article>,
 }
@@ -404,19 +467,208 @@ impl Db {
         id
     }
 
-    /// Create a folder (idempotent by name: the id is the name's hash).
+    /// Create a folder, or answer the one already named `name`. The id is the name's hash,
+    /// salted when a renamed folder still holds that hash.
     pub fn add_folder(&self, name: &str) -> u64 {
-        let id = folder_id(name);
-        if self.container.get::<Folder>(id).is_none() {
-            let position = self.next_position::<Folder>(Folder::position());
-            self.container.insert(Folder {
-                id,
-                name: name.to_string(),
-                position,
-                ..Default::default()
-            });
+        if let Some(id) = self.folder_named(name) {
+            return id;
         }
+        let mut id = folder_id(name);
+        let mut salt = 0u32;
+        while self.container.get::<Folder>(id).is_some() {
+            salt += 1;
+            id = ident(&["folder", name, &salt.to_string()]);
+        }
+        let position = self.next_position::<Folder>(Folder::position());
+        self.container.insert(Folder {
+            id,
+            name: name.to_string(),
+            position,
+            ..Default::default()
+        });
         id
+    }
+
+    /// The folder called `name`, if any.
+    pub fn folder_named(&self, name: &str) -> Option<u64> {
+        self.container
+            .query::<Folder>()
+            .filter(Folder::name().eq(name.to_string()))
+            .limit(1)
+            .live()
+            .first()
+            .map(|id| id.handle())
+    }
+
+    /// Rename a folder. Refuses an empty name and one another folder already has.
+    pub fn rename_folder(&self, id: u64, name: &str) -> Result<bool, DbError> {
+        let name = name.trim();
+        let Some(folder) = self.container.get::<Folder>(id) else {
+            return Ok(false);
+        };
+        if name.is_empty() || self.folder_named(name).is_some_and(|other| other != id) {
+            return Ok(false);
+        }
+        let old = folder.name().peek();
+        if old != name {
+            folder.name().write(name.to_string());
+            self.sync_queue_folder_rename(&old, name)?;
+        }
+        Ok(true)
+    }
+
+    /// Delete a folder. Its feeds stay subscribed and leave the folder first, so the
+    /// relation's cascade finds nothing to take with it.
+    pub fn delete_folder(&self, id: u64) -> Result<(), DbError> {
+        let Some(folder) = self.container.get::<Folder>(id) else {
+            return Ok(());
+        };
+        let name = folder.name().peek();
+        for feed in self.folder_feeds(Some(id))? {
+            if let Some(row) = self.container.get::<Feed>(feed) {
+                row.folder().write(None);
+            }
+        }
+        self.container.delete::<Folder>(id)?;
+        self.sync_queue_folder_delete(&name)?;
+        Ok(())
+    }
+
+    /// Move a folder to `to` in the sidebar's folder order.
+    pub fn move_folder(&self, id: u64, to: usize) -> Result<(), DbError> {
+        let mut folders: Vec<u64> = self
+            .container
+            .query::<Folder>()
+            .sort(Folder::position().asc())
+            .sort(Folder::name().asc())
+            .live()
+            .try_collect()?
+            .into_iter()
+            .map(|folder| folder.id)
+            .collect();
+        let Some(from) = folders.iter().position(|folder| *folder == id) else {
+            return Ok(());
+        };
+        folders.remove(from);
+        folders.insert(to.min(folders.len()), id);
+        for (index, folder) in folders.into_iter().enumerate() {
+            if let Some(row) = self.container.get::<Folder>(folder)
+                && row.position().peek() != index as f64
+            {
+                row.position().write(index as f64);
+            }
+        }
+        Ok(())
+    }
+
+    /// Choose how the sidebar orders a folder's feeds.
+    pub fn set_folder_sort(&self, id: u64, sort: FeedSort) {
+        if let Some(folder) = self.container.get::<Folder>(id)
+            && folder.sort().peek() != sort.key()
+        {
+            folder.sort().write(sort.key().to_string());
+        }
+    }
+
+    /// Put a feed in a folder (`None`: in none), before `before` in that place's manual order
+    /// or at its end. Within its own folder this is a manual reorder; the feeds in no folder
+    /// keep a manual order of their own.
+    pub fn set_feed_folder(
+        &self,
+        feed: u64,
+        folder: Option<u64>,
+        before: Option<u64>,
+    ) -> Result<(), DbError> {
+        let Some(row) = self.container.get::<Feed>(feed) else {
+            return Ok(());
+        };
+        if folder.is_some_and(|id| self.container.get::<Folder>(id).is_none()) {
+            return Ok(());
+        }
+        let current = row
+            .folder()
+            .peek()
+            .and_then(|f| f.id())
+            .map(|id| id.handle());
+        if current != folder {
+            row.folder().write(folder.map(One::to));
+            let name = folder
+                .and_then(|id| self.container.get::<Folder>(id))
+                .map(|f| f.name().peek());
+            self.sync_queue_feed_folder(feed, name.as_deref())?;
+        }
+        // Renumber the manual order with the feed in its new place.
+        let mut order: Vec<u64> = self
+            .folder_feeds(folder)?
+            .into_iter()
+            .filter(|id| *id != feed)
+            .collect();
+        let at = before
+            .and_then(|b| order.iter().position(|id| *id == b))
+            .unwrap_or(order.len());
+        order.insert(at, feed);
+        for (index, id) in order.into_iter().enumerate() {
+            if let Some(row) = self.container.get::<Feed>(id)
+                && row.collection_position().peek() != index as f64
+            {
+                row.collection_position().write(index as f64);
+            }
+        }
+        Ok(())
+    }
+
+    /// A folder's feeds (`None`: the subscribed feeds in no folder), in its manual order.
+    fn folder_feeds(&self, folder: Option<u64>) -> Result<Vec<u64>, DbError> {
+        let query = self.container.query::<Feed>();
+        let query = match folder {
+            Some(folder) => query.filter(Feed::folder().is(folder)),
+            None => query.filter(Feed::unsubscribed().eq(false)),
+        };
+        Ok(query
+            .sort(Feed::collection_position().asc())
+            .sort(Feed::position().asc())
+            .live()
+            .try_collect()?
+            .into_iter()
+            .filter(|feed| folder.is_some() || feed.folder.is_none())
+            .map(|feed| feed.id)
+            .collect())
+    }
+
+    /// Write folder positions in one go: the sidebar's collection order, with gaps where the
+    /// app places something of its own (the feeds in no folder).
+    pub fn set_folder_positions(&self, positions: &[(u64, f64)]) {
+        for (id, position) in positions {
+            if let Some(row) = self.container.get::<Folder>(*id)
+                && row.position().peek() != *position
+            {
+                row.position().write(*position);
+            }
+        }
+    }
+
+    /// Unread, total and newest-article figures for every feed with articles.
+    pub fn feed_stats(&self) -> Result<std::collections::HashMap<u64, FeedStats>, DbError> {
+        let mut stats = std::collections::HashMap::new();
+        self.container.try_with_connection(|conn| {
+            conn.query(
+                "SELECT feed, SUM(is_read = 0), COUNT(*), MAX(published_at) FROM articles GROUP BY feed",
+                &[],
+                &mut |row| {
+                    if let Ok(id) = row.get(0).as_int() {
+                        stats.insert(
+                            id as u64,
+                            FeedStats {
+                                unread: row.get(1).as_int().unwrap_or(0),
+                                total: row.get(2).as_int().unwrap_or(0),
+                                newest: row.get(3).as_int().ok(),
+                            },
+                        );
+                    }
+                },
+            )
+        })?;
+        Ok(stats)
     }
 
     /// Create a tag (idempotent by name).
@@ -655,11 +907,6 @@ impl Db {
             self.container.delete::<Feed>(id)?;
         }
         Ok(())
-    }
-
-    /// Delete a folder and its feeds (their articles cascade too): the deep cascade.
-    pub fn delete_folder(&self, id: u64) {
-        let _ = self.container.delete::<Folder>(id);
     }
 
     // ---- articles -------------------------------------------------------------------------

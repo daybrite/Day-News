@@ -803,6 +803,15 @@ pub fn dashboard() -> impl Piece {
         .background(move || accent(scope.get()).with_alpha(0.1))
         .corner_radius(18.0),
         hero_text,
+        // A feed's collection, changed in place. Keyed on the collection count as well: the
+        // picker's separators sit around the collections.
+        keyed(
+            move || match scope.get() {
+                Scope::Feed(id) => Some((id, daynews_core::state().folders.with(Vec::len))),
+                _ => None,
+            },
+            |&(feed, _)| crate::feed_list::collection_picker(feed),
+        ),
     ))
     .spacing(14.0)
     .align(VAlign::Center)

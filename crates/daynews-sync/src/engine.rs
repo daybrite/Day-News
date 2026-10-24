@@ -16,6 +16,8 @@ pub trait Storage {
     fn pending(&self) -> Call<'_, Vec<Operation>>;
     fn outcomes(&self, outcomes: Vec<Outcome>) -> Call<'_, ()>;
     fn subscriptions(&self, changes: Changes<Subscription>) -> Call<'_, ()>;
+    /// A complete tagging list for the account's linked feeds, applied after subscriptions.
+    fn taggings(&self, taggings: Vec<Tagging>) -> Call<'_, ()>;
     fn missing(&self, ids: Vec<String>) -> Call<'_, Vec<String>>;
     fn entries(&self, entries: Vec<Entry>, state: ReadChanges) -> Call<'_, Imported>;
     fn reading(&self, state: ReadChanges) -> Call<'_, ()>;
@@ -101,6 +103,10 @@ pub async fn synchronize_with_history(
     };
     progress.subscriptions = titles.len();
     store.subscriptions(subscriptions).await?;
+    // Collections refer to feeds, so they follow the subscriptions they file.
+    if let Some(taggings) = provider.taggings().await? {
+        store.taggings(taggings).await?;
+    }
     observe(progress.clone())?;
     progress.phase = Phase::ReadState;
     observe(progress.clone())?;

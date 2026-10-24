@@ -737,6 +737,9 @@ impl Storage for WorkerStorage {
         }
         .boxed_local()
     }
+    fn taggings(&self, t: Vec<Tagging>) -> Call<'_, ()> {
+        async move { self.write(move |db, a| db.sync_apply_taggings(a, t)).await }.boxed_local()
+    }
     fn missing(&self, ids: Vec<String>) -> Call<'_, Vec<String>> {
         async move { self.write(move |db, a| Ok(db.sync_missing(a, ids))).await }.boxed_local()
     }

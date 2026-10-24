@@ -84,6 +84,11 @@ fn scope_for_key(key: &str) -> Option<Scope> {
     }
 }
 
+/// The feed a sidebar key names.
+fn feed_of_key(key: &str) -> Option<u64> {
+    key.strip_prefix("feed:")?.parse().ok()
+}
+
 /// A sidebar count, blank when there is nothing unread; an empty badge draws nothing.
 fn count(n: i64) -> String {
     if n > 0 {
@@ -203,28 +208,17 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         })
         .title(res::str::app_title())
         .refreshable(commands::refreshing, commands::refresh_now)
-        .reorder_items(
-            |key: &Option<String>| key.as_deref().is_some_and(|k| k.starts_with("feed:")),
-            |from, to| {
-                let Some(feed) = from
-                    .as_deref()
-                    .and_then(|k| k.strip_prefix("feed:"))
-                    .and_then(|k| k.parse::<u64>().ok())
-                else {
-                    return;
-                };
-                let Some(target) = to
-                    .as_deref()
-                    .and_then(|k| k.strip_prefix("feed:"))
-                    .and_then(|k| k.parse::<u64>().ok())
-                else {
-                    return;
-                };
-                if let Some(index) = daynews_core::state()
-                    .feeds
-                    .with_untracked(|rows| rows.iter().position(|f| f.id == target))
-                {
-                    daynews_core::move_feed(feed, index);
+        // Feeds drag between collections, and within the sections whose order the user sets
+        // (feed_list::drag); a drop joins the collection it lands in.
+        .regroup_items(
+            |key: &Option<String>| match key.as_deref().and_then(feed_of_key) {
+                Some(feed) => feed_list::drag(feed),
+                None => NavDrag::Fixed,
+            },
+            |drop: NavDrop<Option<String>>| {
+                if let Some(feed) = drop.moved.as_deref().and_then(feed_of_key) {
+                    let before = drop.before.flatten().as_deref().and_then(feed_of_key);
+                    feed_list::dropped(feed, drop.section.as_deref(), before);
                 }
             },
         )
@@ -288,44 +282,56 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
                     .page(reader_dest),
             ),
         )
-        // One row per subscription, re-derived whenever the feed list or its counts change.
-        .section_id(
-            "feeds",
-            feed_list::section_title,
-            nav_items(
-                move || {
-                    let unread_only = feed_list::FeedList::app().unread_only.get();
-                    let icons = feed_icons::paths().get();
-                    st.feeds
-                        .get()
-                        .into_iter()
-                        .filter(|feed| feed_list::visible(feed.unread, unread_only))
-                        .map(|feed| {
-                            let icon = icons.get(&feed.id).cloned();
-                            (feed, icon)
-                        })
-                        .collect::<Vec<_>>()
-                },
-                move |(f, icon): &(daynews_core::FeedRow, Option<String>)| {
-                    let name = if f.has_error {
-                        format!("⚠ {}", f.title)
-                    } else {
-                        f.title.clone()
-                    };
-                    let row = item(format!("feed:{}", f.id), name);
-                    let row = if let Some(path) = icon {
-                        row.icon(path.clone())
-                    } else {
-                        row.icon(res::images::sidebar_feed)
-                            .icon_tint(Color::hex(0x30B0C7))
-                    };
-                    menu_scope.enter(|| {
-                        row.badge(count(f.unread))
-                            .context_menu(menus::feed_context_menu(f.id, f.unread))
+        // One section per collection, then the feeds in no collection, re-derived whenever the
+        // feeds, their counts or the collections change. Each section heads its first row.
+        .items(nav_items(
+            move || {
+                let unread_only = feed_list::FeedList::app().unread_only.get();
+                let icons = feed_icons::paths().get();
+                feed_list::current_groups()
+                    .into_iter()
+                    .flat_map(|group| {
+                        let header = (group.section_id(), group.title());
+                        group
+                            .feeds
+                            .into_iter()
+                            .filter(|feed| feed_list::visible(feed.unread, unread_only))
+                            .enumerate()
+                            .map(|(i, feed)| {
+                                let icon = icons.get(&feed.id).cloned();
+                                (feed, icon, (i == 0).then(|| header.clone()))
+                            })
+                            .collect::<Vec<_>>()
                     })
-                },
-            ),
-        )
+                    .collect::<Vec<_>>()
+            },
+            move |(f, icon, header): &(
+                daynews_core::FeedRow,
+                Option<String>,
+                Option<(String, String)>,
+            )| {
+                let name = if f.has_error {
+                    format!("⚠ {}", f.title)
+                } else {
+                    f.title.clone()
+                };
+                let row = item(format!("feed:{}", f.id), name);
+                let row = if let Some(path) = icon {
+                    row.icon(path.clone())
+                } else {
+                    row.icon(res::images::sidebar_feed)
+                        .icon_tint(Color::hex(0x30B0C7))
+                };
+                let row = match header {
+                    Some((id, title)) => row.section_id(id.clone(), title.clone()),
+                    None => row,
+                };
+                menu_scope.enter(|| {
+                    row.badge(count(f.unread))
+                        .context_menu(menus::feed_context_menu(f.id, f.unread, f.folder_id))
+                })
+            },
+        ))
         // User tags, with their article counts; selecting one scopes the timeline to it.
         .section(
             res::str::nav_tags_section(),
@@ -417,9 +423,18 @@ mod navigation_tests {
                     feed_url: String::new(),
                     icon_url: None,
                     has_fetched: true,
+                    total: 0,
+                    newest: None,
+                    collection_position: 0.0,
                 })
                 .collect(),
         );
+        let title = || {
+            feed_list::current_groups()
+                .last()
+                .map(|group| group.title().replace(['\u{2068}', '\u{2069}'], ""))
+                .unwrap_or_default()
+        };
         for (locale, expected) in [
             ("en-US", "72,811"),
             ("fr-FR", "72\u{202f}811"),
@@ -428,25 +443,11 @@ mod navigation_tests {
             day::locale().set(locale.to_string());
             assert_eq!(count(72_811), expected);
             assert_eq!(count(0), "");
-            let expected_counts = format!(
-                "{}/{}",
-                day::format_decimal(1_234.0, 0),
-                day::format_decimal(12_345.0, 0)
-            );
-            assert!(
-                feed_list::section_title()
-                    .replace(['\u{2068}', '\u{2069}'], "")
-                    .contains(&expected_counts),
-                "{:?}",
-                feed_list::section_title()
-            );
+            let expected_count = format!("({})", day::format_decimal(12_345.0, 0));
+            assert!(title().contains(&expected_count), "{:?}", title());
         }
         feeds.set(Vec::new());
-        assert!(
-            feed_list::section_title()
-                .replace(['\u{2068}', '\u{2069}'], "")
-                .contains("0/0")
-        );
+        assert!(title().contains("(0)"), "{:?}", title());
         feeds.set(original);
         day::locale().set(previous);
     }
