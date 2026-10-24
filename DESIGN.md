@@ -506,7 +506,7 @@ missing selections disable movement, while no selection starts at the first/last
 The existing selection binding scrolls and highlights the native row. Both commands live in
 Go and in the reader toolbar; Next Unread has a distinct double-chevron image.
 
-On iOS, Android and HarmonyOS, the reader uses `day-piece-pager`: a native horizontal
+On iOS, Android and HarmonyOS, the reader uses `day::pager`: a native horizontal
 page container with three stable slots for the current, previous and next articles. UIKit
 uses `UIPageViewController` (the same native scrolling architecture as NetNewsWire), Android
 uses AndroidX `ViewPager`, and Harmony uses ArkUI `Swiper`. A drag reveals the neighboring

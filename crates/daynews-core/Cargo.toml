@@ -30,4 +30,5 @@ day-spec = { git = "https://github.com/daybrite/day.git" }
 
 # Android resolves its writable files dir through the JNI bridge (see `store_dir`).
 [target.'cfg(target_os = "android")'.dependencies]
-day-android = { git = "https://github.com/daybrite/day.git" }
+day-mdc = { git = "https://github.com/daybrite/day.git" }
+day-android-runtime = { git = "https://github.com/daybrite/day.git" }

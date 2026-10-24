@@ -268,7 +268,7 @@ fn color_row(
         row((
             label(title()),
             spacer(),
-            day_piece_colorpicker::color_picker(color)
+            day::colorpicker::color_picker(color)
                 .title(title())
                 .id(key.clone()),
         ))

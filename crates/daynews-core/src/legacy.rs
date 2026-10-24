@@ -1257,7 +1257,7 @@ fn base_dir() -> PathBuf {
 
 #[cfg(target_os = "android")]
 fn android_files_dir() -> Option<PathBuf> {
-    use day_android::{DayEnv, as_jstring, read_jstring, with_env};
+    use day_mdc::{DayEnv, as_jstring, read_jstring, with_env};
     const BRIDGE: &str = "dev/daybrite/day/bridge/DayBridge";
     with_env(|env| {
         let obj = env

@@ -2,7 +2,7 @@
 //! reading order rotates. Preparing a page never calls open_article/set_read.
 use crate::reader_view::{ReaderView, ReaderVisibility};
 use day::prelude::*;
-use day_piece_pager::{PagerState, pager};
+use day::pager::{PagerState, pager};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PageLoad {

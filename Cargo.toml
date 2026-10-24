@@ -14,11 +14,11 @@ default = ["mock"]
 appkit = ["day/appkit", "day-piece-webview/appkit"]
 gtk = ["day/gtk", "day-piece-webview/gtk"]
 qt = ["day/qt", "day-piece-webview/qt"]
-uikit = ["day/uikit", "day-piece-webview/uikit", "day-piece-pager/uikit"]
-mdc = ["day/mdc", "day-piece-webview/mdc", "day-piece-pager/mdc"]
+uikit = ["day/uikit", "day-piece-webview/uikit"]
+mdc = ["day/mdc", "day-piece-webview/mdc"]
 xaml = ["day/xaml", "day-piece-webview/xaml"]
 winui = ["day/winui", "day-piece-webview/winui"]
-arkui = ["day/arkui", "day-piece-webview/arkui", "day-piece-pager/arkui"]
+arkui = ["day/arkui", "day-piece-webview/arkui"]
 dom = ["day/dom", "day-piece-webview/dom"]
 # day-piece-webview ships no mock renderer, so the headless default omits it.
 mock = ["day/mock"]
@@ -35,7 +35,6 @@ name = "dayapp"
 crate-type = ["rlib"]
 
 [dependencies]
-day-piece-pager = { git = "https://github.com/daybrite/day.git" }
 day-piece-charts = { git = "https://github.com/daybrite/day-piece-charts.git" }
 day-core = { git = "https://github.com/daybrite/day.git" }
 day-spec = { git = "https://github.com/daybrite/day.git" }
@@ -48,7 +47,6 @@ day-async = { git = "https://github.com/daybrite/day.git" }
 html5ever = "0.39"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "ico", "webp"] }
 day-part-http = { git = "https://github.com/daybrite/day.git" }
-day-piece-colorpicker = { git = "https://github.com/daybrite/day.git" }
 day-piece-settings = { git = "https://github.com/daybrite/day.git" }
 day = { git = "https://github.com/daybrite/day.git", features = ["model"] }
 day-piece-webview = { git = "https://github.com/daybrite/day-piece-webview.git" }
