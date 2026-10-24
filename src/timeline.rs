@@ -40,7 +40,6 @@ fn row_for(
     preview_lines: usize,
     scale: f64,
     sc: daynews_core::NewsScene,
-    grouped: bool,
 ) -> impl Piece {
     let id = move || slot.field(|a| a.id);
     let read = move || slot.field(|a| a.is_read);
@@ -57,7 +56,7 @@ fn row_for(
     };
     let sub_color = move || palette().text_muted;
 
-    let article = row((
+    row((
         // The dot rides at the title's optical center rather than the row's: a three-line row
         // would otherwise float it down beside the summary. The gutter keeps its width whether
         // or not a dot is drawn, so every title starts on the same x.
@@ -199,34 +198,13 @@ fn row_for(
             .unwrap_or(usize::MAX);
         day::id!(article_row, pos)
     })
-    .grow_w();
-    column((
-        when(
-            move || {
-                grouped
-                    && sc.articles.with(|rows| {
-                        rows.iter()
-                            .position(|row| row.id == id())
-                            .is_some_and(|index| {
-                                index == 0 || rows[index - 1].feed_id != rows[index].feed_id
-                            })
-                    })
-            },
-            move || {
-                feed_header(
-                    move || slot.field(|a| (a.feed_id, a.feed_title.clone())),
-                    false,
-                )
-            },
-        ),
-        article,
-    ))
-    .spacing(0.0)
-    .align(HAlign::Leading)
     .grow_w()
 }
 
-fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool) -> impl Piece {
+/// A feed's section header in the grouped timeline: the list's own group header, which the
+/// platform pins to the top while the feed's articles scroll under it (docs/list.md
+/// "Sections"). No background of its own: the host draws the group row.
+fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static) -> impl Piece {
     row((
         keyed(
             move || Some(crate::feed_icons::paths().with(|icons| icons.get(&feed().0).cloned())),
@@ -246,58 +224,13 @@ fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static, floating: bool
             .font(Font::Footnote)
             .weight(FontWeight::Semibold)
             .single_line()
-            .id_of(move || {
-                if floating {
-                    day::id!(floating_feed_name)
-                } else {
-                    day::id!(feed_group_name, feed().0)
-                }
-            })
+            .id_of(move || day::id!(feed_group_name, feed().0))
             .grow_w(),
     ))
     .spacing(Space::S)
     .align(VAlign::Center)
-    .padding(Insets::symmetric(12.0, 4.0))
-    .height(32.0)
-    .background(move || {
-        if floating {
-            let bg = palette().bg;
-            let tint = palette().accent;
-            Color::rgba(
-                bg.r * 0.91 + tint.r * 0.09,
-                bg.g * 0.91 + tint.g * 0.09,
-                bg.b * 0.91 + tint.b * 0.09,
-                0.92,
-            )
-        } else {
-            palette().bg_alt
-        }
-    })
-    .corner_radius(if floating { 8.0 } else { 0.0 })
-    .overlay(canvas(move |draw, size| {
-        if floating {
-            draw.stroke(
-                Shape::RoundedRect(
-                    Rect::new(
-                        0.5,
-                        0.5,
-                        (size.width - 1.0).max(0.0),
-                        (size.height - 1.0).max(0.0),
-                    ),
-                    8.0,
-                ),
-                palette().accent.with_alpha(0.38),
-                1.0,
-            );
-        }
-    }))
-    .id_of(move || {
-        if floating {
-            day::id!(floating_feed_group)
-        } else {
-            day::id!(feed_group, feed().0)
-        }
-    })
+    .padding(Insets::symmetric(12.0, 6.0))
+    .id_of(move || day::id!(feed_group, feed().0))
     .grow_w()
 }
 
@@ -519,23 +452,27 @@ fn timeline_rows(
             // arrow keys, and the swipe actions where the toolkit has them
             // (Cap::ListSwipeActions; the context menu and the Article menu carry the same
             // commands everywhere else).
-            let first_visible = Signal::new(0usize);
             let timeline = list(
                 items(
                     move || sc.articles.get(),
                     |a: &ArticleSummary| a.id.to_string(),
                 ),
-                move |slot| row_for(slot, preview_lines, scale, sc, grouped),
+                move |slot| row_for(slot, preview_lines, scale, sc),
             );
+            // Grouped by feed: each feed's run of articles opens with the feed's header, a
+            // native section header that floats while its articles scroll under it.
             let timeline = if grouped {
-                timeline.first_visible_row(first_visible)
+                timeline.sections(
+                    move |i| sc.articles.with(|a| a.get(i).map(|a| a.feed_id)),
+                    |slot: ItemSlot<ArticleSummary, String>| {
+                        feed_header(move || slot.field(|a| (a.feed_id, a.feed_title.clone())))
+                    },
+                )
             } else {
                 timeline
             };
             timeline
-                .row_height(RowHeight::Uniform(
-                    row_height(preview_lines, scale) + if grouped { 32.0 } else { 0.0 },
-                ))
+                .row_height(RowHeight::Uniform(row_height(preview_lines, scale)))
                 // Selection reads as it moves (NetNewsWire): a click or a native arrow step both
                 // land here and open the row.
                 .on_select(|key: String| {
@@ -609,34 +546,6 @@ fn timeline_rows(
                 // native selection, and stationary while a swipe slides the row past them.
                 .separators()
                 .id(day::id!(timeline))
-                .overlay_aligned(
-                    Alignment::TopLeading,
-                    when(
-                        // The first row already carries its feed heading. Pin a heading only
-                        // after that row scrolls away, so the overlay cannot cover its title.
-                        move || {
-                            grouped
-                                && first_visible.get() > 0
-                                && !sc.articles.with(|rows| rows.is_empty())
-                        },
-                        move || {
-                            feed_header(
-                                move || {
-                                    sc.articles.with(|rows| {
-                                        rows.get(
-                                            first_visible.get().min(rows.len().saturating_sub(1)),
-                                        )
-                                        .map(|article| {
-                                            (article.feed_id, article.feed_title.clone())
-                                        })
-                                        .unwrap_or_default()
-                                    })
-                                },
-                                true,
-                            )
-                        },
-                    ),
-                )
                 .grow()
         },
     ))

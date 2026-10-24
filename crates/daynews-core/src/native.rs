@@ -1436,8 +1436,8 @@ fn base_dir() -> PathBuf {
 
 #[cfg(target_os = "android")]
 fn android_files_dir() -> Option<PathBuf> {
-    use day_mdc::{DayBridge, java_string, with_env};
-    let path = with_env(|env| java_string(env, DayBridge::filesDirPath))?;
+    use day_mdc::{DayRuntime, java_string, with_env};
+    let path = with_env(|env| java_string(env, DayRuntime::filesDirPath))?;
     (!path.is_empty()).then(|| PathBuf::from(path))
 }
 
