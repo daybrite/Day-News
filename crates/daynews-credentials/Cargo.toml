@@ -20,5 +20,5 @@ keyring = { version = "3.6", features = ["async-secret-service", "async-io", "cr
 day-build = { git = "https://github.com/daybrite/day.git" }
 
 [target.'cfg(target_os = "android")'.dependencies]
-day-mdc = { git = "https://github.com/daybrite/day.git" }
-day-android-runtime = { git = "https://github.com/daybrite/day.git" }
+day-toolkit-material = { git = "https://github.com/daybrite/day.git" }
+day-platform-android = { git = "https://github.com/daybrite/day.git" }

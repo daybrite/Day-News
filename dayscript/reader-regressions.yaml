@@ -15,13 +15,13 @@ flow:
   - pause: { secs: 1 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
   - swipe_row: { id: timeline, row: 0, edge: leading, key: mark_unread }
   - navigate: { route: "feed:4450945874607950238" }
   - wait_for: { id: article_row:0 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
   - swipe_row: { id: timeline, row: 0, edge: leading, key: mark_unread }
   - navigate: { route: starred }
   - toolbar: { item: day::search, text: "no-matching-fixture-phrase" }

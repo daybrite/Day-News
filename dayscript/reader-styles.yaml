@@ -8,10 +8,10 @@ flow:
   - pause: { secs: 1 }
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
-  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: reader_size_slider }
   # A real native back proves the Reader page joined the visible phone stack, not a hidden column.
   - pause: { secs: 1, only_on: [ios-uikit] }
@@ -29,7 +29,7 @@ flow:
   - input: { id: reader_background_color, text: '#fff2d5' }
   - input: { id: reader_text_color, text: '#243448' }
   - screenshot: { name: reader-style-preferences, window: day.preferences, only_on: [macos-appkit] }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - select: { id: timeline, index: 0, only_on: [ios-uikit] }
   - pause: { secs: 1 }
@@ -43,24 +43,24 @@ flow:
   - menu: { id: reader_decrease_text_size, only_on: [macos-appkit] }
   - web_eval: { id: reader_web, script: 'window.readerStyleMarker', text: preserved }
   - screenshot: { name: reader-custom-style, only_on: [macos-appkit] }
-  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: reader_size_slider }
   - assert_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
-  - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/general, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: theme_picker }
   - select: { id: theme_picker, index: 0 }
-  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: reader_reset_styles }
   - tap: { id: reader_reset_styles }
   - assert_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - select: { id: timeline, index: 0, only_on: [ios-uikit] }
   - pause: { secs: 1 }

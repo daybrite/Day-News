@@ -9,7 +9,7 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
-  - toolbar: { item: feed_overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: feed_overview, only_on: [ios-uikit, android-material, harmony-arkui] }
   - wait_for: { id: dashboard_site_preview }
   - tap: { id: dashboard_site_forget }
   - assert_text: { id: dashboard_site_status, key: site_data_cleared, timeout_secs: 20 }
@@ -47,8 +47,8 @@ flow:
   - assert_missing: { id: site_browser_web, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - assert_route: { route: today, only_on: [macos-appkit, macos-gtk, macos-qt] }
   - navigate: { route: 'feed:4345234357225265956', only_on: [macos-appkit, macos-gtk, macos-qt] }
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-material, harmony-arkui] }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - web_eval: { id: reader_web, script: 'document.querySelector("#reader-load-full kbd") === null', text: 'true' }

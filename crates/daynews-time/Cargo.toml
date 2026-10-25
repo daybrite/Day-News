@@ -16,8 +16,8 @@ license = "Apache-2.0"
 libc = "0.2"
 
 # The browser owns the clock and the zone rules on web: `SystemTime::now()` traps on
-# wasm32-unknown-unknown, and there is no zoneinfo to read. day-dom is the page bridge the web
-# build already links (the `dom` backend IS day-dom), so this costs nothing there and nothing at
+# wasm32-unknown-unknown, and there is no zoneinfo to read. day-toolkit-dom is the page bridge the web
+# build already links (the `dom` backend IS day-toolkit-dom), so this costs nothing there and nothing at
 # all anywhere else.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-day-dom = { git = "https://github.com/daybrite/day.git" }
+day-toolkit-dom = { git = "https://github.com/daybrite/day.git" }

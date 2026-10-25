@@ -60,28 +60,28 @@ flow:
   - pause: { secs: 1 } # Let the chart entrance settle before capturing.
   - screenshot: dashboard-feed
   # Smart-feed overview chrome is desktop-only; mobile uses that slot for Settings.
-  - navigate: { route: unread, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: dashboard_publisher_chart, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_text: { id: dashboard_title, key: nav_all_unread, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] } # Let the chart entrance settle before capturing.
-  - screenshot: { name: dashboard-unread, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_missing: { id: dashboard_refresh_now, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: dashboard_publisher:9105033381806695217, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: dashboard_habits_chart, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_text: { id: dashboard_title, text: Kitchen Science, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_visible: { id: dashboard_refresh_now, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - navigate: { route: unread, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: dashboard_publisher_chart, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] } # Settle the incoming chart before selecting a value.
-  - tap: { id: dashboard_activity_chart, at: [200, 50], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - screenshot: { name: dashboard-unread-annotation, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - navigate: { route: today, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: dashboard_title, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] } # Let the chart entrance settle before capturing.
-  - screenshot: { name: dashboard-today, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: unread, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: dashboard_publisher_chart, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_text: { id: dashboard_title, key: nav_all_unread, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] } # Let the chart entrance settle before capturing.
+  - screenshot: { name: dashboard-unread, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_missing: { id: dashboard_refresh_now, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: dashboard_publisher:9105033381806695217, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: dashboard_habits_chart, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_text: { id: dashboard_title, text: Kitchen Science, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_visible: { id: dashboard_refresh_now, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - navigate: { route: unread, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: dashboard_publisher_chart, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] } # Settle the incoming chart before selecting a value.
+  - tap: { id: dashboard_activity_chart, at: [200, 50], skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - screenshot: { name: dashboard-unread-annotation, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - navigate: { route: today, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: dashboard_title, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] } # Let the chart entrance settle before capturing.
+  - screenshot: { name: dashboard-today, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - navigate: { route: all }
   - wait_for: { id: article_row:0 }
 
@@ -104,16 +104,16 @@ flow:
       id: reader_web
       script: "document.getElementById('reader-title') ? 'reader-ok' : 'no-title'"
       text: "reader-ok"
-      only_on: [macos-appkit, ios-uikit, macos-qt, android-mdc]
+      only_on: [macos-appkit, ios-uikit, macos-qt, android-material]
   - screenshot: article
 
   # Selection walks and the reader follows (docs/list.md): the native table owns the arrow
   # keys; this drives the same selection event programmatically. Desktop-only to keep the
   # phones' push-navigation flow linear.
-  - select: { id: timeline, index: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 1, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
   - screenshot: keyboard-next
-  - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
 
   # Normalize the selected fixture before verifying the state-dependent star offers.
@@ -132,13 +132,13 @@ flow:
   # but can recycle offscreen cells. On a tablet the reader sits
   # beside the timeline, and the same back closes it without leaving the section. `nav_back`
   # is the app bar's arrow and the system back, the same route out a finger takes.
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
-  - pause: { secs: 1, only_on: [ios-uikit, android-mdc] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
+  - pause: { secs: 1, only_on: [ios-uikit, android-material] }
   - swipe_row: { id: timeline, row: 0, edge: leading, key: mark_unread }
   - pause: { secs: 1 }
-  - toolbar: { item: read, on: true, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: read, on: true, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
-  - menu: { key: toggle_read, path: [menu_article], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - menu: { key: toggle_read, path: [menu_article], skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
 
   # The trailing edge stars, and its label is state-dependent too: star, then unstar. The
@@ -150,7 +150,7 @@ flow:
 
   # Article ▸ Mark as Unread guarantees the unread scope below is non-empty even when a
   # previous run left everything read; mark-all-read would otherwise sit disabled.
-  - menu: { key: menu_mark_unread, path: [menu_article], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - menu: { key: menu_mark_unread, path: [menu_article], skip_on: [ios-uikit, android-material, harmony-arkui] }
 
   # Mark-all-read empties the unread timeline specifically.
   - navigate: { route: unread }
@@ -168,24 +168,24 @@ flow:
   - wait_for: { id: article_row:0, timeout_secs: 10 }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - menu: { key: menu_tag, path: [menu_article], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - respond: { text: "keep", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - menu: { key: menu_tag, path: [menu_article], skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - respond: { text: "keep", skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
-  - navigate: { route: "tag:6648694386267937070", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: "tag:6648694386267937070", skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
-  - assert_text: { id: scope_title, text: "keep", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: article_row:0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_text: { id: scope_title, text: "keep", skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: article_row:0, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - screenshot: tag-scope
 
   # Untag from inside the tag scope: the row leaves the live tag timeline on the spot, and
   # the store returns to untagged so the tag steps above repeat cleanly on the next run.
   # (An aborted run can strand the tag applied; the run after that untags and fails once.)
-  - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - select: { id: timeline, index: 0, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
-  - menu: { key: menu_tag, path: [menu_article], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - respond: { text: "keep", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - menu: { key: menu_tag, path: [menu_article], skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - respond: { text: "keep", skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
-  - assert_visible: { id: timeline_empty, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_visible: { id: timeline_empty, skip_on: [ios-uikit, android-material, harmony-arkui] }
 
   # Settings: Day's shared surface (https://daybrite.dev/docs/reference/settings), a window on the
   # desktops and a modal on mobile/web. The mobile gear opens
@@ -194,20 +194,20 @@ flow:
   # On a desktop `settings/<group>` then switches the window to a group's tab; a phone
   # taps the group's row and comes back with `nav_back`. The surface stays open across groups
   # and closes at the end; display controls persist and reset together to the shipped defaults.
-  - navigate: { route: settings, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: language_picker, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - wait_for: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: language_picker, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - wait_for: { id: prefs_group:general, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - screenshot: { name: settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
-  - screenshot: { name: settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: settings, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: language_picker }
   - assert_visible: { id: theme_picker, only_on: [macos-appkit, ios-uikit] }
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
-  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: list_size_slider }
   - assert_visible: { id: group_by_feeds_picker }
   - assert_visible: { id: preview_lines_picker }
@@ -216,29 +216,29 @@ flow:
   - set_value: { id: list_size_slider, value: 170, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - assert_value: { id: list_size_slider, value: 170, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - select: { id: preview_lines_picker, index: 3 }
-  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: reader_size_slider }
   - assert_visible: { id: reader_font_picker }
   - set_value: { id: reader_size_slider, value: 160, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - assert_value: { id: reader_size_slider, value: 160, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - tap: { id: reader_reset_styles }
   - assert_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
-  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: list_size_slider }
   - assert_value: { id: list_size_slider, value: 120, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - assert_value: { id: preview_lines_picker, value: 2 }
-  - navigate: { route: settings/browser, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:browser, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/browser, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:browser, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: incognito_mode_picker }
   - assert_visible: { id: browser_picker, only_on: [macos-appkit] }
-  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: retention_picker }
   - assert_visible: { id: refresh_interval_picker }
   - select: { id: refresh_interval_picker, index: 0 }
@@ -251,9 +251,9 @@ flow:
   - assert_value: { id: refresh_interval_picker, value: 4 }
   - select: { id: refresh_interval_picker, index: 0 }
   - assert_value: { id: refresh_interval_picker, value: 0 }
-  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: app_reader_script }
   - assert_visible: { id: site_reader_scripts }
   - tap: { id: app_reader_script }
@@ -262,14 +262,14 @@ flow:
   - screenshot: reader-script-editor
   - tap: { id: reader_script_close }
   - screenshot: { name: settings-reader, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
-  - screenshot: { name: settings-reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, web-dom] }
+  - screenshot: { name: settings-reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, web-dom] }
 
   # The toolbar's sidebar toggle hides the pane and brings it back.
-  - toolbar: { item: day::sidebar_toggle, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: day::sidebar_toggle, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
   - screenshot: sidebar-hidden
-  - toolbar: { item: day::sidebar_toggle, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: day::sidebar_toggle, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1 }
 
   # Feed ▸ Refresh Feed, Mark All as Read and Unsubscribe act on the feed the sidebar has
@@ -277,53 +277,53 @@ flow:
   # drives the app menu, which the phones do not have, so they skip this block. Kitchen Science
   # refreshes from the bundle, so no network is involved. Its route id is the URL's deterministic
   # hash (daynews_db::feed_id("asset:demo/kitchen-science.xml")).
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, web-dom] }
-  - navigate: { route: "feed:9105033381806695217", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: article_row:0, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, web-dom] }
+  - navigate: { route: "feed:9105033381806695217", skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: article_row:0, skip_on: [ios-uikit, android-material, harmony-arkui] }
   # Leaving Settings rebuilds the toolbar and timeline; both must keep their window's scene.
-  - assert_text: { id: scope_title, text: Kitchen Science, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - screenshot: { name: settings-return, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - menu: { key: menu_refresh_feed, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - menu: { key: mark_all_read, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - menu: { key: unsubscribe, path: [menu_feed], skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: "sidebar:header%3Afeeds", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(6)", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - assert_text: { id: scope_title, text: Kitchen Science, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - screenshot: { name: settings-return, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - menu: { key: menu_refresh_feed, path: [menu_feed], skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - menu: { key: mark_all_read, path: [menu_feed], skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - menu: { key: unsubscribe, path: [menu_feed], skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: "sidebar:header%3Afeeds", skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(6)", skip_on: [ios-uikit, android-material, harmony-arkui] }
   # Subscribe again, so the screenshots below and the next run see all seven feeds.
-  - toolbar: { item: new_feed, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: feed_url, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - input: { id: feed_url, text: "asset:demo/kitchen-science.xml", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: feed_verify, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_idle: { skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - screenshot: { name: subscription-preview, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: feed_subscribe, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 2, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(7)", skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: new_feed, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: feed_url, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - input: { id: feed_url, text: "asset:demo/kitchen-science.xml", skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: feed_verify, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_idle: { skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - screenshot: { name: subscription-preview, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: feed_subscribe, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 2, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(7)", skip_on: [ios-uikit, android-material, harmony-arkui] }
 
   # Subscription import/export lives in Settings ▸ Feeds.
-  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: opml_export }
   - assert_visible: { id: opml_import }
   - screenshot: { name: subscription-settings, window: day.preferences, only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
-  - screenshot: { name: subscription-settings, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - screenshot: { name: subscription-settings, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
 
   # Capture a populated saved-story dashboard, then restore the temporary star.
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, web-dom] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, web-dom] }
   - navigate: { route: all }
   - select: { id: timeline, index: 0 }
   - wait_for: { id: reader_web }
   - toolbar: { item: star, on: true }
   - navigate: { route: starred }
-  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - wait_for: { id: dashboard_publisher_chart, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - assert_text: { id: dashboard_title, key: nav_starred, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 1, skip_on: [ios-uikit, android-mdc, harmony-arkui] } # Let the chart entrance settle before capturing.
-  - screenshot: { name: dashboard-starred, skip_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: feed_overview, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: dashboard_publisher_chart, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_text: { id: dashboard_title, key: nav_starred, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] } # Let the chart entrance settle before capturing.
+  - screenshot: { name: dashboard-starred, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - navigate: { route: all }
   - select: { id: timeline, index: 0 }
   - wait_for: { id: reader_web }

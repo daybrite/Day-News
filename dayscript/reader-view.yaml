@@ -9,7 +9,7 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
-  - toolbar: { item: feed_overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: feed_overview, only_on: [ios-uikit, android-material, harmony-arkui] }
   - wait_for: { id: feed_auto_reader }
   - toggle: { id: feed_auto_reader, value: false }
   - navigate: { route: all }

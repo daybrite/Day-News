@@ -18,7 +18,7 @@ def adb(*commands):
     return subprocess.check_output([args.adb, '-s', args.serial, *commands])
 
 def drive(*steps):
-    result = subprocess.run([args.day, 'drive', '-t', 'android-mdc', '--steps-json', json.dumps(steps)], capture_output=True, text=True, env={**os.environ, 'ANDROID_SERIAL': args.serial})
+    result = subprocess.run([args.day, 'drive', '-t', 'android-material', '--steps-json', json.dumps(steps)], capture_output=True, text=True, env={**os.environ, 'ANDROID_SERIAL': args.serial})
     assert '{' in result.stdout, (result.stdout, result.stderr)
     report = json.loads(result.stdout[result.stdout.index('{'):])
     for step in report.get('steps', []):

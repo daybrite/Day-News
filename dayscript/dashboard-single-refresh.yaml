@@ -6,10 +6,10 @@ flow:
   - dialog_mode: { mode: scripted }
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
-  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: refresh_interval_picker }
   - select: { id: refresh_interval_picker, index: 1 }
   - toolbar: { item: new_feed }
@@ -23,7 +23,7 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 4 }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
   - navigate: { route: 'feed:8512098384262059532' }
   - toolbar: { item: feed_overview }
   - wait_for: { id: dashboard_refresh_now }
@@ -38,11 +38,11 @@ flow:
   - tap: { id: dashboard_publisher:8512098384262059532 }
   - wait_for: { id: dashboard_habits_chart }
   - assert_visible: { id: dashboard_refresh_now }
-  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: refresh_interval_picker }
   - select: { id: refresh_interval_picker, index: 0 }
   - dialog_mode: { mode: native }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui] }

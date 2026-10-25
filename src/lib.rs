@@ -46,7 +46,7 @@ day::day_start!(options: window(), root);
 /// The window every entry point opens: `src/main.rs` on the desktop, the platform shells
 /// through the macro above.
 ///
-/// `launch` installs the catalog itself, after the OS's languages have reached day-l10n and
+/// `launch` installs the catalog itself, after the OS's languages have reached day-localization and
 /// before the first localized string is read; installing it here, or in `root`, would resolve
 /// against an empty hint list and open an English window on a French device. The same ordering
 /// is what lets the title come from the catalog (docs/localization.md).

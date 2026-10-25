@@ -12,8 +12,8 @@ flow:
   - toolbar: { item: feed_overview }
   - wait_for: { id: feed_auto_reader }
   - toggle: { id: feed_auto_reader, value: false }
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-material, harmony-arkui] }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
   - web_eval: { id: reader_web, script: 'Boolean(document.getElementById("reader-load-full"))', text: 'true' }

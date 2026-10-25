@@ -9,12 +9,12 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
-  - toolbar: { item: feed_overview, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - toolbar: { item: feed_overview, only_on: [ios-uikit, android-material, harmony-arkui] }
   - wait_for: { id: feed_inline_reader }
   - toggle: { id: feed_inline_reader, value: true }
   - toggle: { id: feed_auto_reader, value: true }
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - pause: { secs: 0.6, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - pause: { secs: 0.6, only_on: [ios-uikit, android-material, harmony-arkui] }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 5 }
   - web_eval: { id: reader_web, script: 'document.getElementById("reader-load-full").getBoundingClientRect().top > innerHeight', text: 'true' }

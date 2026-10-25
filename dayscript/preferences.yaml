@@ -3,10 +3,10 @@ name: day-news-preferences
 description: Native preferences and live appearance changes on Apple platforms.
 flow:
   # General explicitly: a reopened desktop window keeps the group it last showed.
-  - navigate: { route: settings/general, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/general, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:general, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: theme_picker }
   - assert_visible: { id: language_picker }
   - select: { id: theme_picker, index: 0 }
@@ -22,24 +22,24 @@ flow:
   - select: { id: theme_picker, index: 2 }
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
-  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: reader_size_slider }
   - assert_visible: { id: reader_font_picker }
   - assert_visible: { id: reader_background_color }
   - assert_visible: { id: reader_text_color }
   - assert_visible: { id: reader_reset_styles }
-  - navigate: { route: settings/browser, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:browser, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/browser, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:browser, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: incognito_mode_picker }
   - assert_visible: { id: browser_picker, only_on: [macos-appkit] }
   - select: { id: browser_picker, index: 0, only_on: [macos-appkit] }
-  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - assert_visible: { id: show_sync_status, skip_on: [web-dom] }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
   - navigate: { route: all }
   - wait_for: { id: article_row:0 }

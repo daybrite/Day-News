@@ -121,7 +121,7 @@ there so navigation and long-press feed menus take precedence. Ordinary lists st
 | macos-gtk | 169 passed | 219 passed |
 | macos-qt | Covered in combined suite | 279 passed, including grouping and reader cases |
 | ios-uikit (iPad simulator) | 121 passed | 220 passed, including remaining reader cases |
-| android-mdc (emulator) | 174 passed | 173 passed, including reader cases |
+| android-material (emulator) | 174 passed | 173 passed, including reader cases |
 | web-dom (Chromium) | Covered in combined suite | 384 passed |
 
 Counts describe separate runs and are not additive. Platform-inapplicable assertions are
@@ -226,7 +226,7 @@ replace, the cold-launch, smart-feed, reader, system Back and tablet checks abov
 fixture. It verifies that Refresh and Show Only Unread Feeds belong to the middle bar,
 that its duplicate Day News title is absent, that visible buttons have usable widths,
 and that filtering does not change the M/N subscription count. UIKit's older plain-bar
-fallback also has host unit tests in `day-uikit/src/toolbar_policy.rs`. Validate iOS 15
+fallback also has host unit tests in `day-toolkit-uikit/src/toolbar_policy.rs`. Validate iOS 15
 on hardware: the reader should expose its primary actions plus a visible ellipsis menu,
 with remaining commands available in that menu rather than squeezed into the bar.
 

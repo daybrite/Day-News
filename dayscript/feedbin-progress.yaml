@@ -4,9 +4,9 @@ name: feedbin-progress
 description: Progress, cancellation, paused scheduler, and confirmed local reset.
 flow:
   - dialog_mode: { mode: scripted }
-  - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:accounts, only_on: [ios-uikit, android-material, harmony-arkui] }
   - input: { id: sync_username, text: fixture@example.invalid, skip_on: [web-dom] }
   - input: { id: sync_password, text: fixture-password, skip_on: [web-dom] }
   - tap: { id: sync_sign_in, skip_on: [web-dom] }
@@ -23,8 +23,8 @@ flow:
   - assert_text: { id: sync_progress_activity, key: sync_progress_articles, args: {articles: 1, page: 1, total: 2}, timeout_secs: 25, skip_on: [web-dom] }
   - assert_visible: { id: sync_progress_bar, skip_on: [web-dom] }
   - assert_visible: { id: sync_progress_time, skip_on: [web-dom] }
-  - screenshot: { name: sync-progress, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - screenshot: { name: sync-progress, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - screenshot: { name: sync-progress, window: day.preferences, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-progress, only_on: [ios-uikit, android-material, harmony-arkui] }
   - tap: { id: sync_cancel_transfer, skip_on: [web-dom] }
   - pause: { secs: 6, skip_on: [web-dom] }
   - assert_text: { id: sync_status, key: sync_paused, skip_on: [web-dom] }
@@ -41,7 +41,7 @@ flow:
   - assert_text: { id: sync_progress_activity, key: sync_progress_articles, args: {articles: 1, page: 1, total: 2}, timeout_secs: 25, skip_on: [web-dom] }
   - assert_text: { id: sync_status, key: sync_ready, timeout_secs: 25, skip_on: [web-dom] }
   - assert_text: { id: sync_pending, key: sync_pending, args: {count: 0}, skip_on: [web-dom] }
-  - screenshot: { name: sync-reset-complete, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - screenshot: { name: sync-reset-complete, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - screenshot: { name: sync-reset-complete, window: day.preferences, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-reset-complete, only_on: [ios-uikit, android-material, harmony-arkui] }
   - tap: { id: sync_disconnect, skip_on: [web-dom] }
   - wait_for: { id: sync_sign_in, skip_on: [web-dom] }

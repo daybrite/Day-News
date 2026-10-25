@@ -22,7 +22,7 @@
 pub fn now_epoch_ms() -> u64 {
     #[cfg(target_arch = "wasm32")]
     {
-        day_dom::now_epoch_ms()
+        day_toolkit_dom::now_epoch_ms()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -130,14 +130,14 @@ pub fn local_offset_seconds(at_unix: i64) -> Option<i32> {
 
 /// The web shape of the same question.
 ///
-/// The browser is the tz database on this target. `host_env` is day-dom's channel for page facts
+/// The browser is the tz database on this target. `host_env` is day-toolkit-dom's channel for page facts
 /// (the reserved `tz` key beside it answers the IANA zone id), and the offset key takes the
 /// instant because daylight saving makes the answer a function of it. An older shim does not know
 /// the key and answers nothing, which reads as UTC rather than as a wrong hour.
 #[cfg(target_arch = "wasm32")]
 pub fn local_offset_seconds(at_unix: i64) -> Option<i32> {
     let ms = at_unix.checked_mul(1000)?;
-    let minutes: i32 = day_dom::host_env(&format!("tzoffset:{ms}"))?.parse().ok()?;
+    let minutes: i32 = day_toolkit_dom::host_env(&format!("tzoffset:{ms}"))?.parse().ok()?;
     minutes.checked_mul(60)
 }
 

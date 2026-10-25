@@ -4,7 +4,7 @@ A feed reader on the [Day](https://daybrite.dev) framework, modeled on
 [NetNewsWire](https://github.com/Ranchero-Software/NetNewsWire): subscriptions on the left, a
 timeline in the middle, the article on the right — collapsing to push navigation on a phone.
 
-Targets: `macos-appkit`, `macos-gtk`, `macos-qt`, `windows-winui`, `ios-uikit`, `android-mdc`,
+Targets: `macos-appkit`, `macos-gtk`, `macos-qt`, `windows-winui`, `ios-uikit`, `android-material`,
 `web-dom`, `harmony-arkui`.
 
 > `web-dom` builds and runs the whole shell, but a browser may only fetch feeds that send CORS
@@ -24,7 +24,7 @@ The libraries live under `crates/`; the UI crate is the repository root.
 | crate | owns | depends on |
 |---|---|---|
 | `crates/daynews-opml` | OPML parse + serialize, nested folders | quick-xml |
-| `crates/daynews-time` | the wall clock and the reader's UTC offset, asked of the host | libc (unix), day-dom (web) |
+| `crates/daynews-time` | the wall clock and the reader's UTC offset, asked of the host | libc (unix), day-toolkit-dom (web) |
 | `crates/daynews-feed` | fetching and parsing RSS/RDF/Atom/JSON Feed, normalized | feed-rs, day-part-http, `daynews-time` |
 | `crates/daynews-sync` | provider contracts, Feedbin adapter, synchronization engine, HTTP fixtures | day-part-http, serde, chrono, httpdate |
 | `crates/daynews-credentials` | native credential vaults | keyring, day-bridge |
@@ -48,7 +48,7 @@ Three non-obvious ones, since the house rule is to justify every dependency:
   offset and its DST rules — and the app also needs a wall clock everywhere it runs, since
   `SystemTime::now()` aborts on `wasm32`. Both come from the host, which already has the rules
   installed and keeps them current: POSIX `localtime_r` (macOS, Linux, iOS, Android, OpenHarmony),
-  Win32's `SystemTimeToTzSpecificLocalTime`, and the browser's `Intl` behind day-dom's `tzoffset`
+  Win32's `SystemTimeToTzSpecificLocalTime`, and the browser's `Intl` behind day-toolkit-dom's `tzoffset`
   page fact on web. That is ~150 lines and one `libc` edge, against ~200 KB of bundled IANA data
   that would need re-releasing every time a government moves a clock.
 

@@ -3,14 +3,14 @@
 name: feedbin-resume
 description: Restore credentials after relaunch, synchronize, disconnect, and reject invalid login.
 flow:
-  - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:accounts, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - navigate: { route: settings/accounts, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:accounts, only_on: [ios-uikit, android-material, harmony-arkui] }
   - wait_for: { id: sync_account, skip_on: [web-dom] }
   - pause: { secs: 3, skip_on: [web-dom] }
   - assert_text: { id: sync_status, key: sync_ready, timeout_secs: 25, skip_on: [web-dom] }
-  - screenshot: { name: sync-restored, window: day.preferences, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - screenshot: { name: sync-restored, only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - screenshot: { name: sync-restored, window: day.preferences, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - screenshot: { name: sync-restored, only_on: [ios-uikit, android-material, harmony-arkui] }
   - tap: { id: sync_disconnect, skip_on: [web-dom] }
   - wait_for: { id: sync_username, skip_on: [web-dom] }
   - pause: { secs: 1, skip_on: [web-dom] }

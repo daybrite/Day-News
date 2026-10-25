@@ -39,7 +39,7 @@ flow:
       script: "window.linkCopyMarker"
       text: "preserved"
   - screenshot: reading-navigation
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
   - toolbar: { item: day::search, text: "sun" }
   - pause: { secs: 1 }
   - select: { id: timeline, index: 0 }
@@ -56,5 +56,5 @@ flow:
       script: "document.getElementById('reader-title').textContent"
       text: "Reading the tide pools: why the sea rises twice a day"
   - screenshot: reading-search-navigation
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
   - toolbar: { item: day::search, text: "" }

@@ -2,7 +2,7 @@
 """Verify Day's native IME lifecycle using the synthetic Feedbin form.
 
 Launch Day-News on the chosen emulator with DAY_NEWS_SYNC_TEST=1 and an isolated
-DAY_NEWS_DATA_DIR, without signing in. Day's current android-mdc drive target must
+DAY_NEWS_DATA_DIR, without signing in. Day's current android-material drive target must
 be that emulator. Tests use Android's actual IME state, not a UI focus proxy.
 """
 
@@ -26,7 +26,7 @@ def main():
 
     def drive(*steps):
         result = subprocess.run(
-            [args.day, "drive", "-t", "android-mdc", "--steps-json", json.dumps(steps),
+            [args.day, "drive", "-t", "android-material", "--steps-json", json.dumps(steps),
              "--format", "json"], text=True,
             env={**os.environ, "ANDROID_SERIAL": args.serial}, capture_output=True)
         output = result.stdout

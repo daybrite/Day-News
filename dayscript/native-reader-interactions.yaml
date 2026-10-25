@@ -13,13 +13,13 @@ flow:
   - wait_for: { id: feed_inline_reader }
   - toggle: { id: feed_inline_reader, value: true }
   - toggle: { id: feed_auto_reader, value: true }
-  - nav_back: { native: true, only_on: [ios-uikit, android-mdc] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
   - select: { id: timeline, index: 0 }
   - wait_for: { id: reader_web }
   - web_eval: { id: reader_web, script: 'document.getElementById("reader-load-full").getBoundingClientRect().top > innerHeight', text: 'true' }
   - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', text: '' }
   - web_eval: { id: reader_web, script: 'window.regressionHeight = innerHeight; window.regressionMarker = "retained"; document.getElementById("reader-load-full").scrollIntoView({block:"center"}); "scrolled"', text: 'scrolled' }
-  - web_eval: { id: reader_web, script: 'document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'true', only_on: [macos-appkit, macos-gtk, macos-qt, ios-uikit, android-mdc] }
+  - web_eval: { id: reader_web, script: 'document.getElementById("reader-load-full").getAttribute("aria-busy")', text: 'true', only_on: [macos-appkit, macos-gtk, macos-qt, ios-uikit, android-material] }
   - web_eval: { id: reader_web, script: 'window.regressionScroll = scrollY; innerHeight === window.regressionHeight', text: 'true' }
   - web_eval: { id: reader_web, script: 'document.getElementById("reader-full-slot").textContent', contains: 'Full publication content.', timeout_secs: 20 }
   - web_eval: { id: reader_web, script: 'Math.abs(scrollY-window.regressionScroll) < 2 && innerHeight === window.regressionHeight', text: 'true' }

@@ -1075,7 +1075,7 @@ fn start_refresh(feeds: Vec<(u64, String)>) {
 /// arm; the subscription then shows the same failed-refresh state a dead feed does.
 pub async fn preview_feed(url: &str) -> Result<daynews_feed::ParsedFeed, daynews_feed::FeedError> {
     if let Some(name) = url.strip_prefix("asset:") {
-        let locale = day_l10n::locale().get_untracked();
+        let locale = day_localization::locale().get_untracked();
         for candidate in asset_candidates(name, &locale) {
             // wasm has no filesystem for the resource opener to read; the web dist serves the
             // same bundle over HTTP instead (`resource/assets/` staged under `assets/data/`,
@@ -1475,7 +1475,7 @@ fn base_dir() -> PathBuf {
 
 #[cfg(target_os = "android")]
 fn android_files_dir() -> Option<PathBuf> {
-    use day_mdc::{DayRuntime, java_string, with_env};
+    use day_toolkit_material::{DayRuntime, java_string, with_env};
     let path = with_env(|env| java_string(env, DayRuntime::filesDirPath))?;
     (!path.is_empty()).then(|| PathBuf::from(path))
 }

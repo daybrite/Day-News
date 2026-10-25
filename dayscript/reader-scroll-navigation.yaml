@@ -42,7 +42,7 @@ flow:
   - pause: { secs: 1 }
   - web_eval: { id: reader_web, script: 'document.getElementById("reader-title").textContent', text: slow }
   - web_eval: { id: reader_web, script: 'scrollY', text: '0', only_on: [macos-appkit, macos-gtk, macos-qt, linux-gtk, linux-qt, windows-winui, windows-xaml, web-dom] }
-  - web_eval: { id: reader_web, script: 'scrollY > 500', text: 'true', only_on: [ios-uikit, android-mdc, harmony-arkui] }
+  - web_eval: { id: reader_web, script: 'scrollY > 500', text: 'true', only_on: [ios-uikit, android-material, harmony-arkui] }
   - web_eval: { id: reader_web, script: 'window.scrollTo(0, 600); "scrolled"', text: scrolled }
   - pause: { secs: 0.3 }
   - web_eval: { id: reader_web, script: 'scrollY > 500', text: 'true' }

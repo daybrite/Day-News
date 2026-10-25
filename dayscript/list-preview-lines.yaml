@@ -9,10 +9,10 @@ flow:
   - web_eval: { id: reader_web, script: "window.previewMarker = 'preserved'", text: preserved }
   # On a phone or the web the section is a root list of groups: open it and tap the group's
   # row (`settings/<group>` is the desktop window's route to a tab).
-  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: list_size_slider }
   # Slider values are driven where the row's id is on the control itself; the UIKit, ArkUI
   # GTK and XAML settings rows put it on the layout wrapper, which a probe cannot read.
@@ -20,38 +20,38 @@ flow:
   - assert_value: { id: list_size_slider, value: 200, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - select: { id: preview_lines_picker, index: 5 }
   - assert_value: { id: preview_lines_picker, value: 5 }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - wait_for: { id: article_row:0 }
   - screenshot: { name: list-five-preview-lines, only_on: [macos-appkit] }
   - web_eval: { id: reader_web, script: window.previewMarker, text: preserved, only_on: [macos-appkit] }
-  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: list_size_slider }
   - set_value: { id: list_size_slider, value: 70, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - assert_value: { id: list_size_slider, value: 70, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
   - select: { id: preview_lines_picker, index: 0 }
   - assert_value: { id: preview_lines_picker, value: 0 }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - wait_for: { id: article_row:0 }
   - screenshot: { name: list-no-preview, only_on: [macos-appkit] }
-  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/reader, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }
-  - toolbar: { item: settings, only_on: [ios-uikit, android-mdc, harmony-arkui] }
-  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - toolbar: { item: settings, only_on: [ios-uikit, android-material, harmony-arkui] }
+  - tap: { id: prefs_group:reader, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: reader_reset_styles }
   - tap: { id: reader_reset_styles }
   - assert_value: { id: reader_size_slider, value: 140, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
-  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - nav_back: { only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
-  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-mdc, harmony-arkui, web-dom] }
+  - navigate: { route: settings/articles, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - nav_back: { only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - tap: { id: prefs_group:articles, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: list_size_slider }
   - assert_value: { id: preview_lines_picker, value: 2 }
   - assert_value: { id: list_size_slider, value: 120, skip_on: [ios-uikit, harmony-arkui, linux-gtk, macos-gtk, windows-winui] }
-  - close_window: { window: day.preferences, only_on: [ios-uikit, android-mdc, harmony-arkui, macos-appkit] }
+  - close_window: { window: day.preferences, only_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
   - navigate: { route: all, only_on: [ios-uikit] }
   - wait_for: { id: article_row:0 }
   - screenshot: { name: list-default-preview, only_on: [macos-appkit] }
