@@ -202,9 +202,49 @@ pub fn subscription_sheet() -> impl Piece {
         let verify_result = verified.clone();
         let subscribe_result = verified.clone();
         column((
-            label(crate::res::str::menu_new_feed())
-                .font(Font::Title)
-                .id(day::id!(subscription_title)),
+            // The sheet's actions sit beside its title, where a phone's keyboard can't cover them.
+            row((
+                button(crate::res::str::cancel_action())
+                    .action(move || sheet.open.set(None))
+                    .id(day::id!(feed_cancel)),
+                spacer().grow_w(),
+                label(crate::res::str::new_feed_title())
+                    .font(Font::Headline)
+                    .id(day::id!(subscription_title)),
+                spacer().grow_w(),
+                button(crate::res::str::subscribe_action())
+                    .enabled(move || {
+                        !busy.get() && verified_input.get().as_deref() == Some(address.get().trim())
+                    })
+                    .action(move || {
+                        let Some((url, update)) = subscribe_result.borrow_mut().take() else {
+                            return;
+                        };
+                        busy.set(true);
+                        day::task(async move {
+                            match daynews_core::subscribe_discovered(url, update).await {
+                                Ok(feed) => {
+                                    // Keep this task's scope alive until the feed projection
+                                    // settles. Dismissing the cover first disposes its child
+                                    // observer on DOM and can leave the old scope selected.
+                                    select_subscribed_feed(feed).await;
+                                    if sheet_scope.is_alive() {
+                                        busy.set(false);
+                                    }
+                                    sheet.open.set(None);
+                                    return;
+                                }
+                                Err(_) => {
+                                    verified_input.set(None);
+                                    status.set(crate::res::str::subscribe_failed().format());
+                                }
+                            }
+                            busy.set(false);
+                        });
+                    })
+                    .id(day::id!(feed_subscribe)),
+            ))
+            .spacing(Space::S),
             label(crate::res::str::subscribe_preview_note()).font(Font::Footnote),
             row((
                 text_field(address)
@@ -282,44 +322,6 @@ pub fn subscription_sheet() -> impl Piece {
             .row_height(RowHeight::Uniform(100.0))
             .id(day::id!(feed_preview))
             .grow(),
-            row((
-                button(crate::res::str::cancel_action())
-                    .action(move || sheet.open.set(None))
-                    .id(day::id!(feed_cancel)),
-                spacer().grow_w(),
-                button(crate::res::str::subscribe_action())
-                    .enabled(move || {
-                        !busy.get() && verified_input.get().as_deref() == Some(address.get().trim())
-                    })
-                    .action(move || {
-                        let Some((url, update)) = subscribe_result.borrow_mut().take() else {
-                            return;
-                        };
-                        busy.set(true);
-                        day::task(async move {
-                            match daynews_core::subscribe_discovered(url, update).await {
-                                Ok(feed) => {
-                                    // Keep this task's scope alive until the feed projection
-                                    // settles. Dismissing the cover first disposes its child
-                                    // observer on DOM and can leave the old scope selected.
-                                    select_subscribed_feed(feed).await;
-                                    if sheet_scope.is_alive() {
-                                        busy.set(false);
-                                    }
-                                    sheet.open.set(None);
-                                    return;
-                                }
-                                Err(_) => {
-                                    verified_input.set(None);
-                                    status.set(crate::res::str::subscribe_failed().format());
-                                }
-                            }
-                            busy.set(false);
-                        });
-                    })
-                    .id(day::id!(feed_subscribe)),
-            ))
-            .spacing(Space::S),
         ))
         .spacing(Space::M)
         .align(HAlign::Leading)

@@ -289,8 +289,10 @@ flow:
   - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - menu: { key: unsubscribe, path: [menu_feed], skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui] }
-  - wait_for: { id: "sidebar:header%3Afeeds", skip_on: [ios-uikit, android-material, harmony-arkui] }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(6)", skip_on: [ios-uikit, android-material, harmony-arkui] }
+  # AppKit uses a native outline, whose section headers are not Day elements.
+  # Keep the same header-probe targets as seed-demo.yaml; the menu actions still run here.
+  - wait_for: { id: "sidebar:header%3Afeeds", skip_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(6)", skip_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
   # Subscribe again, so the screenshots below and the next run see all seven feeds.
   - toolbar: { item: new_feed, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - wait_for: { id: feed_url, skip_on: [ios-uikit, android-material, harmony-arkui] }
@@ -300,7 +302,7 @@ flow:
   - screenshot: { name: subscription-preview, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - tap: { id: feed_subscribe, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - pause: { secs: 2, skip_on: [ios-uikit, android-material, harmony-arkui] }
-  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(7)", skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - assert_text: { id: "sidebar:header%3Afeeds", contains: "(7)", skip_on: [ios-uikit, android-material, harmony-arkui, macos-appkit] }
 
   # Subscription import/export lives in Settings ▸ Feeds.
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }

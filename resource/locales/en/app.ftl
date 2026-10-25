@@ -45,6 +45,7 @@ menu_export = Export Subscriptions…
 menu_next_unread = Next Unread
 menu_feed = Feed
 menu_refresh_feed = Refresh Feed
+new_feed_title = New Feed
 new_collection_title = New Collection
 new_collection_placeholder = Collection name
 collection_menu = Collection
