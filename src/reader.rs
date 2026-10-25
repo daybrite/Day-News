@@ -496,7 +496,11 @@ fn article_text() -> impl Piece {
 /// all act on what this pane is showing, so they ride its chrome and leave when it does. The
 /// window's bar cannot see the open article, which is why they used to need mirror signals.
 pub fn reader_pane() -> AnyPiece {
-    if cfg!(any(feature = "uikit", feature = "material", feature = "arkui")) {
+    if cfg!(any(
+        feature = "uikit",
+        feature = "material",
+        feature = "arkui"
+    )) {
         let scene = daynews_core::scene();
         column((
             when(

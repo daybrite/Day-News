@@ -10,7 +10,11 @@ use day::prelude::*;
 use day_piece_settings::prelude::*;
 
 /// Mobile Settings is reached from the toolbar and presented by Day as a native cover.
-pub const TOOLBAR_SETTINGS: bool = cfg!(any(feature = "uikit", feature = "material", feature = "arkui"));
+pub const TOOLBAR_SETTINGS: bool = cfg!(any(
+    feature = "uikit",
+    feature = "material",
+    feature = "arkui"
+));
 
 /// The project site the About window links to.
 const WEBSITE: &str = "https://daybrite.github.io/Day-News";

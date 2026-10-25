@@ -137,7 +137,9 @@ pub fn local_offset_seconds(at_unix: i64) -> Option<i32> {
 #[cfg(target_arch = "wasm32")]
 pub fn local_offset_seconds(at_unix: i64) -> Option<i32> {
     let ms = at_unix.checked_mul(1000)?;
-    let minutes: i32 = day_toolkit_dom::host_env(&format!("tzoffset:{ms}"))?.parse().ok()?;
+    let minutes: i32 = day_toolkit_dom::host_env(&format!("tzoffset:{ms}"))?
+        .parse()
+        .ok()?;
     minutes.checked_mul(60)
 }
 
