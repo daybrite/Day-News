@@ -7,7 +7,7 @@ license = "Apache-2.0"
 [dependencies]
 daynews-sync = { path = "../daynews-sync" }
 daynews-credentials = { path = "../daynews-credentials" }
-day-async = { git = "https://github.com/daybrite/day.git" }
+day-async = "0.6"
 log = "0.4"
 futures-util = "0.3"
 daynews-db = { path = "../daynews-db" }
@@ -17,18 +17,18 @@ daynews-opml = { path = "../daynews-opml" }
 # The view-model publishes signals derived from live queries: standing effects bridge the
 # container's queries and count badges into the value shapes the UI binds. day-core supplies
 # the main-loop executor (`day::task`) the refresh loop runs on; no async runtime is involved.
-day-reactive = { git = "https://github.com/daybrite/day.git" }
-day-core = { git = "https://github.com/daybrite/day.git" }
-day-model = { git = "https://github.com/daybrite/day.git" }
-day-persistence = { git = "https://github.com/daybrite/day-persistence.git", version = "0.1" }
+day-reactive = "0.6"
+day-core = "0.6"
+day-model = "0.6"
+day-persistence = "0.1"
 # The bundled demo feeds are written per language: `fetch_feed` reads the set for the locale the
 # app resolved (resource/assets/demo/README.md).
-day-localization = { git = "https://github.com/daybrite/day.git" }
+day-localization = "0.6"
 
 [dev-dependencies]
-day-spec = { git = "https://github.com/daybrite/day.git" }
+day-spec = "0.6"
 
 # Android resolves its writable files dir through the JNI bridge (see `store_dir`).
 [target.'cfg(target_os = "android")'.dependencies]
-day-toolkit-material = { git = "https://github.com/daybrite/day.git" }
-day-platform-android = { git = "https://github.com/daybrite/day.git" }
+day-toolkit-material = "0.6"
+day-platform-android = "0.6"

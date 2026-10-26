@@ -10,13 +10,13 @@ serde_json = "1"
 # The local article store rides day-persistence's lazy engine: models declared with
 # #[derive(Model)], relations with cascade rules, generated FTS5 shadows, and live queries
 # the UI binds to directly. SQLite itself comes bundled through the engine.
-day-persistence = { git = "https://github.com/daybrite/day-persistence.git", version = "0.1" }
-day-model = { git = "https://github.com/daybrite/day.git" }
+day-persistence = "0.1"
+day-model = "0.6"
 # "Today" means today where the reader is, so the cut-off is local midnight, not UTC midnight;
 # that needs the machine's UTC offset and its DST rules, and a wall clock that also works on wasm.
 # Both come from the host's time-zone database through this workspace's `daynews-time`.
 daynews-time = { path = "../daynews-time" }
-day-reactive = { git = "https://github.com/daybrite/day.git" }
+day-reactive = "0.6"
 # Statement tracing rides the standard logging facade the day crates already pull in; the
 # engine's trace hook logs each executed SQL at `trace!` in debug builds (Day-Sketch's shape).
 log = "0.4"
