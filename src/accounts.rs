@@ -247,34 +247,12 @@ pub fn sync_progress() -> impl Piece {
                         .reserving(res::str::sync_progress_feed(String::new()).format())
                         .id(day::id!(sync_progress_feed))
                         .grow_w(),
-                        label(move || {
-                            let s = status.get();
-                            let duration = |seconds: u64| {
-                                res::str::sync_progress_duration(res::str::SyncProgressDuration {
-                                    minutes: (seconds / 60) as f64,
-                                    seconds: (seconds % 60) as f64,
-                                })
-                                .format()
-                            };
-                            match s.remaining_seconds {
-                                Some(seconds) => {
-                                    res::str::sync_progress_eta(res::str::SyncProgressEta {
-                                        elapsed: duration(s.elapsed_seconds),
-                                        remaining: duration(seconds),
-                                    })
-                                    .format()
-                                }
-                                None => {
-                                    res::str::sync_progress_estimating(duration(s.elapsed_seconds))
-                                        .format()
-                                }
-                            }
-                        })
-                        .font(Font::Caption)
-                        .single_line()
-                        .color(move || crate::theme::palette().text_muted)
-                        .id(day::id!(sync_progress_time))
-                        .grow_w(),
+                        label(move || progress_timing(&status.get()))
+                            .font(Font::Caption)
+                            .single_line()
+                            .color(move || crate::theme::palette().text_muted)
+                            .id(day::id!(sync_progress_time))
+                            .grow_w(),
                     ))
                     .spacing(2.0)
                     .align(HAlign::Leading)
@@ -294,7 +272,26 @@ pub fn sync_progress() -> impl Piece {
         },
     )
 }
-fn progress_text(p: &daynews_sync::progress::Progress) -> String {
+/// How long the running sync has taken, and how much longer it should.
+pub(crate) fn progress_timing(s: &daynews_core::SyncStatus) -> String {
+    let duration = |seconds: u64| {
+        res::str::sync_progress_duration(res::str::SyncProgressDuration {
+            minutes: (seconds / 60) as f64,
+            seconds: (seconds % 60) as f64,
+        })
+        .format()
+    };
+    match s.remaining_seconds {
+        Some(seconds) => res::str::sync_progress_eta(res::str::SyncProgressEta {
+            elapsed: duration(s.elapsed_seconds),
+            remaining: duration(seconds),
+        })
+        .format(),
+        None => res::str::sync_progress_estimating(duration(s.elapsed_seconds)).format(),
+    }
+}
+
+pub(crate) fn progress_text(p: &daynews_sync::progress::Progress) -> String {
     use daynews_sync::progress::Phase;
     match p.phase {
         Phase::Preparing => res::str::sync_progress_preparing().format(),

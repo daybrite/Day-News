@@ -10,6 +10,8 @@ use daynews_db::Scope;
 /// The left gutter the unread dot lives in. Wide enough for the dot plus breathing room, and
 /// applied to read rows too so every title starts on the same x.
 const GUTTER: f64 = 18.0;
+/// Between the gutter and the text, in rows and feed headers alike, so their text lines up.
+const GUTTER_GAP: f64 = 6.0;
 const DOT: f64 = 8.0;
 
 /// The row's type ramp, in Day's semantic steps so it follows the reader's accessibility text
@@ -137,9 +139,8 @@ fn row_for(
             },
         ),
     ))
-    .spacing(6.0)
+    .spacing(GUTTER_GAP)
     .align(VAlign::Top)
-    .padding(Insets::symmetric(12.0, 8.0))
     // Taps are the native table's now (they select, and selection opens; see
     // `timeline_pane`), so the menu is the row's only gesture of its own.
     .context_menu(move || {
@@ -203,19 +204,21 @@ fn row_for(
 
 /// A feed's section header in the grouped timeline: the list's own group header, which the
 /// platform pins to the top while the feed's articles scroll under it (docs/list.md
-/// "Sections"). No background of its own: the host draws the group row.
+/// "Sections"). No background of its own: the host draws the group row. The icon fills the
+/// rows' unread-dot gutter, so the feed's name starts where its articles' titles do; the side
+/// margins are the list's own, as they are for rows.
 fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static) -> impl Piece {
     row((
         keyed(
             move || Some(crate::feed_icons::paths().with(|icons| icons.get(&feed().0).cloned())),
             |path| {
                 if let Some(path) = path {
-                    image(path.clone()).decorative().frame(20.0, 20.0).any()
+                    image(path.clone()).decorative().frame(GUTTER, GUTTER).any()
                 } else {
                     vector(crate::res::vectors::dashboard_feed)
                         .tint(move || palette().accent)
                         .decorative()
-                        .frame(20.0, 20.0)
+                        .frame(GUTTER, GUTTER)
                         .any()
                 }
             },
@@ -227,9 +230,9 @@ fn feed_header(feed: impl Fn() -> (u64, String) + Copy + 'static) -> impl Piece 
             .id_of(move || day::id!(feed_group_name, feed().0))
             .grow_w(),
     ))
-    .spacing(Space::S)
+    .spacing(GUTTER_GAP)
     .align(VAlign::Center)
-    .padding(Insets::symmetric(12.0, 6.0))
+    .padding(Insets::symmetric(0.0, 6.0))
     .id_of(move || day::id!(feed_group, feed().0))
     .grow_w()
 }
@@ -339,9 +342,10 @@ pub fn timeline_pane() -> impl Piece {
                 .grow_w()
             },
         ),
-        // Refresh progress, shown only while a refresh is running.
+        // Refresh progress, shown only while a refresh is running, unless the bottom bar's
+        // status already says it.
         when(
-            move || st.refresh_progress.get().is_some(),
+            move || st.refresh_progress.get().is_some() && !crate::toolbar::status_in_bottom_bar(),
             move || {
                 row((
                     spinner(),
@@ -379,7 +383,10 @@ pub fn timeline_pane() -> impl Piece {
             },
         ),
         #[cfg(not(target_arch = "wasm32"))]
-        crate::accounts::sync_status_footer(day::id!(sync_status_footer)),
+        when(
+            || !crate::toolbar::status_in_bottom_bar(),
+            || crate::accounts::sync_status_footer(day::id!(sync_status_footer)),
+        ),
     ))
     .background(move || palette().bg_alt)
     .toolbar(crate::toolbar::list_items)

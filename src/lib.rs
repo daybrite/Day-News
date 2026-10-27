@@ -225,7 +225,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         // Refresh and Mark All as Read act on the scope this list has chosen, so they ride this
         // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root
         // list's bar when it collapses. The article's commands are on the reader.
-        .toolbar(move || menu_scope.enter(toolbar::feed_items))
+        .toolbar(move || menu_scope.enter(|| toolbar::feed_items(section)))
         .icon_progress(move || {
             st.updating_feeds
                 .get()
@@ -359,12 +359,14 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
             || {
                 crate::settings::TOOLBAR_SETTINGS
                     && day::size_class().is_none_or(|size| size.width == WidthClass::Compact)
+                    && !toolbar::status_in_bottom_bar()
             },
             || accounts::sync_status_footer(day::id!(feeds_sync_status_footer)),
         )
     });
     column((
         navigation.id(day::id!(nav)).grow(),
+        toolbar::status_bar(),
         site_browser::browser_cover(),
         subscriptions::subscription_sheet(),
     ))
@@ -422,7 +424,7 @@ mod navigation_tests {
                     site_url: None,
                     feed_url: String::new(),
                     icon_url: None,
-                    has_fetched: true,
+                    last_fetched: Some(0),
                     total: 0,
                     newest: None,
                     collection_position: 0.0,

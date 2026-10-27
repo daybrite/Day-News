@@ -20,6 +20,21 @@ fn local_time(unix_secs: i64) -> i64 {
     ))
 }
 
+/// When the library was last brought up to date, for the list's status line: "Updated just
+/// now", minutes for the first hour, then the time of day, then the date.
+pub fn updated_status(unix_secs: i64, now: i64) -> String {
+    let age = now.saturating_sub(unix_secs).max(0);
+    if age < 60 {
+        crate::res::str::list_status_updated_now().format()
+    } else if age < 3_600 {
+        crate::res::str::list_status_updated_minutes((age / 60) as f64).format()
+    } else if daynews_time::start_of_day(unix_secs) == daynews_time::start_of_day(now) {
+        crate::res::str::list_status_updated_time(local_time(unix_secs) as f64).format()
+    } else {
+        crate::res::str::list_status_updated_date(local_time(unix_secs) as f64).format()
+    }
+}
+
 pub fn full_date(unix_secs: i64) -> String {
     crate::res::str::article_date(local_time(unix_secs) as f64).format()
 }

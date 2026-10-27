@@ -414,18 +414,10 @@ pub fn collection_picker(feed: u64) -> impl Piece {
     } else {
         vec![1, collections + 1]
     };
-    row((
-        label(res::str::collection_menu())
-            .font(Font::Caption)
-            .color(move || crate::theme::palette().text_muted)
-            .single_line(),
-        picker(CollectionBinding::new(feed), collection_options)
-            .menu()
-            .separators_before(separators)
-            .id(day::id!(dashboard_collection_picker)),
-    ))
-    .spacing(Space::S)
-    .align(VAlign::Center)
+    picker(CollectionBinding::new(feed), collection_options)
+        .menu()
+        .separators_before(separators)
+        .id(day::id!(dashboard_collection_picker))
 }
 
 fn choose(feed: u64, folder: Option<u64>) {
@@ -779,7 +771,7 @@ mod group_tests {
             site_url: None,
             feed_url: String::new(),
             icon_url: None,
-            has_fetched: true,
+            last_fetched: Some(0),
             total: unread * 2,
             newest: Some(id as i64),
             collection_position: (10 - id) as f64,

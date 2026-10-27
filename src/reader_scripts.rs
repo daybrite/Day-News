@@ -85,7 +85,7 @@ fn controls(feed: Option<u64>) -> impl Piece {
     column((
         row((
             button(if feed.is_some() {
-                res::str::reader_script_site()
+                res::str::reader_script_edit()
             } else {
                 res::str::reader_script_app()
             })

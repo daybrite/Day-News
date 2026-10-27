@@ -103,8 +103,8 @@ fn full_text_search_matches_title_and_body_across_two_shadows() {
     );
 
     assert_eq!(titles(&db, Scope::All, "splines"), ["Reticulating splines"]);
-    // `parallax` lives only in the body, a different model, reached through the relation
-    // crossing in the search fetch.
+    // `parallax` lives only in the body, a different model, reached through the body index's
+    // matches (a body shares its article's id).
     assert_eq!(titles(&db, Scope::All, "parallax"), ["Unrelated"]);
     // Live-as-you-type: a partial last token still matches.
     assert_eq!(titles(&db, Scope::All, "retic").len(), 1);
@@ -114,6 +114,47 @@ fn full_text_search_matches_title_and_body_across_two_shadows() {
     // Diacritics fold through the declared tokenizer.
     db.upsert_articles(f, url, &[item("3", "École buissonnière", "z", 300)]);
     assert_eq!(titles(&db, Scope::All, "ecole"), ["École buissonnière"]);
+}
+
+/// The dashboard's word cloud: words from titles and summaries in their own spelling, without
+/// the language's stopwords, a feed's boilerplate, or markup.
+#[test]
+fn word_cloud_counts_meaningful_words_in_their_own_spelling() {
+    let db = Db::open_in_memory().unwrap();
+    let url = "https://e.example/w";
+    let f = db.add_feed(url, "W", None);
+    let items: Vec<_> = (0..10)
+        .map(|i| {
+            let (title, body) = match i {
+                0..3 => ("The Rust compiler", "École gardens and the borrow checker"),
+                3..5 => ("The Rust compiler", "Notes on the borrow checker"),
+                9 => ("Garden tomatoes", "Ripe tomatoes in the école garden"),
+                _ => ("Garden tomatoes", "Ripe tomatoes in the garden"),
+            };
+            item(
+                &i.to_string(),
+                title,
+                &format!("{body}. Comments URL: https://news.example/item?id={i}"),
+                100 + i,
+            )
+        })
+        .collect();
+    db.upsert_articles(f, url, &items);
+    let words = db.word_cloud(Scope::Feed(f), 1_000, 50, "en").unwrap();
+    let count = |w: &str| words.iter().find(|c| c.word == w).map(|c| c.count);
+    // A name keeps its capital; a word seen lowercase a third as often as capitalized (as
+    // headlines and sentence starts capitalize it) takes its lowercase spelling, accent kept.
+    assert_eq!(count("Rust"), Some(5));
+    assert_eq!(count("tomatoes"), Some(10));
+    assert_eq!(count("école"), Some(4));
+    // Stopwords, the feed's boilerplate (in every article) and short or markup terms are gone.
+    for gone in [
+        "the", "and", "Comments", "comments", "URL", "url", "item", "https", "id",
+    ] {
+        assert_eq!(count(gone), None, "{gone} should not be in the cloud");
+    }
+    // Most frequent first.
+    assert!(words.windows(2).all(|w| w[0].count >= w[1].count));
 }
 
 #[test]
@@ -695,9 +736,7 @@ fn dashboards_measure_full_scopes_and_reuse_article_metrics_on_feed_checks() {
     assert_eq!(first.total, 2);
     assert_eq!(first.words, 403);
     assert_eq!(first.authors, 1);
-    assert_eq!(first.lengths, [1, 0, 1, 0, 0]);
     assert_eq!(first.days.iter().map(|s| s.1).sum::<u64>(), 2);
-    assert_eq!(first.habits.iter().flatten().sum::<u64>(), 2);
     assert_eq!(first.sources, vec![(feed, "Dashboard fixture".into(), 2)]);
     db.record_publications(feed, [now - 60, now - 86400 * 9]);
     db.feed_checked(feed, None, None);

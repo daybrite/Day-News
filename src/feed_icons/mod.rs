@@ -57,7 +57,9 @@ pub fn init() {
         let mut added = Vec::new();
         for feed in &feeds {
             if web_url(&feed.feed_url).is_none()
-                || (!feed.has_fetched && feed.site_url.is_none() && feed.icon_url.is_none())
+                || (feed.last_fetched.is_none()
+                    && feed.site_url.is_none()
+                    && feed.icon_url.is_none())
             {
                 continue;
             }

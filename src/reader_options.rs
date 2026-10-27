@@ -64,24 +64,18 @@ impl Binding<bool> for OptionBinding {
     }
 }
 /// The feed dashboard's override controls, with the feed's reader-script editor.
-pub fn controls(feed: u64) -> impl Piece {
-    column((
-        labeled(
-            crate::res::str::reader_inline_mode(),
-            toggle(OptionBinding { feed, auto: false })
-                .enabled(|| !crate::site_browser::incognito())
-                .id(day::id!(feed_inline_reader)),
-        ),
-        labeled(
-            crate::res::str::reader_auto_mode(),
-            toggle(OptionBinding { feed, auto: true })
-                .enabled(|| !crate::site_browser::incognito())
-                .id(day::id!(feed_auto_reader)),
-        ),
-        crate::reader_scripts::feed_controls(feed),
-    ))
-    .spacing(5.0)
-    .grow_w()
+/// The feed's Inline Reader Mode switch, for the overview's settings form.
+pub fn inline_toggle(feed: u64) -> impl Piece {
+    toggle(OptionBinding { feed, auto: false })
+        .enabled(|| !crate::site_browser::incognito())
+        .id(day::id!(feed_inline_reader))
+}
+
+/// The feed's Auto-load Reader Mode switch, for the overview's settings form.
+pub fn auto_toggle(feed: u64) -> impl Piece {
+    toggle(OptionBinding { feed, auto: true })
+        .enabled(|| !crate::site_browser::incognito())
+        .id(day::id!(feed_auto_reader))
 }
 #[cfg(test)]
 mod tests {

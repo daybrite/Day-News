@@ -297,8 +297,10 @@ Settings → Reader holds the app-wide defaults (`READER_INLINE`, `READER_AUTO`)
 dashboard exposes independent inline and auto-load overrides, persisted by stable feed ID in
 Day preferences. Feeds without overrides
 inherit the defaults, and changes propagate across windows. Selection changes/disposal retain
-the cancellation and stale-response checks above. Dashboard chart space contracts to make
-room for the feed controls inside the fixed viewport.
+the cancellation and stale-response checks above. The feed controls sit under the feed's name
+as one aligned form (Day's `form` and `labeled` in a grid: two columns, one on a compact
+width), and the dashboard's chart space contracts to make room for it inside the fixed
+viewport.
 
 NetNewsWire uses signed Feedbin extraction requests with a client ID and secret; no unauthenticated
 or User-Agent-whitelist integration is provided. Feedbin access requires credentials authorized
@@ -626,10 +628,12 @@ Regression coverage lives in daynews-db polling/store tests and the grouped-feed
 ### Scope dashboards
 
 An unselected reader is a native viewport-sized dashboard built from day-piece-charts.
-Individual feeds show publication rhythm, estimated word-count distribution, weekday/hour
-publishing habits, contributor counts, reading time, saved/read share and source metadata.
+Individual feeds show their settings form (collection, inline and auto-load reader modes,
+reader script, site data) under the hero, then publication rhythm, contributor counts, reading
+time, a word cloud across the row below, and source metadata.
 Today shows local-hour arrivals; Unread emphasizes backlog age; Starred maps the saved
-collection over publication time. Smart-feed dashboards add a publisher donut and counts.
+collection over publication time. Smart-feed dashboards set the word cloud beside a publisher
+donut and counts.
 Publisher legend links select their feed in the sidebar and navigate to its overview; hovering
 a link highlights its row and matching donut segment. Publisher navigation reopens the detail
 layer after the scope change, including on compact mobile stacks. The donut and legend
@@ -637,9 +641,41 @@ share a horizontal region with reserved widths; legend rows cannot consume the d
 height in a short CI capture window. Stable feed IDs keep identically named
 publishers separate. The shared day-piece-charts interaction grammar binds the legend and donut to one
 series-projected point parameter. Conditional opacity provides hover emphasis; registered
-link handlers select a publisher from either surface, with pointer cursors on its hit target. Publication plots offer date/count guides, length bars offer
-category/count guides through composable Inspect bindings, and heatmap cells annotate weekday, time and article count on hover
-or touch. These readouts use the plotted metadata without further database queries.
+link handlers select a publisher from either surface, with pointer cursors on its hit target. Publication plots offer date/count guides through composable Inspect bindings.
+These readouts use the plotted metadata without further database queries.
+
+The word cloud counts the scope's words straight from the search index: an `fts5vocab`
+instance table over `articles_fts` (`articles_fts_terms`, created at open on the writable
+connection, since the worker reads on a read-only one) lists each title and summary term with
+its article, and one SQL statement counts them per feed. A term in more than half of a feed's
+articles (a feed of eight or more) is that feed's boilerplate, "Comments URL" under every link
+an aggregator posts, and does not count for it. Stopwords come from the vendored stopwords-iso
+lists (`crates/daynews-db/data/stopwords/README.md`): every language whose list covers at least a
+quarter as much of the top terms as the best match, falling back to the reader's language, plus
+HTML leftovers. The index folds case and accents, so each kept term is shown in its most common
+original spelling from the scope's titles and summaries, lowercase when that is seen a third as
+often as the top spelling ("école", but "NASA"). The app caches clouds by scope, local day,
+article count and language, so read marks and rebuilt overviews never recount. The layout is
+Wordle's (and d3-cloud's): words largest first along an Archimedean spiral stretched to the
+card, type size by the square root of the count, the whole cloud shrinking until its larger
+words fit. Settings ▸ Articles chooses across and up (the default: two words in five upright,
+each trying both directions at every step) or across only, and the face: the system's, weighted
+by size, or one of nine bundled display faces from Google Fonts
+(`resource/fonts/licenses/README.md`). Choosing a word fills the search field with it, which
+searches the selected feed or smart feed; a phone returns to the list to show the results.
+
+A search matches article bodies by id: a body shares its article's id, so the body index's
+matches are an id list SQLite builds once (`Pred::Raw`), where crossing the `body` relation
+compiled to a subquery correlated per article and made a common word five to fifteen times
+slower than a rare one. Debug builds optimize the bundled SQLite alone
+(`[profile.dev.package.libsqlite3-sys]`): unoptimized it ran the word count and searches about
+seven times slower.
+
+On a Mac only Refresh and Show Only Unread Feeds sit over the sidebar; Next Unread, the
+overview, New Feed and Group by Feeds sit over the article list. AppKit folds the toolbar's
+search item into a magnifier whenever the sidebar's part of the toolbar holds more than two
+items beside its toggle, however much room the rest has (measured on macOS 26 with a plain
+`NSSearchToolbarItem`), so the light sidebar part keeps the native field open.
 All plots describe the full selected scope, independently of the 500-row timeline window
 and search. Empty scopes display honest zeroes rather than synthetic chart data. The Feed
 overview toolbar action makes dashboards reachable on compact navigation stacks and lets
@@ -695,6 +731,24 @@ filter uses Google Material Symbols’ Apache-2.0 mark_email_unread vector, sepa
 the article-grouping filter. Bulk Mark All as Read remains in the Article menu with its
 shortcut, rather than occupying the toolbar. Walkthrough bulk-marking steps use its
 shared command id through the menu model.
+
+The app's status has one bar per window. On iPhone it is the navigation's bottom bar, Mail's,
+shared by the feeds page and the article list (the reader has none): Show Only Unread Feeds
+at the leading edge, and at the trailing edge Cancel while a sync can be stopped, otherwise
+Mark All as Read over the list (a phone has no Article menu) or New Feed over the feeds.
+Between them, the status: a sync's step, a refresh's progress, or when the library was last
+updated, over the unread count (the list's, or every feed's on the feeds page). Refresh stays
+in the navigation bar. The sidebar's selection, which Back clears, tells the two pages apart.
+On a desktop window it is a status bar across the bottom of the whole window, shown by
+default and toggled with View ▸ Show/Hide Status Bar (⌥⌘/, since ⌘/ is Next Unread) or the
+Articles setting, `news.window.status_bar`: idle, the unread and feed counts and when the
+library was last updated; while a sync runs, its progress bar, step, timing and Cancel; while
+a refresh runs, its progress. With the status in a bar of its own, the lists drop the refresh
+row and the sync panel they show on Android and iPad, and a hidden status bar hides the
+status. "Updated 5 minutes ago" is the newer of the feeds' newest `last_fetched` and the
+account's last sync, and ages with a minute clock. Article rows and feed headers take the
+platform list's own side margins and pad nothing themselves; a feed header's icon fills the
+rows' unread-dot gutter, so feed names line up with article titles.
 
 ### Settings and About
 

@@ -47,7 +47,8 @@ pub struct FeedRow {
     pub site_url: Option<String>,
     pub feed_url: String,
     pub icon_url: Option<String>,
-    pub has_fetched: bool,
+    /// When the feed was last checked, whether or not it had anything new.
+    pub last_fetched: Option<i64>,
     /// Stored articles, read or not.
     pub total: i64,
     /// The newest article's publication time.
@@ -526,7 +527,7 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
                 site_url: f.site_url,
                 feed_url: f.feed_url,
                 icon_url: f.icon_url,
-                has_fetched: f.last_fetched_at.is_some(),
+                last_fetched: f.last_fetched_at,
                 total: stats.total,
                 newest: stats.newest,
                 collection_position: f.collection_position,
@@ -1522,6 +1523,96 @@ pub fn watch_dashboard(
                     Ok(snapshot) => output.set_if_changed(Some(snapshot.value)),
                     Err(error) => report(error),
                 }
+            }
+        });
+    });
+}
+
+/// How many words the dashboard's word cloud draws at most.
+pub const CLOUD_WORDS: usize = 90;
+
+/// The reader's language, as the ISO 639-1 code the word cloud's stopwords fall back to.
+fn reader_language() -> String {
+    day_localization::locale()
+        .get()
+        .split(['-', '_'])
+        .next()
+        .unwrap_or("en")
+        .to_ascii_lowercase()
+}
+
+/// Word clouds already counted, newest last, by what they were counted for: the scope, the
+/// local day, the number of stored articles and the stopword fallback language. An overview
+/// built again (a search changes the list's selection, the reader closes) shows its cloud at
+/// once rather than queueing the count again in front of the list's own query.
+type CloudKey = (Scope, i64, i64, String);
+thread_local! {
+    static CLOUDS: RefCell<Vec<(CloudKey, Vec<daynews_db::dashboard::CloudWord>)>> =
+        const { RefCell::new(Vec::new()) };
+}
+const CLOUD_CACHE: usize = 12;
+
+/// The dashboard's word cloud for `scope`, read off the search index on the worker
+/// (`Db::word_cloud`). It follows the scope, the day and the number of stored articles, but not
+/// read marks: a cloud is the gist of the articles, and recounting it on every article read
+/// would be work no reader could see.
+pub fn watch_word_cloud(
+    scope: Signal<Scope>,
+    local_day: Signal<i64>,
+    output: Signal<Option<Vec<daynews_db::dashboard::CloudWord>>>,
+) {
+    let st = store();
+    let totals = state();
+    Effect::new(move || {
+        let scope = scope.get();
+        let key = (
+            scope,
+            local_day.get(),
+            totals.total_articles.get(),
+            reader_language(),
+        );
+        if let Some(words) = CLOUDS.with(|c| {
+            c.borrow()
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, w)| w.clone())
+        }) {
+            output.set_if_changed(Some(words));
+            return;
+        }
+        let fallback = key.3.clone();
+        if !st.ready.get() {
+            return;
+        }
+        let Some(worker) = worker() else {
+            return;
+        };
+        scoped_task(async move {
+            let words = worker
+                .read(move |db| {
+                    Db {
+                        container: db.clone(),
+                    }
+                    .word_cloud(
+                        scope,
+                        daynews_time::now_unix(),
+                        CLOUD_WORDS,
+                        &fallback,
+                    )
+                })
+                .await;
+            match words {
+                Ok(words) => {
+                    CLOUDS.with(|c| {
+                        let mut c = c.borrow_mut();
+                        c.retain(|(k, _)| *k != key);
+                        c.push((key, words.clone()));
+                        let excess = c.len().saturating_sub(CLOUD_CACHE);
+                        c.drain(..excess);
+                    });
+                    output.set_if_changed(Some(words));
+                }
+                Err(error) => report(error),
             }
         });
     });

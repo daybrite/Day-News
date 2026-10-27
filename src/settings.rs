@@ -27,6 +27,29 @@ const SOURCE: &str = "https://github.com/daybrite/Day-News";
 
 /// Whether the timeline shows a heading per feed (the Feed menu toggles it too).
 pub static GROUP_BY_FEED: Pref<bool> = Pref::new("news.articles.group_by_feed", || true);
+/// How the overview's word cloud sets its words: `"2d"`, across and up (the default), or
+/// `"1d"`, across only.
+pub static WORD_CLOUD_LAYOUT: Pref<String> =
+    Pref::new("news.dashboard.word_cloud_layout", || WORD_CLOUD_2D.into());
+pub const WORD_CLOUD_2D: &str = "2d";
+pub const WORD_CLOUD_1D: &str = "1d";
+/// The word cloud's typeface: one of [`WORD_CLOUD_FONTS`] by family name, or empty for the
+/// system face.
+pub static WORD_CLOUD_FONT: Pref<String> = Pref::new("news.dashboard.word_cloud_font", String::new);
+/// The display faces bundled for the word cloud (resource/fonts/licenses/README.md).
+pub const WORD_CLOUD_FONTS: [day::FontFamily; 9] = [
+    res::fonts::abril_fatface,
+    res::fonts::amatic_sc,
+    res::fonts::bungee,
+    res::fonts::chewy,
+    res::fonts::lobster,
+    res::fonts::pacifico,
+    res::fonts::permanent_marker,
+    res::fonts::righteous,
+    res::fonts::special_elite,
+];
+/// Whether a desktop window shows its status bar along the bottom (View ▸ Show Status Bar).
+pub static STATUS_BAR: Pref<bool> = Pref::new("news.window.status_bar", || true);
 /// Show synchronization beneath the article list and the compact mobile feeds list.
 #[cfg(not(target_arch = "wasm32"))]
 pub static SHOW_SYNC_STATUS: Pref<bool> = Pref::new("news.articles.show_sync_status", || true);
@@ -173,7 +196,48 @@ fn articles_group() -> Group {
         .row(
             rows::choice(&PREVIEW_LINES, res::str::settings_preview_lines(), lines)
                 .id(day::id!(preview_lines_picker)),
+        )
+        .row(
+            rows::choice(
+                &WORD_CLOUD_LAYOUT,
+                res::str::settings_word_cloud_layout(),
+                [
+                    (
+                        WORD_CLOUD_2D.to_owned(),
+                        res::str::settings_word_cloud_2d().format(),
+                    ),
+                    (
+                        WORD_CLOUD_1D.to_owned(),
+                        res::str::settings_word_cloud_1d().format(),
+                    ),
+                ],
+            )
+            .id(day::id!(word_cloud_layout_picker)),
+        )
+        .row(
+            rows::choice(
+                &WORD_CLOUD_FONT,
+                res::str::settings_word_cloud_font(),
+                std::iter::once((
+                    String::new(),
+                    res::str::settings_word_cloud_system_font().format(),
+                ))
+                .chain(
+                    WORD_CLOUD_FONTS
+                        .iter()
+                        .map(|family| (family.as_str().to_owned(), family.as_str().to_owned())),
+                ),
+            )
+            .id(day::id!(word_cloud_font_picker)),
         );
+    // A desktop window reports synchronization in its status bar; the phones and tablets
+    // show it beneath their lists.
+    if !TOOLBAR_SETTINGS {
+        return group.row(
+            rows::toggle(&STATUS_BAR, res::str::settings_show_status_bar())
+                .id(day::id!(show_status_bar)),
+        );
+    }
     #[cfg(not(target_arch = "wasm32"))]
     let group = group.row(
         rows::toggle(&SHOW_SYNC_STATUS, res::str::settings_show_sync_status())

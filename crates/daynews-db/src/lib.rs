@@ -312,8 +312,18 @@ pub fn timeline_fetch(scope: Scope, search: &str, limit: usize) -> Fetch {
     let search = search.trim();
     if !search.is_empty() {
         let q = fts_query(search);
+        // A body shares its article's id, so the body index's matches are article ids too,
+        // and the match is one id list SQLite builds once. Crossing the `body` relation instead
+        // compiles to a subquery correlated per article, which made a common word ("Apple", as
+        // a word-cloud tap searches for) five times slower than a rare one.
         f = f.filter(
-            Article::fts().matches(q.clone()) | Article::body().any(ArticleBody::fts().matches(q)),
+            Article::fts().matches(q.clone())
+                | Pred::Raw(
+                    "articles.id IN (SELECT rowid FROM article_bodies_fts \
+                     WHERE article_bodies_fts MATCH ?)"
+                        .into(),
+                    vec![Value::Text(q)],
+                ),
         );
     }
     f
@@ -420,6 +430,17 @@ impl Db {
         )?;
         let db = Db { container };
         db.backfill_word_counts()?;
+        // The search index's vocabulary, for the dashboard's word cloud (`Db::word_cloud`): a
+        // virtual table that stores nothing of its own, only lists the index's terms with the
+        // articles they occur in. Created here, on the writable connection, because the
+        // database worker answers reads on a read-only one.
+        db.container.try_with_connection(|conn| {
+            conn.execute(
+                "CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts_terms \
+                 USING fts5vocab(articles_fts, instance)",
+                &[],
+            )
+        })?;
         Ok(db)
     }
 

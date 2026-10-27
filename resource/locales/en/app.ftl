@@ -15,6 +15,13 @@ subscribe_action = Subscribe
 refresh_action = Refresh
 toggle_read = Toggle Read/Unread
 refresh_progress = Refreshing { $done } of { $total }…
+list_status_updated_now = Updated just now
+list_status_updated_minutes = { $minutes ->
+    [one] Updated { $minutes } minute ago
+   *[other] Updated { $minutes } minutes ago
+}
+list_status_updated_time = Updated at { DATETIME($when, timeStyle: "short") }
+list_status_updated_date = Updated { DATETIME($when, dateStyle: "medium") }
 mark_all_read = Mark All as Read
 mark_read = Mark as Read
 mark_unread = Mark as Unread
@@ -133,6 +140,13 @@ reader_view_unavailable = Load Full Content is unavailable. Open the original we
 show_unread_feeds_only = Show Only Unread Feeds
 
 menu_find_articles = Find Articles…
+menu_view = View
+menu_show_status_bar = Show Status Bar
+menu_hide_status_bar = Hide Status Bar
+status_bar_feeds = { $count ->
+    [one] { NUMBER($count) } feed
+   *[other] { NUMBER($count) } feeds
+}
 storage_error = { $error }
 
 status_feed_refreshed = Refreshed { $title }
@@ -193,7 +207,6 @@ dashboard_read = Read
 dashboard_number = { NUMBER($value, maximumFractionDigits: 0) }
 dashboard_minutes = { NUMBER($value, maximumFractionDigits: 0) } min
 dashboard_percent = { NUMBER($value, maximumFractionDigits: 0) }%
-dashboard_words = { NUMBER($value, maximumFractionDigits: 0) } words on average
 dashboard_authors = { $count ->
     [one] One contributing author
    *[other] { NUMBER($count) } contributing authors
@@ -205,19 +218,14 @@ dashboard_activity_starred = When your saved stories were published
 dashboard_activity_note = { DATETIME($start, dateStyle: "medium", timeStyle: "none") } – { DATETIME($end, dateStyle: "medium", timeStyle: "none") } · articles by publication date
 dashboard_today_note = Today, in your local time
 dashboard_unread_note = Recent discoveries and stories waiting a little longer
-dashboard_lengths = Story lengths
-dashboard_lengths_note = Estimated words · stored article text
+dashboard_words_title = Common words
+dashboard_words_note = Titles and summaries · choose a word to search for it
+dashboard_words_empty = Not enough text yet
 dashboard_sources = Publisher mix
 dashboard_sources_note = Where these stories come from
 dashboard_chart_date = { DATETIME($when, dateStyle: "medium", timeStyle: "none") }
 dashboard_chart_hour = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: "false") }:00
 dashboard_chart_count = Articles
-dashboard_chart_words = Words
-dashboard_short = <100
-dashboard_medium = 100–299
-dashboard_long = 300–699
-dashboard_deep = 700–1,499
-dashboard_very_long = 1,500+
 dashboard_age_today = <1 day
 dashboard_age_week = 1–6 days
 dashboard_age_month = 1–4 weeks
@@ -241,27 +249,12 @@ dashboard_fixed = A fixed refresh interval is selected. Automatic would use this
 dashboard_no_schedule = Subscribe to a feed to see its refresh forecast.
 dashboard_backoff = Some feeds are backing off after an error or an origin-requested delay.
 dashboard_policy = Based on recent publication cadence and recency; quiet feeds are checked less often.
-dashboard_last_story = Latest story: { DATETIME($when, dateStyle: "medium", timeStyle: "short") }
 dashboard_show = Feed overview
-dashboard_habits = Publishing habits
-dashboard_habits_note = Local weekday and hour · brighter means more stories
-dashboard_mon = Mon
-dashboard_tue = Tue
-dashboard_wed = Wed
-dashboard_thu = Thu
-dashboard_fri = Fri
-dashboard_sat = Sat
-dashboard_sun = Sun
 dashboard_checked = Last checked: { DATETIME($when, dateStyle: "medium", timeStyle: "short") }
-dashboard_read_share = { NUMBER($percent, maximumFractionDigits: 0) }% read · { NUMBER($count) } starred
 dashboard_contributors = Named authors
 
 dashboard_refresh_now = Refresh Now
 
-dashboard_cell_annotation = { NUMBER($hour, minimumIntegerDigits: 2, useGrouping: "false") }:00 · { $count ->
-    [one] 1 article
-   *[other] { NUMBER($count, maximumFractionDigits: 0) } articles
-    }
 
 subscribe_invalid = Enter a valid website or feed URL
 subscribe_missing = No feed found
@@ -284,8 +277,9 @@ reader_load_full = Load Full Article
 reader_hide_full = Hide Full Article
 
 
-site_preview = Preview Site or Login
-site_forget = Forget all site information
+site_preview = Preview or Log In…
+site_forget = Forget Site Data
+site_label = Site
 incognito_mode = Incognito Mode
 site_browser_back = Back
 site_browser_forward = Forward
@@ -306,7 +300,9 @@ subscribe_preview_ready =
     }
 
 reader_script_app = App Reader Script…
-reader_script_site = Site Reader Script…
+reader_script_site = Site Reader Script
+reader_script_edit = Edit…
+reader_script_label = Reader script
 reader_script_sites = Manage Site Scripts…
 reader_script_new_site = New site…
 reader_script_address = Site URL
@@ -382,3 +378,9 @@ reader_page_unavailable = This article is no longer available.
 reader_page_failed = Unable to load this article. Return to the article list to try again.
 
 settings_show_sync_status = Show synchronization status
+settings_show_status_bar = Show status bar
+settings_word_cloud_layout = Word cloud layout
+settings_word_cloud_2d = Across and up
+settings_word_cloud_1d = Across only
+settings_word_cloud_font = Word cloud font
+settings_word_cloud_system_font = System

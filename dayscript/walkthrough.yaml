@@ -52,7 +52,7 @@ flow:
   - toolbar: { item: read, only_on: [ios-uikit] }
   - pause: { secs: 1 }
   - toolbar: { item: feed_overview }
-  - wait_for: { id: dashboard_habits_chart }
+  - wait_for: { id: dashboard_word_cloud }
   - assert_text: { id: dashboard_title, text: Kitchen Science }
   - assert_visible: { id: dashboard_feed_link }
   - assert_visible: { id: dashboard_refresh_now }
@@ -68,7 +68,7 @@ flow:
   - screenshot: { name: dashboard-unread, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - assert_missing: { id: dashboard_refresh_now, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - tap: { id: dashboard_publisher:9105033381806695217, skip_on: [ios-uikit, android-material, harmony-arkui] }
-  - wait_for: { id: dashboard_habits_chart, skip_on: [ios-uikit, android-material, harmony-arkui] }
+  - wait_for: { id: dashboard_word_cloud, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - assert_text: { id: dashboard_title, text: Kitchen Science, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - assert_visible: { id: dashboard_refresh_now, skip_on: [ios-uikit, android-material, harmony-arkui] }
   - navigate: { route: unread, skip_on: [ios-uikit, android-material, harmony-arkui] }

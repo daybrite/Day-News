@@ -2,6 +2,7 @@
 # Launch with DAY_NEWS_SYNC_TEST=1 DAY_NEWS_SYNC_TEST_LATENCY_MS=1500 in an isolated store.
 name: mobile-navigation
 description: In-place unread filtering, toolbar Settings, and sync footers on both compact lists.
+# The iPhone reports synchronization in its bottom bar's status instead, so it skips the footer steps.
 flow:
   # Let the launch-triggered fixture sync finish before issuing Refresh.
   - pause: { secs: 8 }
@@ -26,10 +27,10 @@ flow:
   - pause: { secs: 8 }
   - toolbar: { item: refresh }
   - pause: { secs: 1 }
-  - assert_missing: { id: feeds_sync_status_footer }
+  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
   - navigate: { route: all }
   - pause: { secs: 1 }
-  - assert_missing: { id: sync_status_footer }
+  - assert_missing: { id: sync_status_footer, skip_on: [ios-uikit] }
   - pause: { secs: 8 }
   - toolbar: { item: settings }
   - wait_for: { id: prefs_group:articles }
@@ -39,25 +40,25 @@ flow:
   - pause: { secs: 1 }
   - toolbar: { item: refresh }
   - pause: { secs: 1 }
-  - assert_visible: { id: sync_status_footer }
+  - assert_visible: { id: sync_status_footer, skip_on: [ios-uikit] }
   - screenshot: mobile-sync-footer
-  - tap: { id: sync_cancel_transfer }
+  - tap: { id: sync_cancel_transfer, skip_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - assert_missing: { id: sync_status_footer }
+  - assert_missing: { id: sync_status_footer, skip_on: [ios-uikit] }
   - nav_back: {}
   - assert_route: { route: "" }
   - toolbar: { item: refresh }
-  - wait_for: { id: feeds_sync_status_footer }
+  - wait_for: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
   - screenshot: mobile-feeds-sync-footer
-  - tap: { id: sync_cancel_transfer }
+  - tap: { id: sync_cancel_transfer, skip_on: [ios-uikit] }
   - pause: { secs: 1 }
-  - assert_missing: { id: feeds_sync_status_footer }
+  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
   # Navigate while syncing: each page owns its footer, with progress preserved on Back.
   - toolbar: { item: refresh }
-  - wait_for: { id: feeds_sync_status_footer }
+  - wait_for: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
   - navigate: { route: all }
-  - assert_visible: { id: sync_status_footer }
+  - assert_visible: { id: sync_status_footer, skip_on: [ios-uikit] }
   - nav_back: {}
-  - assert_visible: { id: feeds_sync_status_footer }
+  - assert_visible: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
   - pause: { secs: 15 }
-  - assert_missing: { id: feeds_sync_status_footer }
+  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }

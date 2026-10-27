@@ -36,7 +36,7 @@ flow:
   - wait_for: { id: dashboard_publisher_chart }
   - assert_missing: { id: dashboard_refresh_now }
   - tap: { id: dashboard_publisher:8512098384262059532 }
-  - wait_for: { id: dashboard_habits_chart }
+  - wait_for: { id: dashboard_word_cloud }
   - assert_visible: { id: dashboard_refresh_now }
   - navigate: { route: settings/feeds, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - navigate: { route: settings, only_on: [web-dom] }

@@ -47,6 +47,26 @@ pub fn install() {
                 ],
             )
             .bar_role(MenuBarRole::File),
+            // Claim the View slot for the status bar, keeping the stock Enter Full Screen.
+            sub_menu(
+                res::str::menu_view(),
+                vec![
+                    menu_item(if crate::settings::STATUS_BAR.get() {
+                        res::str::menu_hide_status_bar()
+                    } else {
+                        res::str::menu_show_status_bar()
+                    })
+                    .id(day::id!(toggle_status_bar))
+                    .shortcut(Shortcut::primary("/").alt())
+                    .action(|| {
+                        crate::settings::STATUS_BAR
+                            .set(!crate::settings::STATUS_BAR.get_untracked())
+                    }),
+                    menu_separator(),
+                    menu_role(MenuRole::Fullscreen),
+                ],
+            )
+            .bar_role(MenuBarRole::View),
             sub_menu(
                 res::str::menu_go(),
                 vec![

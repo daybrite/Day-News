@@ -144,5 +144,17 @@
 	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>DayPieces_DayPieces.bundle/fonts/AbrilFatface-Regular.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/AmaticSC-Bold.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/Bungee-Regular.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/Chewy-Regular.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/Lobster-Regular.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/Pacifico-Regular.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/PermanentMarker-Regular.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/Righteous-Regular.ttf</string>
+		<string>DayPieces_DayPieces.bundle/fonts/SpecialElite-Regular.ttf</string>
+	</array>
 </dict>
 </plist>

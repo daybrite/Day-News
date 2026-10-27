@@ -46,7 +46,8 @@ pub struct FeedRow {
     pub site_url: Option<String>,
     pub feed_url: String,
     pub icon_url: Option<String>,
-    pub has_fetched: bool,
+    /// When the feed was last checked, whether or not it had anything new.
+    pub last_fetched: Option<i64>,
     /// Stored articles, read or not.
     pub total: i64,
     /// The newest article's publication time.
@@ -517,7 +518,7 @@ fn build_feed_rows(q: &Query<daynews_db::Feed>) -> Vec<FeedRow> {
                 site_url: f.site_url().with(|v| v.cloned().flatten()),
                 feed_url: f.feed_url().with(|v| v.cloned().unwrap_or_default()),
                 icon_url: f.icon_url().with(|v| v.cloned().flatten()),
-                has_fetched: f.last_fetched_at().with(|v| v.copied().flatten()).is_some(),
+                last_fetched: f.last_fetched_at().with(|v| v.copied().flatten()),
                 total: figures.total,
                 newest: figures.newest,
                 collection_position: f.collection_position().with(|v| v.copied().unwrap_or(0.0)),
@@ -1345,6 +1346,53 @@ pub fn watch_dashboard(
             db.dashboard_cached(scope, daynews_time::now_unix(), &mut cache.borrow_mut())
         }) {
             output.set_if_changed(Some(snapshot));
+        }
+    });
+}
+
+/// How many words the dashboard's word cloud draws at most.
+pub const CLOUD_WORDS: usize = 90;
+
+/// The dashboard's word cloud for `scope` (`Db::word_cloud`), following the scope, the day and
+/// the number of stored articles but not read marks.
+pub fn watch_word_cloud(
+    scope: Signal<Scope>,
+    local_day: Signal<i64>,
+    output: Signal<Option<Vec<daynews_db::dashboard::CloudWord>>>,
+) {
+    // Counted clouds by what they were counted for, so an overview built again reuses one.
+    type Counted = Vec<(
+        (Scope, i64, i64, String),
+        Vec<daynews_db::dashboard::CloudWord>,
+    )>;
+    let counted: RefCell<Counted> = RefCell::default();
+    let st = state();
+    Effect::new(move || {
+        let scope = scope.get();
+        let fallback = day_localization::locale()
+            .get()
+            .split(['-', '_'])
+            .next()
+            .unwrap_or("en")
+            .to_ascii_lowercase();
+        let key = (scope, local_day.get(), st.total_articles.get(), fallback);
+        if let Some(words) = counted
+            .borrow()
+            .iter()
+            .find(|(k, _)| *k == key)
+            .map(|(_, w)| w.clone())
+        {
+            output.set_if_changed(Some(words));
+            return;
+        }
+        if let Some(Ok(words)) =
+            with_db(|db| db.word_cloud(scope, daynews_time::now_unix(), CLOUD_WORDS, &key.3))
+        {
+            let mut counted = counted.borrow_mut();
+            counted.push((key, words.clone()));
+            let excess = counted.len().saturating_sub(12);
+            counted.drain(..excess);
+            output.set_if_changed(Some(words));
         }
     });
 }
