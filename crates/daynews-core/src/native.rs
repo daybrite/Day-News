@@ -382,7 +382,7 @@ pub enum StatusMessage {
 pub fn init(format_status: fn(StatusMessage) -> String) {
     let st = store();
     *st.format_status.borrow_mut() = Some(format_status);
-    let path = store_dir().join("sheets2.sqlite3"); // Resolve platform directories on the UI thread.
+    let path = store_dir().join(crate::LIBRARY);
     let can_undo = st.can_undo;
     let can_redo = st.can_redo;
     day_core::install_undo_bridge(
@@ -508,7 +508,7 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
         container: db.clone(),
     };
     let stats = d.feed_stats()?;
-    let feeds = db
+    let feeds: Vec<FeedRow> = db
         .query::<Feed>()
         .filter(Feed::unsubscribed().eq(false))
         .sort(Feed::position().asc())
@@ -562,11 +562,14 @@ fn sidebar_snapshot(db: &ModelContainer) -> Result<SidebarSnapshot, DbError> {
             })
         })
         .collect::<Result<_, DbError>>()?;
+    // Only the feeds the sidebar lists: an unsubscribed feed keeps its articles, but they show
+    // in no list, so they count toward no total either.
+    let unread = feeds.iter().map(|f| f.unread).sum();
     Ok((
         feeds,
         folders,
         tags,
-        stats.values().map(|s| s.unread).sum(),
+        unread,
         d.count(Scope::Starred).try_get()? as i64,
         d.unread_count(Scope::Today).try_get()? as i64,
         d.count(Scope::All).try_get()? as i64,
@@ -622,6 +625,23 @@ fn timeline_snapshot(
         .try_get()?;
     Ok((result, count))
 }
+/// The subscribed feeds already holding articles at any of `links`, most first
+/// (`Db::feeds_with_links`); empty when the library cannot be read.
+pub async fn feeds_with_links(links: Vec<String>) -> Vec<(u64, usize)> {
+    let Ok(worker) = ready_worker().await else {
+        return Vec::new();
+    };
+    worker
+        .read(move |db| {
+            Db {
+                container: db.clone(),
+            }
+            .feeds_with_links(&links)
+        })
+        .await
+        .unwrap_or_default()
+}
+
 /// Read-only page preparation: never selects or marks an article read.
 pub async fn preview_article(id: u64) -> Result<Option<StoredArticle>, DbError> {
     ready_worker()
@@ -1432,53 +1452,17 @@ fn fallback_title(url: &str) -> String {
     host.strip_prefix("www.").unwrap_or(host).to_string()
 }
 
-/// Where the SQLite file lives, per platform.
+/// The app's data directory, where the library lives: `day_spec::storage::data_dir()`, a folder
+/// named for the app where its platform keeps app data, or `DAY_DATA_DIR`, which a test or a UI
+/// validation run sets so it never touches a reader's subscriptions.
 pub fn store_dir() -> PathBuf {
-    // UI validation can use a fresh store without modifying a reader's subscriptions.
-    std::env::var_os("DAY_NEWS_DATA_DIR")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
-        .unwrap_or_else(base_dir)
+    day_spec::storage::data_dir().unwrap_or_else(std::env::temp_dir)
 }
 
-#[cfg(not(any(target_os = "ios", target_os = "android", target_arch = "wasm32")))]
-fn base_dir() -> PathBuf {
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(std::env::temp_dir)
-        .join(".daybrite-sheets")
-}
-
-#[cfg(target_arch = "wasm32")]
-fn base_dir() -> PathBuf {
-    // Web: the "path" names an OPFS file, not a filesystem location; there is no $HOME and
-    // `std::env::temp_dir` panics on wasm.
-    PathBuf::from("daybrite-sheets")
-}
-
-#[cfg(target_os = "ios")]
-fn base_dir() -> PathBuf {
-    // `$HOME` is the sandbox container, whose root is not writable; Application Support is.
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(std::env::temp_dir)
-        .join("Library/Application Support/daybrite-sheets")
-}
-
-#[cfg(target_os = "android")]
-fn base_dir() -> PathBuf {
-    // The app's private files dir, via the JNI bridge. Resolved on the main thread (the only
-    // thread this crate runs on), so the app classloader is reachable.
-    android_files_dir()
-        .unwrap_or_else(std::env::temp_dir)
-        .join("daybrite-sheets")
-}
-
-#[cfg(target_os = "android")]
-fn android_files_dir() -> Option<PathBuf> {
-    use day_toolkit_material::{DayRuntime, java_string, with_env};
-    let path = with_env(|env| java_string(env, DayRuntime::filesDirPath))?;
-    (!path.is_empty()).then(|| PathBuf::from(path))
+/// The app's cache directory, for what can be fetched again (feed icons):
+/// `day_spec::storage::cache_dir()`.
+pub fn cache_dir() -> PathBuf {
+    day_spec::storage::cache_dir().unwrap_or_else(|| std::env::temp_dir().join("day-news-cache"))
 }
 
 /// Subscribe only while a dashboard is mounted; scope disposal cancels obsolete projections.

@@ -1,0 +1,25 @@
+# Subscribing to a feed already in the library asks first instead of adding it twice.
+# Requires seed-demo.yaml and an isolated DAY_DATA_DIR.
+name: day-news-subscription-duplicates
+description: A second subscription to the same address offers the existing feed.
+flow:
+  - dialog_mode: { mode: scripted }
+  - wait_for: { id: nav, timeout_secs: 30 }
+  # Cancel leaves the sheet and its preview, ready to subscribe again.
+  - toolbar: { item: new_feed }
+  - wait_for: { id: feed_url }
+  - input: { id: feed_url, text: "asset:demo/kitchen-science.xml" }
+  - tap: { id: feed_verify }
+  - tap: { id: feed_subscribe }
+  - assert_presented: {}
+  - respond: { dismiss: true }
+  - assert_not_presented:
+  - assert_visible: { id: subscription_sheet }
+  # Show Feed closes the sheet on the feed already subscribed.
+  - tap: { id: feed_subscribe }
+  - assert_presented: {}
+  - respond: { button: 0 }
+  - assert_not_presented:
+  - pause: { secs: 1 }
+  - assert_missing: { id: subscription_sheet }
+  - assert_text: { id: scope_title, text: Kitchen Science }

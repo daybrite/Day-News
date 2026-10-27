@@ -1,4 +1,4 @@
-# Start tests/feed-refresh-server.py and use an isolated DAY_NEWS_DATA_DIR.
+# Start tests/feed-refresh-server.py and use an isolated DAY_DATA_DIR.
 name: day-news-feed-progress
 flow:
   - dialog_mode: { mode: scripted }
@@ -7,6 +7,8 @@ flow:
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/progress/known' }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
+  # Subscribing opens the new feed; New Feed is on the feeds page (a phone's bottom bar).
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/progress/unknown' }

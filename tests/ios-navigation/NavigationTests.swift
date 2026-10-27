@@ -7,7 +7,7 @@ final class NavigationTests: XCTestCase {
 
     func testNewFeedRemainsUsableWhenPasteIsDenied() {
         continueAfterFailure = false
-        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-new-feed-clipboard-test"
+        app.launchEnvironment["DAY_DATA_DIR"] = "/tmp/day-news-new-feed-clipboard-test"
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launch()
         let newFeed = app.buttons["New Feed…"].firstMatch
@@ -47,7 +47,7 @@ final class NavigationTests: XCTestCase {
 
     func testScrollingFeedChromeAndAdaptiveSettings() {
         continueAfterFailure = false
-        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-mobile-chrome"
+        app.launchEnvironment["DAY_DATA_DIR"] = "/tmp/day-news-mobile-chrome"
         app.launchEnvironment["DAY_NEWS_SYNC_TEST"] = "1"
         app.launch()
         let back = app.navigationBars.buttons.matching(
@@ -92,7 +92,7 @@ final class NavigationTests: XCTestCase {
 
     func testTabletToolbarColumns() {
         continueAfterFailure = false
-        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-mobile-chrome"
+        app.launchEnvironment["DAY_DATA_DIR"] = "/tmp/day-news-mobile-chrome"
         app.launchEnvironment["DAY_NEWS_SYNC_TEST"] = "1"
         app.launch()
         XCTAssertGreaterThan(app.frame.width, 600)
@@ -125,7 +125,7 @@ final class NavigationTests: XCTestCase {
 
     func testRootReachableFromSmartFeeds() {
         continueAfterFailure = false
-        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-navigation-up-empty"
+        app.launchEnvironment["DAY_DATA_DIR"] = "/tmp/day-news-navigation-up-empty"
         app.launch()
         // A compact initial selection may show the list or the root. Either way,
         // a visible list must provide UIKit's Back, not just a scripted nav_back.
@@ -164,7 +164,7 @@ final class NavigationTests: XCTestCase {
         // XCTest may relaunch its target. Explicitly retain the isolated fixture store
         // and navigate natively; never let an offscreen timeline label pass as an article.
         continueAfterFailure = false
-        app.launchEnvironment["DAY_NEWS_DATA_DIR"] = "/tmp/day-news-native-pager"
+        app.launchEnvironment["DAY_DATA_DIR"] = "/tmp/day-news-native-pager"
         app.launchEnvironment["DAY_NEWS_HTTP_TEST"] = "1"
         app.launch()
         let feed = app.staticTexts["Field Notes"].firstMatch

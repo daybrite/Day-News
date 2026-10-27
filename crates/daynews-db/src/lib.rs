@@ -692,6 +692,38 @@ impl Db {
         Ok(stats)
     }
 
+    /// The subscribed feeds already holding articles at any of `links`, with how many of them
+    /// each holds, most first: how the subscription sheet recognizes a feed it is about to add
+    /// twice under another address.
+    pub fn feeds_with_links(&self, links: &[String]) -> Result<Vec<(u64, usize)>, DbError> {
+        let links: Vec<Value> = links
+            .iter()
+            .filter(|l| !l.is_empty())
+            .take(500)
+            .map(|l| Value::Text(l.clone()))
+            .collect();
+        let mut found = Vec::new();
+        if links.is_empty() {
+            return Ok(found);
+        }
+        let marks = vec!["?"; links.len()].join(",");
+        self.container.try_with_connection(|conn| {
+            conn.query(
+                &format!(
+                    "SELECT a.feed, COUNT(DISTINCT a.url) FROM articles a JOIN feeds f ON f.id = a.feed \
+                     WHERE f.unsubscribed = 0 AND a.url IN ({marks}) GROUP BY a.feed ORDER BY 2 DESC"
+                ),
+                &links,
+                &mut |row| {
+                    if let (Ok(feed), Ok(count)) = (row.get(0).as_int(), row.get(1).as_int()) {
+                        found.push((feed as u64, count as usize));
+                    }
+                },
+            )
+        })?;
+        Ok(found)
+    }
+
     /// Create a tag (idempotent by name).
     pub fn add_tag(&self, name: &str) -> u64 {
         let id = tag_id(name);

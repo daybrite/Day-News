@@ -9,3 +9,6 @@ pub use native::*;
 mod legacy;
 #[cfg(target_arch = "wasm32")]
 pub use legacy::*;
+
+/// The library's file name in the app's data directory ([`store_dir`]).
+pub const LIBRARY: &str = "library.db";

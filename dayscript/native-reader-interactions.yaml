@@ -1,5 +1,5 @@
 # Start tests/reader-view-server.py 28772. Android: adb reverse tcp:28772 tcp:28772.
-# Use an isolated DAY_NEWS_DATA_DIR. open_url avoids depending on clipboard permission.
+# Use an isolated DAY_DATA_DIR. open_url avoids depending on clipboard permission.
 name: native-reader-interactions
 description: Long previews, visibility-triggered extraction, stable scrolling, and reversible reader transitions.
 flow:

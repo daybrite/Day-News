@@ -1,4 +1,4 @@
-# Requires seed-demo.yaml. Run with DAY_NEWS_DATA_DIR pointing to an isolated store.
+# Requires seed-demo.yaml. Run with DAY_DATA_DIR pointing to an isolated store.
 name: day-news-reader-regressions
 description: Next Unread crosses scopes, clears search, and preserves the loaded reader on flag changes.
 flow:

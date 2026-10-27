@@ -225,7 +225,7 @@ reader walkthrough on native targets; their steps explicitly skip web DOM. The t
 sets compose in one Day simulation.
 
 For native UI validation, launch `dayscript/feedbin-sync.yaml` with `DAY_NEWS_SYNC_TEST=1` and a
-fresh `DAY_NEWS_DATA_DIR`. Relaunch against that same store with `dayscript/feedbin-resume.yaml`
+fresh `DAY_DATA_DIR`. Relaunch against that same store with `dayscript/feedbin-resume.yaml`
 to verify restoration, disconnect, and invalid credentials. Also set
 `DAY_NEWS_SYNC_TEST_SECURE_STORE=1` on both launches to exercise the real native credential vault;
 otherwise the explicit fixture mode supplies only the synthetic test password. Ordinary launches
@@ -384,7 +384,7 @@ checks the feed heading after returning from Settings.
 
 Desktop gets a File menu (New Feed, New Collection, New Window, Refresh, Import/Export Subscriptions,
 Close Window), a Go menu (Previous/Next Article ⌘[/⌘], Next Unread ⌘/, then the three smart feeds),
-a Feed menu (Collection, Refresh Feed, Mark All as Read, Unsubscribe) and an Article menu. These are one live `app_menu` model,
+a Feed menu (Collection, Rename Feed…, Refresh Feed, Mark All as Read, Unsubscribe) and an Article menu. These are one live `app_menu` model,
 so all four desktop toolkits get the same bar from the same code, and dayscript drives them by
 Fluent key on every one. Next Unread walks the visible timeline forward and wraps, then falls back
 to any unread article, so it keeps working when the current scope is exhausted.
@@ -395,6 +395,13 @@ also carries a context menu with the same three commands (`item(…).context_men
 row that was right-clicked or long-pressed. Both call the same daynews-core functions, so the
 walkthrough's Feed-menu steps cover the row menu's actions too; `menu:` steps reach only the app
 menu, so the row menu itself is checked by hand.
+
+Renaming a feed has three ways in: Feed ▸ Rename Feed… (disabled with no feed selected), Rename…
+in the feed row's context menu, and the Rename… button in the Name row of the feed's overview
+form. All three open one prompt (`feed_list::rename_feed`) that starts from the current title and
+ignores an empty or unchanged answer. The new title is the feed's custom title: refreshes keep
+it, and a connected Feedbin account gets it as the subscription's title. `dayscript/feed-rename.yaml`
+drives each way in; on AppKit, whose sidebar is a native outline, the row menu step is skipped.
 
 ## What real feeds taught us
 
@@ -563,7 +570,7 @@ Refresh cache regressions live in `crates/daynews-feed/tests/conditional.rs` (re
 requests with validator rotation on identical 200 and 304), the feed crate's response tests,
 and `crates/daynews-db/tests/store.rs` (durability and unchanged-field writes). Run
 `dayscript/conditional-cache.yaml` against `tests/feed-refresh-server.py` with an isolated
-`DAY_NEWS_DATA_DIR`; `/stats` verifies request counts and the busy-origin pause.
+`DAY_DATA_DIR`; `/stats` verifies request counts and the busy-origin pause.
 
 Conditional requests save response bodies, not the request itself. Servers without validators
 still transfer bodies, although equal fingerprints avoid repeat imports. Last-check metadata
@@ -832,6 +839,16 @@ has verified successfully, then commits that response with its HTTP validators w
 again and selects the new source. Editing the URL invalidates the ability to subscribe to an old
 preview. Clipboard prefill accepts web/feed URLs only. Downloaded feed files are read with a
 bounded asynchronous FileUrl lease and use their advertised website for fresh discovery.
+
+Subscribe first checks the library for the same feed (`already_subscribed` in
+src/subscriptions.rs). An address already subscribed, compared without its scheme, `www.`, host
+case or trailing slash, is the same feed: an alert offers Show Feed or Cancel, never a second
+copy. A feed whose previewed stories are mostly (at least half their links) already in one
+subscribed feed is that feed under another address, the way a site can link its own feed twice
+or one feed can arrive through Feedbin and directly: an alert asks before Subscribe Anyway,
+offering Show Feed instead. Several feeds of one site, each with stories of its own, pass with no
+question, so the bundled demo feeds (one site, seven feeds) seed without one. Cancel keeps the
+sheet and its verified preview. `dayscript/subscription-duplicates.yaml` covers the first case.
 
 ### Sync progress, cancellation, and authoritative local reset
 

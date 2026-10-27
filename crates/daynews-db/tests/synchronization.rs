@@ -220,7 +220,7 @@ fn failed_subscription_does_not_replay_history_after_restart() {
     use day_reactive::Binding;
     use daynews_db::sync::AccountFields;
     let path = std::env::temp_dir().join(format!(
-        "daynews-sync-upload-failure-{}-{}.sqlite",
+        "daynews-sync-upload-failure-{}-{}.db",
         std::process::id(),
         daynews_time::now_epoch_ms()
     ));
@@ -296,7 +296,7 @@ fn known_boundary_page_does_not_rewrite_records_or_count_as_new() {
 #[test]
 fn offline_intent_survives_database_reopen() {
     let path = std::env::temp_dir().join(format!(
-        "daynews-sync-{}-{}.sqlite",
+        "daynews-sync-{}-{}.db",
         std::process::id(),
         daynews_time::now_epoch_ms()
     ));

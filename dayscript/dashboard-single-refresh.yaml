@@ -1,4 +1,4 @@
-# Run tests/feed-refresh-server.py first in a fresh DAY_NEWS_DATA_DIR.
+# Run tests/feed-refresh-server.py first in a fresh DAY_DATA_DIR.
 # Compare /stats before/after the final tap: only /feed/1 should gain one request.
 name: day-news-dashboard-single-refresh
 description: Refresh Now targets the displayed source and preserves conditional requests.
@@ -17,6 +17,8 @@ flow:
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/1' }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
+  # Subscribing opens the new feed; New Feed is on the feeds page (a phone's bottom bar).
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/2' }

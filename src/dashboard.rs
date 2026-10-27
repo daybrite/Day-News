@@ -658,31 +658,35 @@ pub fn dashboard() -> impl Piece {
     .any();
     let words = Signal::new(None);
     daynews_core::watch_word_cloud(scope, local_day, words);
-    DashboardPieces(
-        scope,
-        vec![
-            hero,
-            // A feed's own settings, under its name: the first thing to change on its overview.
-            keyed(
-                move || match scope.get() {
-                    Scope::Feed(id) => Some((id, daynews_core::state().folders.with(Vec::len))),
-                    _ => None,
-                },
-                |&(feed, _)| feed_settings(feed),
-            )
-            .any(),
-            metrics,
-            activity_card(data, scope),
-            words_card(words, scope),
-            when(
-                move || !matches!(scope.get(), Scope::Feed(_)),
-                move || sources_card(data),
-            )
-            .any(),
-            forecast(data, scope, clock),
-        ],
+    // The regions share the viewport, and scroll once it is too short for the charts to draw
+    // (`min_height`): a feed's settings take a short window's room first.
+    scroll(
+        DashboardPieces(
+            scope,
+            vec![
+                hero,
+                // A feed's own settings, under its name: the first thing to change on its overview.
+                keyed(
+                    move || match scope.get() {
+                        Scope::Feed(id) => Some((id, daynews_core::state().folders.with(Vec::len))),
+                        _ => None,
+                    },
+                    |&(feed, _)| feed_settings(feed),
+                )
+                .any(),
+                metrics,
+                activity_card(data, scope),
+                words_card(words, scope),
+                when(
+                    move || !matches!(scope.get(), Scope::Feed(_)),
+                    move || sources_card(data),
+                )
+                .any(),
+                forecast(data, scope, clock),
+            ],
+        )
+        .padding(18.0),
     )
-    .padding(18.0)
     .background(move || palette().bg)
     .id(day::id!(feed_dashboard))
     .grow()
@@ -691,6 +695,14 @@ pub fn dashboard() -> impl Piece {
 /// A feed's settings, in one aligned form under its name: two columns of labeled controls where
 /// the window is wide enough, one on a phone.
 fn feed_settings(feed: u64) -> AnyPiece {
+    let name = || {
+        labeled(
+            res::str::feed_name_label(),
+            button(res::str::rename_feed())
+                .action(move || crate::feed_list::rename_feed(feed))
+                .id(day::id!(dashboard_rename_feed)),
+        )
+    };
     let collection = || {
         labeled(
             res::str::collection_menu(),
@@ -723,13 +735,15 @@ fn feed_settings(feed: u64) -> AnyPiece {
     };
     let compact = day::size_class().is_none_or(|size| size.width == WidthClass::Compact);
     let rows = if compact {
-        column((collection(), inline(), auto(), script(), site()))
+        column((name(), collection(), inline(), auto(), script(), site()))
             .spacing(4.0)
             .any()
     } else {
         grid((
-            grid_row((collection(), inline())),
-            grid_row((script(), auto())),
+            // The buttons and the picker down the first column, the switches beside them.
+            grid_row((name(), inline())),
+            grid_row((collection(), auto())),
+            grid_row((script(),)),
             // The site's two buttons need the width of both columns.
             grid_row((site().grid_span(2),)),
         ))
@@ -1095,8 +1109,10 @@ fn spiral_place(
     }
 }
 
-/// Measures and places the seven dashboard regions inside the exact offered viewport.
-/// No scroll container or reactive state writes occur in layout. Charts share flexible space.
+/// Measures and places the seven dashboard regions inside the exact offered viewport, never
+/// shorter than `min_height`: the scroll around it offers no height and then places it at the
+/// taller of that and the viewport. No reactive state writes occur in layout. Charts share
+/// flexible space.
 struct DashboardPieces(Signal<Scope>, Vec<AnyPiece>);
 impl Piece for DashboardPieces {
     fn build(self, cx: &mut BuildCx) -> day::RNode {
@@ -1207,6 +1223,31 @@ fn regions(size: Size, settings: f64, publishers: bool) -> [Rect; 7] {
         Rect::new(0.0, h - footer, w, footer),
     ]
 }
+/// The word cloud's least height, its card's heading included, before the dashboard scrolls.
+const MIN_CLOUD: f64 = 180.0;
+
+/// The least height at which the regions give the word cloud `MIN_CLOUD` (and so the activity
+/// chart its own floor). The plots' share grows with the height, so halving finds it.
+fn min_height(width: f64, settings: f64, publishers: bool) -> f64 {
+    let cloud = |h: f64| {
+        regions(Size::new(width, h), settings, publishers)[4]
+            .size
+            .height
+    };
+    let (mut low, mut high) = (0.0_f64, 4000.0_f64);
+    if cloud(high) < MIN_CLOUD {
+        return high;
+    }
+    while high - low > 1.0 {
+        let mid = (low + high) / 2.0;
+        if cloud(mid) < MIN_CLOUD {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    high.ceil()
+}
 impl DashboardLayout {
     /// The settings form's own height at `width` (nothing builds there off a feed's overview),
     /// and whether the publisher mix is showing (everywhere but a feed's overview).
@@ -1234,8 +1275,13 @@ impl DashboardLayout {
 }
 impl Layout for DashboardLayout {
     fn measure(&self, cx: &mut dyn LayoutOps, children: &[day::RNode], p: Proposal) -> Size {
-        let size = Size::new(p.width.unwrap_or(680.0), p.height.unwrap_or(700.0));
-        let (settings, publishers) = self.measure_sections(cx, children, size.width);
+        let width = p.width.unwrap_or(680.0);
+        let (settings, publishers) = self.measure_sections(cx, children, width);
+        let size = Size::new(
+            width,
+            p.height
+                .unwrap_or_else(|| min_height(width, settings, publishers)),
+        );
         for (&child, rect) in children.iter().zip(regions(size, settings, publishers)) {
             cx.measure_child(child, Proposal::exact(rect.size));
         }
@@ -1293,6 +1339,25 @@ mod tests {
                 placed.iter().any(|w| w.vertical),
                 across_and_up,
                 "upright words only in the two-dimensional layout"
+            );
+        }
+    }
+    #[test]
+    fn dashboard_scrolls_before_the_charts_collapse() {
+        for (width, settings, publishers) in [
+            (390.0, 0.0, true),
+            (420.0, 200.0, false),
+            (420.0, 420.0, false),
+            (900.0, 120.0, false),
+        ] {
+            let h = min_height(width, settings, publishers);
+            let boxes = regions(Size::new(width, h), settings, publishers);
+            assert!(boxes[4].size.height >= MIN_CLOUD, "cloud {:?}", boxes[4]);
+            assert!(boxes[3].size.height >= 130.0, "activity {:?}", boxes[3]);
+            let shorter = regions(Size::new(width, h - 2.0), settings, publishers);
+            assert!(
+                shorter[4].size.height < MIN_CLOUD,
+                "{h} is not the least height"
             );
         }
     }

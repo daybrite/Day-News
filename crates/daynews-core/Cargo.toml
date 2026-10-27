@@ -24,11 +24,5 @@ day-persistence = "0.1"
 # The bundled demo feeds are written per language: `fetch_feed` reads the set for the locale the
 # app resolved (resource/assets/demo/README.md).
 day-localization = "0.6"
-
-[dev-dependencies]
+# `storage::{data_dir, cache_dir}`: where the library and the feed icons live (`store_dir`).
 day-spec = "0.6"
-
-# Android resolves its writable files dir through the JNI bridge (see `store_dir`).
-[target.'cfg(target_os = "android")'.dependencies]
-day-toolkit-material = "0.6"
-day-platform-android = "0.6"

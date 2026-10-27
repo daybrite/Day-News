@@ -135,9 +135,15 @@ day launch -t android-material  --script dayscript/seed-mobile.yaml  # a few liv
 day launch -t macos-appkit --script dayscript/walkthrough.yaml  # the full loop, with screenshots
 ```
 
-For an isolated validation run, pass `--env DAY_NEWS_DATA_DIR=/absolute/writable/path`
-to `day launch`. This selects a separate store for the demo scripts; omit it for normal use.
-On iOS the path must be inside the app's sandbox.
+Day News keeps its library, `library.db`, in its data directory and the feed icons in its cache
+directory, the folders Day gives every app
+([where app data lives](https://daybrite.dev/docs/how-to/guide-storage/#where-app-data-lives)). On
+macOS those are `~/Library/Application Support/dev.daybrite.news/` and
+`~/Library/Caches/dev.daybrite.news/`.
+
+For an isolated validation run, pass `--env DAY_DATA_DIR=/absolute/writable/path`
+to `day launch`. The library, the icon cache and Day's own files then all go there; omit it for
+normal use. On iOS and Android the path must be inside the app's sandbox.
 
 Those [dayscripts](https://daybrite.dev/docs/dayscript) are the UI tests, and the walkthrough is
 what CI runs on every target to produce the gallery. Everything below the UI is testable without a
@@ -292,7 +298,7 @@ unset the variable and relaunch to disable it. Logs can include article text and
 URLs, and tracing adds overhead, so enable it when diagnosing database behavior.
 
 Network regressions: run `python3 tests/feed-refresh-server.py`, then launch against a fresh
-`DAY_NEWS_DATA_DIR` with `--script dayscript/feed-refresh.yaml`. Relaunch the same library on
+`DAY_DATA_DIR` with `--script dayscript/feed-refresh.yaml`. Relaunch the same library on
 macOS with `--script dayscript/feed-refresh-relaunch.yaml`; `/stats` on port 28762 should show
 additional 304s, no new icon downloads, and at most four active feed requests.
 
@@ -325,7 +331,7 @@ The feed crate's `tests/interception.rs` exercises the normal conditional-fetch 
 transport failure. Its integration-test process owns the global session; other test executables
 are isolated. Existing loopback-server tests still cover the native stack.
 
-For a local app dayscript, use a fresh absolute `--env DAY_NEWS_DATA_DIR=/tmp/news-http-test`
+For a local app dayscript, use a fresh absolute `--env DAY_DATA_DIR=/tmp/news-http-test`
 (the News store override; `DAY_DATA_DIR` does not isolate this app), add
 `--env DAY_NEWS_HTTP_TEST=1`, and run
 `dayscript/http-interception.yaml`. This explicitly installs a synthetic publication at

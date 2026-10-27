@@ -194,11 +194,15 @@ pub fn subscription_sheet() -> impl Piece {
         let sheet_scope = day::reactive::Scope::current();
         let address = Signal::new(initial.clone());
         let busy = Signal::new(false);
+        // Only Verify's fetch says it is checking; Subscribe's question has its own dialog.
+        let verifying = Signal::new(false);
         let status = Signal::new(String::new());
         let articles = Signal::new(Vec::<daynews_feed::ParsedItem>::new());
         let title = Signal::new(String::new());
         let verified_input = Signal::new(None::<String>);
-        let verified = std::rc::Rc::new(std::cell::RefCell::new(None));
+        let verified = std::rc::Rc::new(std::cell::RefCell::new(
+            None::<(String, daynews_feed::FeedUpdate)>,
+        ));
         let verify_result = verified.clone();
         let subscribe_result = verified.clone();
         column((
@@ -221,7 +225,25 @@ pub fn subscription_sheet() -> impl Piece {
                             return;
                         };
                         busy.set(true);
+                        let unchosen = subscribe_result.clone();
                         day::task(async move {
+                            match already_subscribed(&url, &update).await {
+                                Proceed::Subscribe => {}
+                                Proceed::Show(feed) => {
+                                    select_subscribed_feed(feed).await;
+                                    if sheet_scope.is_alive() {
+                                        busy.set(false);
+                                    }
+                                    sheet.open.set(None);
+                                    return;
+                                }
+                                // The preview stays, ready for Subscribe again.
+                                Proceed::Cancel => {
+                                    *unchosen.borrow_mut() = Some((url, update));
+                                    busy.set(false);
+                                    return;
+                                }
+                            }
                             match daynews_core::subscribe_discovered(url, update).await {
                                 Ok(feed) => {
                                     // Keep this task's scope alive until the feed projection
@@ -256,6 +278,7 @@ pub fn subscription_sheet() -> impl Piece {
                     .enabled(move || !busy.get() && !address.get().trim().is_empty())
                     .action(move || {
                         busy.set(true);
+                        verifying.set(true);
                         status.set(String::new());
                         articles.set(Vec::new());
                         verified_input.set(None);
@@ -284,6 +307,7 @@ pub fn subscription_sheet() -> impl Piece {
                                 Err(()) => status.set(crate::res::str::subscribe_failed().format()),
                             }
                             busy.set(false);
+                            verifying.set(false);
                         });
                         sheet_scope.on_cleanup(move || task.abort());
                     })
@@ -291,7 +315,7 @@ pub fn subscription_sheet() -> impl Piece {
             ))
             .spacing(Space::S),
             when(
-                move || busy.get(),
+                move || verifying.get(),
                 || label(crate::res::str::subscribe_verifying()).id(day::id!(feed_verifying)),
             ),
             label(move || status.get())
@@ -331,6 +355,83 @@ pub fn subscription_sheet() -> impl Piece {
     })
     .sheet()
     .unrouted()
+}
+
+/// What to do with a verified feed that may already be in the library.
+enum Proceed {
+    Subscribe,
+    Show(u64),
+    Cancel,
+}
+
+/// The guard against subscribing to one feed twice. A feed at an address already subscribed
+/// (`http` or `https`, with or without `www.` and a trailing slash) is the same feed: the choice
+/// is to show it. A feed whose stories mostly arrive already through another subscription is
+/// the same feed under a second address (a site's two links to its own feed, or one feed
+/// through a sync service and directly): subscribing again asks first. Several feeds of one
+/// site, each with stories of its own, pass without a question.
+async fn already_subscribed(url: &str, update: &daynews_feed::FeedUpdate) -> Proceed {
+    let titled = |feed: u64| {
+        daynews_core::state()
+            .feeds
+            .with_untracked(|feeds| feeds.iter().find(|f| f.id == feed).map(|f| f.title.clone()))
+    };
+    let key = address_key(url);
+    let same_address = daynews_core::state().feeds.with_untracked(|feeds| {
+        feeds
+            .iter()
+            .find(|f| address_key(&f.feed_url) == key)
+            .map(|f| (f.id, f.title.clone()))
+    });
+    if let Some((feed, title)) = same_address {
+        return match Alert::new(crate::res::str::subscribe_duplicate_title())
+            .message(crate::res::str::subscribe_duplicate(title.as_str()))
+            .button(crate::res::str::subscribe_show_existing(), feed)
+            .cancel(crate::res::str::cancel_action())
+            .await
+        {
+            Some(feed) => Proceed::Show(feed),
+            None => Proceed::Cancel,
+        };
+    }
+    let links: Vec<String> = match update {
+        daynews_feed::FeedUpdate::Modified(feed, _, _) => {
+            feed.items.iter().filter_map(|i| i.url.clone()).collect()
+        }
+        _ => Vec::new(),
+    };
+    let distinct = links.iter().collect::<std::collections::HashSet<_>>().len();
+    let Some((feed, shared)) = daynews_core::feeds_with_links(links).await.first().copied() else {
+        return Proceed::Subscribe;
+    };
+    let Some(title) = titled(feed) else {
+        return Proceed::Subscribe;
+    };
+    if distinct == 0 || shared * 2 < distinct {
+        return Proceed::Subscribe;
+    }
+    match Alert::new(crate::res::str::subscribe_same_feed_title())
+        .message(crate::res::str::subscribe_same_feed(title.as_str()))
+        .button(crate::res::str::subscribe_anyway(), None)
+        .button(crate::res::str::subscribe_show_existing(), Some(feed))
+        .cancel(crate::res::str::cancel_action())
+        .await
+    {
+        Some(None) => Proceed::Subscribe,
+        Some(Some(feed)) => Proceed::Show(feed),
+        None => Proceed::Cancel,
+    }
+}
+
+/// A feed address with what does not tell two feeds apart taken off: the scheme, a leading
+/// `www.`, the host's case and a trailing slash.
+fn address_key(url: &str) -> String {
+    let url = url.trim();
+    let rest = url.split_once("://").map_or(url, |(_, rest)| rest);
+    let (host, path) = rest.split_once('/').unwrap_or((rest, ""));
+    let host = host.to_ascii_lowercase();
+    let host = host.strip_prefix("www.").unwrap_or(&host);
+    format!("{host}/{}", path.trim_end_matches('/'))
 }
 
 /// Wait for the committed feed projection and its native sidebar bindings to settle.
@@ -419,6 +520,22 @@ pub fn export_opml() {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn feed_addresses_compare_without_scheme_www_case_or_trailing_slash() {
+        use super::address_key;
+        assert_eq!(
+            address_key("https://www.TheRegister.com/headlines.atom"),
+            address_key("http://theregister.com/headlines.atom/")
+        );
+        assert_ne!(
+            address_key("https://www.theregister.com/headlines.atom"),
+            address_key("https://www.theregister.com/?lab_viewport=rss")
+        );
+        assert_eq!(
+            address_key("asset:demo/kitchen-science.xml"),
+            address_key("asset:demo/kitchen-science.xml")
+        );
+    }
     #[test]
     fn clipboard_suggestion_does_not_wait_past_the_form_deadline() {
         use futures_util::FutureExt;

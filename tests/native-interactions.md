@@ -28,7 +28,7 @@ HTML, including a long preview and a delayed full article. CORS is enabled for b
 For a desktop target:
 
 ```sh
-day launch -t macos-appkit --env DAY_NEWS_DATA_DIR=/tmp/day-news-regression \
+day launch -t macos-appkit --env DAY_DATA_DIR=/tmp/day-news-regression \
   --script dayscript/seed-demo.yaml \
   --script dayscript/reading-navigation.yaml \
   --script dayscript/article-deselection.yaml \
@@ -175,7 +175,7 @@ an explicit simulator destination and a derived-data directory outside the repos
 Use `-only-testing:NavigationProbe/NavigationTests/testEmptySmartFeeds` for this case.
 
 For `testPullToRefresh`, run `python3 tests/feed-refresh-server.py`, then launch with
-an isolated `DAY_NEWS_DATA_DIR` and `--script dayscript/pull-refresh-seed.yaml`.
+an isolated `DAY_DATA_DIR` and `--script dayscript/pull-refresh-seed.yaml`.
 On Android also use `adb -s SERIAL reverse tcp:28762 tcp:28762`, select that same device
 with `--android-device SERIAL`, and run `tests/android-pull-refresh.py --adb PATH --serial SERIAL`.
 On iOS select `-only-testing:NavigationProbe/NavigationTests/testPullToRefresh`.

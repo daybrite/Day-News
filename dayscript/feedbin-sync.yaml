@@ -1,4 +1,4 @@
-# Run with DAY_NEWS_SYNC_TEST=1 and a fresh DAY_NEWS_DATA_DIR.
+# Run with DAY_NEWS_SYNC_TEST=1 and a fresh DAY_DATA_DIR.
 # The synthetic server intercepts the production day-part-http client.
 name: feedbin-sync
 description: Native account login, preview, article import and reading.

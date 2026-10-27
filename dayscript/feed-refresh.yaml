@@ -9,30 +9,36 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 } # Allow the subscription sheet to close before opening the next.
+  # Subscribing opens the new feed; New Feed is on the feeds page (a phone's bottom bar).
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/2' }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 } # Allow the subscription sheet to close before opening the next.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/3' }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 } # Allow the subscription sheet to close before opening the next.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/4' }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 } # Allow the subscription sheet to close before opening the next.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/5' }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 } # Allow the subscription sheet to close before opening the next.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/6' }

@@ -1,0 +1,34 @@
+# Rename a feed from its overview, from the Feed menu and from its sidebar row's context menu.
+# Requires seed-demo.yaml and an isolated DAY_DATA_DIR. Feed IDs are deterministic.
+name: day-news-feed-rename
+description: Rename a feed three ways; its overview and its article list follow each new title.
+flow:
+  - dialog_mode: { mode: scripted }
+  - wait_for: { id: nav, timeout_secs: 30 }
+  - navigate: { route: "feed:9105033381806695217" }
+  - wait_for: { id: dashboard_rename_feed }
+  - assert_text: { id: dashboard_title, text: Kitchen Science }
+  # The overview's Rename… button. The prompt starts from the current title.
+  - tap: { id: dashboard_rename_feed }
+  - assert_presented: {}
+  - respond: { text: "Kitchen Chemistry" }
+  - assert_not_presented:
+  - pause: { secs: 1 }
+  - assert_text: { id: dashboard_title, text: Kitchen Chemistry }
+  - assert_text: { id: scope_title, text: Kitchen Chemistry }
+  # An empty answer changes nothing.
+  - tap: { id: dashboard_rename_feed }
+  - respond: { text: "" }
+  - pause: { secs: 1 }
+  - assert_text: { id: dashboard_title, text: Kitchen Chemistry }
+  # Feed ▸ Rename Feed… acts on the selected feed.
+  - menu: { key: menu_rename_feed, path: [menu_feed], skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - respond: { text: "Food Science", skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - pause: { secs: 1, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  - assert_text: { id: dashboard_title, text: Food Science, skip_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
+  # The sidebar row's context menu (AppKit's sidebar is a native outline whose rows are not Day elements).
+  - context_menu: { id: 'sidebar:item%3Afeed%3A9105033381806695217', item_id: feed_rename, only_on: [macos-gtk, macos-qt, linux-gtk, linux-qt] }
+  - respond: { text: "Kitchen Science", only_on: [macos-gtk, macos-qt, linux-gtk, linux-qt] }
+  - pause: { secs: 1, only_on: [macos-gtk, macos-qt, linux-gtk, linux-qt] }
+  - assert_text: { id: dashboard_title, text: Kitchen Science, only_on: [macos-gtk, macos-qt, linux-gtk, linux-qt] }
+  - screenshot: feed-renamed

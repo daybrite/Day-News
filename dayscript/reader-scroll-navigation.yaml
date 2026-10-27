@@ -1,4 +1,4 @@
-# Start tests/reader-view-server.py 28763 with a fresh isolated DAY_NEWS_DATA_DIR.
+# Start tests/reader-view-server.py 28763 with a fresh isolated DAY_DATA_DIR.
 name: reader-scroll-navigation
 description: New articles start at the top; flags and retained mobile pages preserve scroll.
 flow:

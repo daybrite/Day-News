@@ -93,6 +93,7 @@ pub fn install() {
                     crate::commands::group_by_feeds().menu_item(),
                     menu_separator(),
                     selected_feed_collection_menu(),
+                    selected_feed_rename_item(),
                     crate::commands::preview_site().menu_item(),
                     menu_item(res::str::menu_refresh_feed())
                         .action(|| with_selected_feed(daynews_core::refresh_feed)),
@@ -194,6 +195,17 @@ fn with_selected_feed(f: impl FnOnce(u64)) {
     }
 }
 
+/// Feed ▸ Rename Feed…: rename the selected feed. Disabled while no feed is selected.
+fn selected_feed_rename_item() -> MenuEntry {
+    let selected = matches!(
+        daynews_core::try_scene().map(|sc| sc.scope.get()),
+        Some(Scope::Feed(_))
+    );
+    menu_item(res::str::menu_rename_feed())
+        .enabled(selected)
+        .action(|| with_selected_feed(crate::feed_list::rename_feed))
+}
+
 /// Feed ▸ Collection: the selected feed's Collection menu, the same one its sidebar row has.
 /// Disabled while no feed is selected.
 fn selected_feed_collection_menu() -> MenuEntry {
@@ -231,6 +243,9 @@ pub fn feed_context_menu(feed: u64, unread: i64, collection: Option<u64>) -> Vec
             .enabled(unread > 0)
             .action(move || daynews_core::mark_feed_read(feed, true)),
         menu_separator(),
+        menu_item(res::str::rename_feed())
+            .id(day::id!(feed_rename))
+            .action(move || crate::feed_list::rename_feed(feed)),
         crate::feed_list::collection_menu(feed, collection),
         menu_item(res::str::move_feed_up())
             .id(day::id!(feed_move_up))

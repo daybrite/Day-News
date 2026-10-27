@@ -25,36 +25,43 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
+  # Subscribing opens the new feed; New Feed is on the feeds page (a phone's bottom bar).
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "asset:demo/night-sky.xml" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "asset:demo/kitchen-science.xml" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "asset:demo/atlas.xml" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "asset:demo/word-of-the-day.xml" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "asset:demo/workshop.xml" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 1 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "asset:demo/almanac.json" }

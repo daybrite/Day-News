@@ -1,4 +1,4 @@
-# Start tests/reader-view-server.py with a fresh isolated DAY_NEWS_DATA_DIR.
+# Start tests/reader-view-server.py with a fresh isolated DAY_DATA_DIR.
 name: reader-transitions
 description: Full-content transitions, the reader defaults in Settings, and global auto-load inheritance.
 flow:

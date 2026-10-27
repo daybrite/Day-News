@@ -1,4 +1,4 @@
-# Run after seed-demo.yaml with an isolated DAY_NEWS_DATA_DIR.
+# Run after seed-demo.yaml with an isolated DAY_DATA_DIR.
 name: day-news-reading-navigation
 description: Previous/Next follow the visible list and search; link copying preserves the reader.
 flow:

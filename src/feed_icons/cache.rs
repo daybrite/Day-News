@@ -115,7 +115,7 @@ pub fn thumbnail(bytes: &[u8]) -> Option<Vec<u8>> {
 }
 
 pub fn root() -> PathBuf {
-    daynews_core::store_dir().join("feed-icons-v1")
+    daynews_core::cache_dir().join("feed-icons-v1")
 }
 
 #[cfg(test)]

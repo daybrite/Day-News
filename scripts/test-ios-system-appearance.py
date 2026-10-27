@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check live system-theme changes in a running, seeded iOS simulator instance.
 
-Requires Pillow, Xcode and a Day CLI. Use an isolated DAY_NEWS_DATA_DIR and seed-demo.yaml
+Requires Pillow, Xcode and a Day CLI. Use an isolated DAY_DATA_DIR and seed-demo.yaml
 when launching the app; do not pass DAY_THEME. This test does not relaunch the app between
 changes. It checks rendered Day-News palette colors, not just UIKit's native toolbar.
 

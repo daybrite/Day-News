@@ -1,6 +1,6 @@
 """Synthetic conditional-feed and icon fixtures; no publisher traffic.
 
-Run this server, then dayscript/feed-refresh.yaml with a fresh DAY_NEWS_DATA_DIR.
+Run this server, then dayscript/feed-refresh.yaml with a fresh DAY_DATA_DIR.
 GET /stats reports validators, 200/304 totals, icon hits and maximum concurrent feeds.
 """
 import json

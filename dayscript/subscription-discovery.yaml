@@ -12,6 +12,8 @@ flow:
   - assert_text: { id: "sidebar:header%3Afeeds", contains: "(1)" }
   - assert_route: { route: 'feed:1442691631189166321' }
   - wait_for: { id: article_row:0 }
+  # Subscribing opens the new feed; New Feed is on the feeds page (a phone's bottom bar).
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28763/site' }
@@ -21,6 +23,7 @@ flow:
   - assert_text: { id: "sidebar:header%3Afeeds", contains: "(2)" }
   - assert_route: { route: 'feed:2226428218085183488' }
   - wait_for: { id: article_row:0 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28763/header' }
@@ -30,6 +33,7 @@ flow:
   - assert_text: { id: "sidebar:header%3Afeeds", contains: "(3)" }
   - assert_route: { route: 'feed:7108728110427175209' }
   - wait_for: { id: article_row:0 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28763/multi' }
@@ -42,6 +46,7 @@ flow:
   - assert_route: { route: 'feed:101536170517251688' }
   - wait_for: { id: article_row:0 }
   - screenshot: new-feed-selected
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28763/missing' }
@@ -53,6 +58,7 @@ flow:
   - pause: { secs: 1 }
   - assert_route: { route: 'feed:101536170517251688' }
   - screenshot: reordered-sidebar
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'file:///tmp/fixture.xml' }
@@ -61,6 +67,7 @@ flow:
   - tap: { id: feed_cancel }
   - assert_text: { id: "sidebar:header%3Afeeds", contains: "(4)" }
   - toolbar: { item: unread_feeds_only, on: true }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28763/empty.xml' }

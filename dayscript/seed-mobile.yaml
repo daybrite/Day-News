@@ -14,36 +14,43 @@ flow:
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
+  # Subscribing opens the new feed; New Feed is on the feeds page (a phone's bottom bar).
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "https://www.quantamagazine.org/feed/" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "https://www.sciencedaily.com/rss/all.xml" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "https://www.merriam-webster.com/wotd/feed/rss2" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "https://users.rust-lang.org/c/announcements/6.rss" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "https://blog.rust-lang.org/feed.xml" }
   - tap: { id: feed_verify }
   - tap: { id: feed_subscribe }
   - pause: { secs: 2 }
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "https://social.rust-lang.org/@rust.rss" }

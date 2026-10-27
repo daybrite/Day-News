@@ -329,12 +329,7 @@ fn wire_scene(sc: NewsScene) {
 /// Open the container and stand up the live pipeline. Call once at startup, before the first
 /// build.
 pub fn init() {
-    let dir = store_dir();
-    // The diesel-era store is a different schema; the redesign starts fresh.
-    for legacy in ["sheets.sqlite3", "sheets.sqlite3-wal", "sheets.sqlite3-shm"] {
-        let _ = std::fs::remove_file(dir.join(legacy));
-    }
-    match Db::open(&dir.join("sheets2.sqlite3")) {
+    match Db::open(&store_dir().join(crate::LIBRARY)) {
         Ok(db) => {
             store_with(|s| *s.db.borrow_mut() = Some(db));
             store_with(|s| {
@@ -857,6 +852,12 @@ pub fn set_feed_folder(feed: u64, folder: Option<u64>, before: Option<u64>) {
     with_db(|d| d.set_feed_folder(feed, folder, before));
 }
 
+/// The subscribed feeds already holding articles at any of `links`, most first.
+pub async fn feeds_with_links(links: Vec<String>) -> Vec<(u64, usize)> {
+    with_db(|d| d.feeds_with_links(&links))
+        .and_then(Result::ok)
+        .unwrap_or_default()
+}
 pub fn rename_feed(feed: u64, title: &str) {
     with_db(|d| d.rename_feed(feed, title));
 }
@@ -1259,64 +1260,28 @@ fn fallback_title(url: &str) -> String {
     host.strip_prefix("www.").unwrap_or(host).to_string()
 }
 
-/// Where the SQLite file lives, per platform.
-pub fn store_dir() -> PathBuf {
-    // UI validation can use a fresh store without modifying a reader's subscriptions.
-    std::env::var_os("DAY_NEWS_DATA_DIR")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
-        .unwrap_or_else(base_dir)
-}
-
-#[cfg(not(any(target_os = "ios", target_os = "android", target_arch = "wasm32")))]
-fn base_dir() -> PathBuf {
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(std::env::temp_dir)
-        .join(".daybrite-sheets")
-}
-
+/// Where the library lives. The web's names an OPFS file, private to the origin, so it needs no
+/// folder; elsewhere (this module's tests) the app's data directory.
 #[cfg(target_arch = "wasm32")]
-fn base_dir() -> PathBuf {
-    // Web: the "path" names an OPFS file, not a filesystem location; there is no $HOME and
-    // `std::env::temp_dir` panics on wasm.
-    PathBuf::from("daybrite-sheets")
+pub fn store_dir() -> PathBuf {
+    PathBuf::new()
 }
 
-#[cfg(target_os = "ios")]
-fn base_dir() -> PathBuf {
-    // `$HOME` is the sandbox container, whose root is not writable; Application Support is.
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(std::env::temp_dir)
-        .join("Library/Application Support/daybrite-sheets")
+#[cfg(not(target_arch = "wasm32"))]
+pub fn store_dir() -> PathBuf {
+    day_spec::storage::data_dir().unwrap_or_else(std::env::temp_dir)
 }
 
-#[cfg(target_os = "android")]
-fn base_dir() -> PathBuf {
-    // The app's private files dir, via the JNI bridge. Resolved on the main thread (the only
-    // thread this crate runs on), so the app classloader is reachable.
-    android_files_dir()
-        .unwrap_or_else(std::env::temp_dir)
-        .join("daybrite-sheets")
+/// Where re-fetchable files go (feed icons). The web has no directory for them: its file reads
+/// and writes fail, and the icons are fetched again.
+#[cfg(target_arch = "wasm32")]
+pub fn cache_dir() -> PathBuf {
+    PathBuf::from("cache")
 }
 
-#[cfg(target_os = "android")]
-fn android_files_dir() -> Option<PathBuf> {
-    use day_toolkit_material::{DayEnv, as_jstring, read_jstring, with_env};
-    const BRIDGE: &str = "dev/daybrite/day/bridge/DayBridge";
-    with_env(|env| {
-        let obj = env
-            .dcall_static(BRIDGE, "filesDirPath", "()Ljava/lang/String;", &[])
-            .ok()?
-            .l()
-            .ok()?;
-        if obj.is_null() {
-            return None;
-        }
-        let path = read_jstring(env, &as_jstring(obj))?;
-        (!path.is_empty()).then(|| PathBuf::from(path))
-    })
+#[cfg(not(target_arch = "wasm32"))]
+pub fn cache_dir() -> PathBuf {
+    day_spec::storage::cache_dir().unwrap_or_else(std::env::temp_dir)
 }
 
 /// Run `f` against the process store, the shape the old `thread_local!` accessor had, so every

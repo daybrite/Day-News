@@ -705,6 +705,31 @@ fn reorder_collections(order: &[FolderRow]) {
     daynews_core::set_folder_positions(positions);
 }
 
+/// Ask for a feed's new title, starting from the one it shows: Feed ▸ Rename Feed…, its sidebar
+/// row's Rename…, and the Rename… button on its overview. The title is the feed's own from then
+/// on (later refreshes keep it) and goes to the sync service with the subscription. An empty or
+/// unchanged answer changes nothing.
+pub fn rename_feed(feed: u64) {
+    let Some(current) = daynews_core::state()
+        .feeds
+        .with_untracked(|feeds| feeds.iter().find(|f| f.id == feed).map(|f| f.title.clone()))
+    else {
+        return;
+    };
+    day::task(async move {
+        let Some(new) = prompt(res::str::rename_feed_title())
+            .placeholder(res::str::feed_name_placeholder())
+            .initial(current.clone())
+            .await
+            .map(|n| n.trim().to_string())
+            .filter(|n| !n.is_empty() && *n != current)
+        else {
+            return;
+        };
+        daynews_core::rename_feed(feed, &new);
+    });
+}
+
 /// Ask for a collection's new name. A name another collection has is refused, and said so.
 /// The default collection's name is a preference; its localized name clears it.
 fn rename_collection(id: u64, name: String) {

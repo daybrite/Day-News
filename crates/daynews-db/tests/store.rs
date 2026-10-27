@@ -488,7 +488,7 @@ fn undo_restores_an_unsubscribed_feeds_whole_subtree() {
 fn conditional_check_persists_validators_without_changing_articles() {
     let root = std::env::temp_dir().join(format!("day-news-validators-{}", std::process::id()));
     std::fs::create_dir_all(&root).unwrap();
-    let file = root.join("store.sqlite");
+    let file = root.join("store.db");
     let url = "https://fixture.example/conditional";
     let f;
     {
@@ -592,7 +592,7 @@ fn duplicate_feed_entries_are_inserted_once() {
 fn retry_deadline_survives_reopen_and_success_clears_it() {
     let root = std::env::temp_dir().join(format!("day-news-retry-{}", std::process::id()));
     std::fs::create_dir_all(&root).unwrap();
-    let file = root.join("store.sqlite");
+    let file = root.join("store.db");
     let id;
     {
         let db = Db::open(&file).unwrap();
@@ -666,7 +666,7 @@ fn adaptive_history_and_reordered_priority_survive_reopen() {
     let root = std::env::temp_dir().join(format!("daynews-polling-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).unwrap();
-    let file = root.join("store.sqlite");
+    let file = root.join("store.db");
     let (fast, slow);
     {
         let db = Db::open(&file).unwrap();
@@ -788,7 +788,7 @@ fn word_count_migration_is_persistent_and_only_processes_missing_metrics() {
     ));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).unwrap();
-    let path = root.join("store.sqlite");
+    let path = root.join("store.db");
     let id;
     {
         let db = Db::open(&path).unwrap();
