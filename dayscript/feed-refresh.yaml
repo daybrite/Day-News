@@ -42,7 +42,7 @@ flow:
   - pause: { secs: 8 }
   - navigate: { route: all }
   - wait_for: { id: article_row:0 }
-  - nav_back: { native: true, only_on: [ios-uikit] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
   - screenshot: cached-feed-icons
   - toolbar: { item: refresh }
   - pause: { secs: 0.5 }
@@ -51,12 +51,14 @@ flow:
   - navigate: { route: all }
   - select: { id: timeline, index: 0 }
   - pause: { secs: 1 }
-  - nav_back: { native: true, only_on: [ios-uikit] }
-  - nav_back: { native: true, only_on: [ios-uikit] }
-  - toolbar: { item: unread_feeds_only, on: true }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
+  - nav_back: { native: true, only_on: [ios-uikit, android-material] }
+  - toolbar: { item: unread_feeds_only, on: true, skip_on: [ios-uikit, android-material] }
+  - toolbar: { item: unread_feeds_only, only_on: [ios-uikit, android-material] }
   - screenshot: unread-feeds-filter
   - web_eval: { id: reader_web, script: 'document.body.textContent', contains: 'Stable original body.', only_on: [macos-appkit] }
-  - toolbar: { item: unread_feeds_only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false, skip_on: [ios-uikit, android-material] }
+  - toolbar: { item: unread_feeds_only, only_on: [ios-uikit, android-material] }
   - menu: { id: unread_feeds_only, only_on: [macos-appkit] }
   - screenshot: unread-feeds-menu-filter
   - menu: { id: unread_feeds_only, only_on: [macos-appkit] }

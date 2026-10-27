@@ -199,6 +199,22 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
     let menu_scope = day::reactive::Scope::current();
     let section: Signal<Option<String>> = Signal::new(Some(OPENING_SECTION.into()));
     bind_sidebar_scope(section, sc);
+    // Whether a phone shows an article list rather than the feeds: choosing a section pushes
+    // one, Back clears the selection, and an open reader sits on top of one. The selection the
+    // window opens with does not count; a phone opens on the feeds with it already chosen.
+    let list_shown = Signal::new(false);
+    watch(
+        move || section.get(),
+        move |now, _| list_shown.set(now.is_some()),
+    );
+    watch(
+        move || sc.reader_open.get(),
+        move |open, _| {
+            if *open {
+                list_shown.set(true);
+            }
+        },
+    );
 
     let navigation = nav(site_browser::FeedSelection { section, scene: sc })
         .style(NavStyle::Sidebar)
@@ -225,7 +241,7 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
         // Refresh and Mark All as Read act on the scope this list has chosen, so they ride this
         // host's chrome (docs/toolbars.md): the sidebar column on a desktop, the root
         // list's bar when it collapses. The article's commands are on the reader.
-        .toolbar(move || menu_scope.enter(|| toolbar::feed_items(section)))
+        .toolbar(move || menu_scope.enter(|| toolbar::feed_items(list_shown)))
         .icon_progress(move || {
             st.updating_feeds
                 .get()

@@ -8,6 +8,8 @@ flow:
   - pause: { secs: 0.5 }
   - screenshot: updating-after-relaunch
   - pause: { secs: 5 }
-  - toolbar: { item: unread_feeds_only, on: true }
+  - toolbar: { item: unread_feeds_only, on: true, skip_on: [ios-uikit, android-material] }
+  - toolbar: { item: unread_feeds_only, only_on: [ios-uikit, android-material] }
   - screenshot: filter-toolbar-active
-  - toolbar: { item: unread_feeds_only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false, skip_on: [ios-uikit, android-material] }
+  - toolbar: { item: unread_feeds_only, only_on: [ios-uikit, android-material] }

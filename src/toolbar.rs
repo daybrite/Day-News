@@ -20,9 +20,9 @@ pub fn available() -> bool {
 }
 
 /// The feed list's commands: they act on the scope the sidebar has chosen, which is what the
-/// user is looking at while the list is in front of them. `section` is the sidebar's selection,
-/// which a phone's Back clears: `None` there means the feeds page itself is showing.
-pub fn feed_items(section: Signal<Option<String>>) -> Vec<ToolbarEntry> {
+/// user is looking at while the list is in front of them. `list_shown` says whether a phone
+/// shows an article list rather than the feeds page.
+pub fn feed_items(list_shown: Signal<bool>) -> Vec<ToolbarEntry> {
     let sc = daynews_core::scene();
     // A phone's narrow reader bar prioritizes reading actions. Sidebar commands
     // remain one native Back away on the timeline.
@@ -31,10 +31,10 @@ pub fn feed_items(section: Signal<Option<String>>) -> Vec<ToolbarEntry> {
         return Vec::new();
     }
     let mut items = Vec::new();
-    if compact_uikit() {
+    if phone_bottom_bar() {
         // The filter and New Feed ride the bottom bar on a phone (`bottom_bar`).
         items.push(refresh_item());
-        items.extend(bottom_bar(section.get().is_some()));
+        items.extend(bottom_bar(list_shown.get()));
     } else if cfg!(feature = "appkit") {
         // Only Refresh and the filter over a Mac's sidebar; the rest sit over the list
         // (`list_items`). AppKit folds the toolbar's search field into a magnifier whenever
@@ -144,8 +144,10 @@ fn wide_uikit() -> bool {
         && day::size_class().is_some_and(|size| size.width != WidthClass::Compact)
 }
 
-fn compact_uikit() -> bool {
-    cfg!(feature = "uikit") && !wide_uikit()
+/// A phone, iPhone or Android: the app's status rides a bottom bar there (`bottom_bar`).
+fn phone_bottom_bar() -> bool {
+    let compact = day::size_class().is_none_or(|size| size.width == WidthClass::Compact);
+    (cfg!(feature = "uikit") || cfg!(feature = "material")) && compact
 }
 
 fn refresh_item() -> ToolbarEntry {
@@ -191,7 +193,7 @@ pub fn list_items() -> Vec<ToolbarEntry> {
 /// status bar, so the lists leave out the refresh row and the sync panel they show elsewhere.
 /// A desktop window whose status bar is hidden shows neither: hiding it hides the status.
 pub fn status_in_bottom_bar() -> bool {
-    compact_uikit() || !crate::settings::TOOLBAR_SETTINGS
+    phone_bottom_bar() || !crate::settings::TOOLBAR_SETTINGS
 }
 
 /// A desktop window's status bar, across the bottom of the whole window and shown until View ▸
@@ -344,17 +346,39 @@ fn last_updated() -> Option<i64> {
 /// Declared on the navigation, so the feeds page and the article list share it; the reader has
 /// its own commands and no bottom bar.
 fn bottom_bar(list_showing: bool) -> Vec<ToolbarEntry> {
+    // Four round icons drawn on one grid (resource/vectors), so the bar's buttons match in size
+    // and weight whichever pair is showing.
     let trailing = if sync_cancellable() {
-        toolbar_button(day::id!(status_cancel_sync), res::str::sync_cancel()).action(cancel_sync)
+        // The round ✕, not the word: the status beside it needs the width.
+        toolbar_button(day::id!(status_cancel_sync), res::str::sync_cancel())
+            .image(res::vectors::cancel_round)
+            .action(cancel_sync)
     } else if list_showing {
-        crate::commands::mark_all_read().toolbar_item()
-    } else {
-        new_feed_item()
-    };
-    vec![
-        crate::commands::unread_feeds_only()
+        crate::commands::mark_all_read()
             .toolbar_item()
-            .placement(ToolbarPlacement::Bottom),
+            .image(res::vectors::mark_all_read)
+    } else {
+        new_feed_item().image(res::vectors::new_feed_round)
+    };
+    // NetNewsWire's filter: the icon fills in while the list is filtered, rather than UIKit's
+    // selected background, which reads as a pressed square on a bar of plain icons.
+    let filtering = crate::feed_list::FeedList::app().unread_only.get();
+    let filter = toolbar_button(
+        day::id!(unread_feeds_only),
+        if filtering {
+            res::str::show_all_feeds()
+        } else {
+            res::str::show_unread_feeds_only()
+        },
+    )
+    .image(if filtering {
+        res::vectors::feed_filter_on
+    } else {
+        res::vectors::feed_filter
+    })
+    .action(crate::feed_list::toggle);
+    vec![
+        filter.placement(ToolbarPlacement::Bottom),
         // Read here, not in a label closure: this builder is what reruns when they change.
         toolbar_label(day::id!(list_status), status(list_showing, clock().get()))
             .placement(ToolbarPlacement::Bottom),

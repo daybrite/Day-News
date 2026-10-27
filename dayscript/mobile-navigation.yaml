@@ -2,7 +2,7 @@
 # Launch with DAY_NEWS_SYNC_TEST=1 DAY_NEWS_SYNC_TEST_LATENCY_MS=1500 in an isolated store.
 name: mobile-navigation
 description: In-place unread filtering, toolbar Settings, and sync footers on both compact lists.
-# The iPhone reports synchronization in its bottom bar's status instead, so it skips the footer steps.
+# The phones report synchronization in their bottom bar's status instead, so they skip the footer steps.
 flow:
   # Let the launch-triggered fixture sync finish before issuing Refresh.
   - pause: { secs: 8 }
@@ -10,10 +10,14 @@ flow:
   - wait_for: { id: article_row:0 }
   - nav_back: {}
   - assert_route: { route: "" }
-  - toolbar: { item: unread_feeds_only, on: true }
+  - toolbar: { item: unread_feeds_only, on: true, skip_on: [ios-uikit, android-material] }
+  # On a phone the filter is a button whose icon fills in while it filters.
+  - toolbar: { item: unread_feeds_only, only_on: [ios-uikit, android-material] }
   - assert_route: { route: "" }
   - screenshot: mobile-filtered-feed-counts
-  - toolbar: { item: unread_feeds_only, on: false }
+  - toolbar: { item: unread_feeds_only, on: false, skip_on: [ios-uikit, android-material] }
+  # On a phone the filter is a button whose icon fills in while it filters.
+  - toolbar: { item: unread_feeds_only, only_on: [ios-uikit, android-material] }
   - assert_route: { route: "" }
   - toolbar: { item: settings }
   - wait_for: { id: prefs_group:articles }
@@ -27,10 +31,10 @@ flow:
   - pause: { secs: 8 }
   - toolbar: { item: refresh }
   - pause: { secs: 1 }
-  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
+  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit, android-material] }
   - navigate: { route: all }
   - pause: { secs: 1 }
-  - assert_missing: { id: sync_status_footer, skip_on: [ios-uikit] }
+  - assert_missing: { id: sync_status_footer, skip_on: [ios-uikit, android-material] }
   - pause: { secs: 8 }
   - toolbar: { item: settings }
   - wait_for: { id: prefs_group:articles }
@@ -40,25 +44,25 @@ flow:
   - pause: { secs: 1 }
   - toolbar: { item: refresh }
   - pause: { secs: 1 }
-  - assert_visible: { id: sync_status_footer, skip_on: [ios-uikit] }
+  - assert_visible: { id: sync_status_footer, skip_on: [ios-uikit, android-material] }
   - screenshot: mobile-sync-footer
-  - tap: { id: sync_cancel_transfer, skip_on: [ios-uikit] }
+  - tap: { id: sync_cancel_transfer, skip_on: [ios-uikit, android-material] }
   - pause: { secs: 1 }
-  - assert_missing: { id: sync_status_footer, skip_on: [ios-uikit] }
+  - assert_missing: { id: sync_status_footer, skip_on: [ios-uikit, android-material] }
   - nav_back: {}
   - assert_route: { route: "" }
   - toolbar: { item: refresh }
-  - wait_for: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
+  - wait_for: { id: feeds_sync_status_footer, skip_on: [ios-uikit, android-material] }
   - screenshot: mobile-feeds-sync-footer
-  - tap: { id: sync_cancel_transfer, skip_on: [ios-uikit] }
+  - tap: { id: sync_cancel_transfer, skip_on: [ios-uikit, android-material] }
   - pause: { secs: 1 }
-  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
+  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit, android-material] }
   # Navigate while syncing: each page owns its footer, with progress preserved on Back.
   - toolbar: { item: refresh }
-  - wait_for: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
+  - wait_for: { id: feeds_sync_status_footer, skip_on: [ios-uikit, android-material] }
   - navigate: { route: all }
-  - assert_visible: { id: sync_status_footer, skip_on: [ios-uikit] }
+  - assert_visible: { id: sync_status_footer, skip_on: [ios-uikit, android-material] }
   - nav_back: {}
-  - assert_visible: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
+  - assert_visible: { id: feeds_sync_status_footer, skip_on: [ios-uikit, android-material] }
   - pause: { secs: 15 }
-  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit] }
+  - assert_missing: { id: feeds_sync_status_footer, skip_on: [ios-uikit, android-material] }

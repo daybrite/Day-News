@@ -138,6 +138,7 @@ reader_view_no_content = No readable article was found. The page may require Jav
 reader_view_timeout = Loading the full article took too long. Try Load Full Content again.
 reader_view_unavailable = Load Full Content is unavailable. Open the original website to read the full article.
 show_unread_feeds_only = Show Only Unread Feeds
+show_all_feeds = Show All Feeds
 
 menu_find_articles = Find Articles…
 menu_view = View

@@ -732,13 +732,19 @@ the article-grouping filter. Bulk Mark All as Read remains in the Article menu w
 shortcut, rather than occupying the toolbar. Walkthrough bulk-marking steps use its
 shared command id through the menu model.
 
-The app's status has one bar per window. On iPhone it is the navigation's bottom bar, Mail's,
+The app's status has one bar per window. On a phone it is the navigation's bottom bar, Mail's
+(UIKit's toolbar on iPhone, a Material `BottomAppBar` on Android),
 shared by the feeds page and the article list (the reader has none): Show Only Unread Feeds
 at the leading edge, and at the trailing edge Cancel while a sync can be stopped, otherwise
 Mark All as Read over the list (a phone has no Article menu) or New Feed over the feeds.
 Between them, the status: a sync's step, a refresh's progress, or when the library was last
 updated, over the unread count (the list's, or every feed's on the feeds page). Refresh stays
 in the navigation bar. The sidebar's selection, which Back clears, tells the two pages apart.
+The bar's buttons are four round icons drawn on one grid (`feed_filter`, `feed_filter_on`,
+`mark_all_read`, `new_feed_round` and `cancel_round` in resource/vectors), so whichever pair
+shows matches in size and weight. The filter is a plain button whose icon fills in while it
+filters, as NetNewsWire's does, not a toggle with UIKit's selected background. An iPad,
+with no bottom bar, keeps its sync panel beneath the lists.
 On a desktop window it is a status bar across the bottom of the whole window, shown by
 default and toggled with View ▸ Show/Hide Status Bar (⌥⌘/, since ⌘/ is Next Unread) or the
 Articles setting, `news.window.status_bar`: idle, the unread and feed counts and when the
