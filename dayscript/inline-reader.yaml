@@ -3,6 +3,8 @@ name: day-news-inline-reader
 description: Inline full content, automatic loading, and independent per-feed preferences.
 flow:
   - dialog_mode: { mode: scripted }
+  # New Feed is on the feeds page (a phone's bottom bar); a phone opens on Today's list.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28761/feed.json' }

@@ -12,6 +12,8 @@ flow:
   - tap: { id: prefs_group:feeds, only_on: [ios-uikit, android-material, harmony-arkui, web-dom] }
   - wait_for: { id: refresh_interval_picker }
   - select: { id: refresh_interval_picker, index: 1 }
+  # New Feed is on the feeds page (a phone's bottom bar); a phone opens on Today's list.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: 'http://127.0.0.1:28762/feed/1' }

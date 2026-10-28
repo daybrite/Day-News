@@ -13,12 +13,15 @@
 # timeline's derived-title path stays covered.
 #
 # CONTRACT: expects a store with no other subscriptions (the count is the whole sidebar); CI
-# runners start empty. Re-running adds nothing: feed ids are a hash of the URL.
+# runners start empty. On a store already seeded, each New Feed meets the Already Subscribed
+# question instead (src/subscriptions.rs `already_subscribed`), so run it on an empty one.
 name: day-news-seed-demo
 description: Subscribe to the bundled demo feeds — the offline seed for the walkthrough.
 flow:
   - dialog_mode: { mode: scripted }
   - wait_for: { id: nav, timeout_secs: 30 }
+  # New Feed is on the feeds page (a phone's bottom bar); a phone opens on Today's list.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "asset:demo/field-notes.xml" }

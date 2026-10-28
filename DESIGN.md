@@ -746,7 +746,10 @@ at the leading edge, and at the trailing edge Cancel while a sync can be stopped
 Mark All as Read over the list (a phone has no Article menu) or New Feed over the feeds.
 Between them, the status: a sync's step, a refresh's progress, or when the library was last
 updated, over the unread count (the list's, or every feed's on the feeds page). Refresh stays
-in the navigation bar. The sidebar's selection, which Back clears, tells the two pages apart.
+in the navigation bar. The sidebar's selection, which Back clears, tells the two pages apart:
+a phone opens on the list of the section the window starts with (Today), as Day's collapsed
+navigation does on every toolkit, so a selection always means its list is showing. Scripts
+that press New Feed first return to the feeds (`navigate: { route: "" }`), its only page.
 The bar's buttons are four round icons drawn on one grid (`feed_filter`, `feed_filter_on`,
 `mark_all_read`, `new_feed_round` and `cancel_round` in resource/vectors), so whichever pair
 shows matches in size and weight. The filter is a plain button whose icon fills in while it

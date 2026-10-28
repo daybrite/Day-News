@@ -200,9 +200,9 @@ fn shell_body(sc: daynews_core::NewsScene, prefs: day_piece_settings::Prefs) -> 
     let section: Signal<Option<String>> = Signal::new(Some(OPENING_SECTION.into()));
     bind_sidebar_scope(section, sc);
     // Whether a phone shows an article list rather than the feeds: choosing a section pushes
-    // one, Back clears the selection, and an open reader sits on top of one. The selection the
-    // window opens with does not count; a phone opens on the feeds with it already chosen.
-    let list_shown = Signal::new(false);
+    // one, Back clears the selection, and an open reader sits on top of one. A phone opens on
+    // the list of the section the window starts with (docs/navigation.md), so that counts too.
+    let list_shown = Signal::new(section.get_untracked().is_some());
     watch(
         move || section.get(),
         move |now, _| list_shown.set(now.is_some()),

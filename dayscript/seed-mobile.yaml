@@ -8,6 +8,8 @@ description: Subscribe to a few representative feeds and let them refresh.
 flow:
   - dialog_mode: { mode: scripted }
   - wait_for: { id: nav, timeout_secs: 30 }
+  # New Feed is on the feeds page (a phone's bottom bar); a phone opens on Today's list.
+  - navigate: { route: "" }
   - toolbar: { item: new_feed }
   - wait_for: { id: feed_url }
   - input: { id: feed_url, text: "https://www.nasa.gov/feed/" }
